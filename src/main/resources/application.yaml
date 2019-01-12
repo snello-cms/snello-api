@@ -1,7 +1,7 @@
 ---
 micronaut:
   application:
-    name: matcms
+    name: snello-api
 
   server:
     cors:
@@ -13,7 +13,7 @@ micronaut:
         enabled: true
         mapping: /files/**
         paths:
-          - file:files/
+          - ${WEBROOT:`file:files/`}
 endpoints:
   health:
     enabled: true
@@ -30,9 +30,9 @@ jackson:
 ---
 datasources:
   default:
-    url: jdbc:mysql://localhost:3307/snello?verifyServerCertificate=false&useSSL=true
-    username: snello
-    password: snello
+    url:  ${JDBC_URL:`jdbc:mysql://mysql:3306/snello?verifyServerCertificate=false&useSSL=true`}
+    username: ${JDBC_USERNAME:snello}
+    password: ${JDBC_PASSWORD:snello}
     driverClassName: com.mysql.jdbc.Driver
     testOnBorrow: true
     validationQuery: select 1
