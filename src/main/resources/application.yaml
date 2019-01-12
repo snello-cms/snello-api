@@ -13,7 +13,7 @@ micronaut:
         enabled: true
         mapping: /files/**
         paths:
-          - file:/Users/fiorenzo/IdeaProjectsMicronaut/matcms/files/
+          - file:files/
 endpoints:
   health:
     enabled: true
@@ -29,15 +29,10 @@ jackson:
   dateFormat: yyyy-MM-dd HH:mm:ss
 ---
 datasources:
-  h2:
-    url: jdbc:h2:mem:default;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password: ""
-    driverClassName: org.h2.Driver
   default:
-    url: jdbc:mysql://localhost:3307/matcms?verifyServerCertificate=false&useSSL=true
-    username: matcms
-    password: matcms
+    url: jdbc:mysql://localhost:3307/snello?verifyServerCertificate=false&useSSL=true
+    username: snello
+    password: snello
     driverClassName: com.mysql.jdbc.Driver
     testOnBorrow: true
     validationQuery: select 1
