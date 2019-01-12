@@ -17,11 +17,11 @@ micronaut:
 endpoints:
   health:
     enabled: true
-  metrics:
-    enabled: true
-    export:
-      prometheus:
-        enabled: true
+#  metrics:
+#    enabled: true
+#    export:
+#      prometheus:
+#        enabled: true
 ---
 jackson:
   serialization:
