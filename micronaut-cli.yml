@@ -1,0 +1,5 @@
+profile: service
+defaultPackage: io.snello.cms
+---
+testFramework: junit
+sourceLanguage: java

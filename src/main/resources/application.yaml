@@ -1,0 +1,47 @@
+---
+micronaut:
+  application:
+    name: matcms
+
+  server:
+    cors:
+      enabled: true
+    port: 8080
+  router:
+    static-resources:
+      default:
+        enabled: true
+        mapping: /files/**
+        paths:
+          - file:/Users/fiorenzo/IdeaProjectsMicronaut/matcms/files/
+endpoints:
+  health:
+    enabled: true
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+---
+jackson:
+  serialization:
+    writeDatesAsTimestamps: false
+  dateFormat: yyyy-MM-dd HH:mm:ss
+---
+datasources:
+  h2:
+    url: jdbc:h2:mem:default;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driverClassName: org.h2.Driver
+  default:
+    url: jdbc:mysql://localhost:3307/matcms?verifyServerCertificate=false&useSSL=true
+    username: matcms
+    password: matcms
+    driverClassName: com.mysql.jdbc.Driver
+    testOnBorrow: true
+    validationQuery: select 1
+    removeAbandoned: true
+    removeAbandonedOnBorrow: true
+    removeAbandonedOnMaintenance: true
+
