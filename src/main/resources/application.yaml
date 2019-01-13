@@ -11,9 +11,9 @@ micronaut:
     static-resources:
       default:
         enabled: true
-        mapping: /files/**
+        mapping: /static/**
         paths:
-          - ${WEBROOT:`file:files/`}
+          - file:${WEBROOT:`/home/snello/webroot`}
 endpoints:
   health:
     enabled: true
@@ -33,9 +33,9 @@ datasources:
     url:  ${JDBC_URL:`jdbc:mysql://mysql:3306/snello?verifyServerCertificate=false&useSSL=true`}
     username: ${JDBC_USERNAME:snello}
     password: ${JDBC_PASSWORD:snello}
-    driverClassName: com.mysql.jdbc.Driver
+    driverClassName: ${JDBC_DRIVER:com.mysql.jdbc.Driver}
     testOnBorrow: true
-    validationQuery: select 1
+    validationQuery: ${JDBC_VALIDATION_QUERY:'select 1'}
     removeAbandoned: true
     removeAbandonedOnBorrow: true
     removeAbandonedOnMaintenance: true
