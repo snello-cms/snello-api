@@ -1,42 +1,73 @@
----
 micronaut:
   application:
     name: snello-api
-
   server:
     cors:
       enabled: true
+      configurations:
+        all:
+          exposedHeaders:
+            - Authorization
+            - authorization
+            - Origin
+            - origin
+            - X-Requested-With
+            - x-request-with
+            - Content-Type
+            - content-type
+            - Accept
+            - accept
+            - X-total-count
+            - x-total-count
+            - size
+            - Size
     port: 8080
+    maxRequestSize: 100MB
+    multipart:
+      maxFileSize: 100MB
   router:
     static-resources:
       default:
         enabled: true
-        mapping: /static/**
+        mapping: /files/**
         paths:
-          - file:${WEBROOT:`/home/snello/webroot`}
-endpoints:
-  health:
+          - file:${WEB_PATH:"/Users/fiorenzo/IdeaProjectsSnello/matcms/docker/webapp/files/"}
+  security:
     enabled: true
-#  metrics:
-#    enabled: true
-#    export:
-#      prometheus:
-#        enabled: true
----
+    endpoints:
+      login:
+        enabled: true
+      oauth:
+        enabled: true
+    token:
+      jwt:
+        enabled: true
+        signatures:
+          secret:
+            generator:
+              secret: "${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}"
+  storage:
+    type: fs
+  s3:
+    endpoint: s3.amazonaws.com
+    accesskey: AKIAJ5F5BXCDFPEJDCUA
+    secretkey: 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
+    region: eu-central-1
+    bucketname: portale-si
+  ---
 jackson:
   serialization:
     writeDatesAsTimestamps: false
   dateFormat: yyyy-MM-dd HH:mm:ss
----
+  ---
 datasources:
   default:
-    url:  ${JDBC_URL:`jdbc:mysql://mysql:3306/snello?verifyServerCertificate=false&useSSL=true`}
-    username: ${JDBC_USERNAME:snello}
-    password: ${JDBC_PASSWORD:snello}
+    url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:matcms}?verifyServerCertificate=false&useSSL=${JDBC_USE_SSL:false}
+    username: ${JDBC_USERNAME:matcms}
+    password: ${JDBC_PASSWORD:matcms}
     driverClassName: ${JDBC_DRIVER:com.mysql.jdbc.Driver}
     testOnBorrow: true
-    validationQuery: ${JDBC_VALIDATION_QUERY:'select 1'}
+    validationQuery: select 1
     removeAbandoned: true
     removeAbandonedOnBorrow: true
     removeAbandonedOnMaintenance: true
-

@@ -14,16 +14,6 @@ public class Condition {
     public String condition;
     public String sub_query;
 
-    public static String creationQuery = "CREATE TABLE IF NOT EXISTS `conditions` (\n" +
-            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `metadata_uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `metadata_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `separator` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `condition` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `query_params` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `sub_query` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  PRIMARY KEY (uuid)\n" +
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     public Condition() {
     }

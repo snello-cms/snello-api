@@ -1,4 +1,4 @@
-package io.snello.cms.util;
+package io.snello.util;
 
 import io.snello.cms.model.Metadata;
 import io.snello.cms.service.ApiService;

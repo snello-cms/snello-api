@@ -1,4 +1,4 @@
-package io.snello.cms;
+package io.snello;
 
 import io.micronaut.runtime.Micronaut;
 

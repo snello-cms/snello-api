@@ -28,33 +28,35 @@ public class FieldDefinition {
     public boolean input_disabled;
     public String function_def;
 
+    public String join_table_name;
+    public String join_table_key;
+    public String join_table_select_fields;
+
 
     public String sql_type;
     public String sql_definition;
     public String default_value;
     public String pattern;
 
-    public static String creationQuery = "CREATE TABLE IF NOT EXISTS `fielddefinitions` (\n" +
-            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `metadata_uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `metadata_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `label` varchar(255) COLLATE utf8mb4_unicode_ci  NOT NULL,\n" +
-            "  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `inputType` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `options` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `group_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `tab_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `validations` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `table_key` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  `input_disabled` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  `function_def` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL ,\n" +
-            "  `sql_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `sql_definition` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `default_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `pattern` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  PRIMARY KEY (uuid)\n" +
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+    //definisce se è il campo cercabile nella lista
+    public boolean searchable;
+    //    static final String EQU = "=";
+    //    static final String NE = "_ne";
+    //    static final String LT = "_lt";
+    //    static final String GT = "_gt";
+    //    static final String LTE = "_lte";
+    //    static final String GTE = "_gte";
+    //    static final String CNT = "_contains";
+    //    static final String NCNT = "_ncontains";
+    public String searchCondition;
+    // composizione del name + la codiione scelta
+    // -> es: search on "name": (EQU) name, (LIKE) name_contains,(NOT LIKE) name_ncontains,
+    // -> es: search on  "age": (EQU) age, (<) age_lt,(>) age_gt, (<=) age_lte, (>=) age_gte
+    public String searchFieldName;
+
+    //definisce se il campo deve essere visto nella lista
+    public boolean showInList;
+
 
 
 
@@ -123,16 +125,104 @@ public class FieldDefinition {
         if (map.get("pattern") instanceof String) {
             fieldDefinition.pattern = (String) map.get("pattern");
         }
+        if (map.get("join_table_name") instanceof String) {
+            fieldDefinition.join_table_name = (String) map.get("join_table_name");
+        }
+        if (map.get("join_table_key") instanceof String) {
+            fieldDefinition.join_table_key = (String) map.get("join_table_key");
+        }
+        if (map.get("join_table_select_fields") instanceof String) {
+            fieldDefinition.join_table_select_fields = (String) map.get("join_table_select_fields");
+        }
 
+        if (map.get("searchable") instanceof Boolean) {
+            fieldDefinition.searchable = (Boolean) map.get("searchable");
+        }
+        if (map.get("searchCondition") instanceof String) {
+            fieldDefinition.searchCondition = (String) map.get("searchCondition");
+        }
+        if (map.get("searchFieldName") instanceof String) {
+            fieldDefinition.searchFieldName = (String) map.get("searchFieldName");
+        }
 
+        if (map.get("showInList") instanceof Boolean) {
+            fieldDefinition.showInList = (Boolean) map.get("showInList");
+        }
         return fieldDefinition;
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> fieldDefinition = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
+        if (this.uuid != null) {
+           map.put("uuid", this.uuid);
+        }
+        if (this.metadata_uuid != null) {
+            map.put("metadata_uuid", this.metadata_uuid);
+        }
+        if (this.metadata_name != null) {
+            map.put("metadata_name", this.metadata_name);
+        }
+        if (this.name != null) {
+            map.put("name", this.name);
+        }
 
+        if (this.label != null) {
+            map.put("label", this.label);
+        }
+        if (this.type != null) {
+            map.put("type", this.type);
+        }
+        if (this.inputType != null) {
+            map.put("inputType", this.inputType);
+        }
+        if (this.options != null) {
+            map.put("options", this.options);
+        }
+        if (this.group_name != null) {
+            map.put("group_name", this.group_name);
+        }
+        if (this.tab_name != null) {
+            map.put("tab_name", this.tab_name);
+        }
+        if (this.validations != null) {
+            map.put("validations", this.validations);
+        }
+        map.put("table_key", this.table_key);
+        map.put("input_disabled", this.input_disabled);
 
-        return fieldDefinition;
+        if (this.function_def != null) {
+            map.put("function_def", this.function_def);
+        }
+        if (this.sql_type != null) {
+            map.put("sql_type", this.sql_type);
+        }
+        if (this.sql_definition != null) {
+            map.put("sql_definition", this.sql_definition);
+        }
+        if (this.default_value != null) {
+            map.put("default_value", this.default_value);
+        }
+        if (this.pattern != null) {
+            map.put("pattern", this.pattern);
+        }
+        if (this.join_table_name != null) {
+            map.put("join_table_name", this.join_table_name);
+        }
+        if (this.join_table_key != null) {
+            map.put("join_table_key", this.join_table_key);
+        }
+        if (this.join_table_select_fields != null) {
+            map.put("join_table_select_fields", this.join_table_select_fields);
+        }
+            map.put("searchable", this.searchable);
+        if (this.searchCondition != null) {
+            map.put("searchCondition", this.searchCondition);
+        }
+        if (this.searchFieldName != null) {
+            map.put("searchFieldName", this.searchFieldName);
+        }
+        map.put("showInList", this.showInList);
+        return map;
     }
 
     @Override
@@ -154,7 +244,14 @@ public class FieldDefinition {
                 ", sql_type='" + sql_type + '\'' +
                 ", sql_definition='" + sql_definition + '\'' +
                 ", default_value='" + default_value + '\'' +
+                ", join_table_name='" + join_table_name + '\'' +
+                ", join_table_key='" + join_table_key + '\'' +
+                ", join_table_select_fields='" + join_table_select_fields + '\'' +
                 ", pattern='" + pattern + '\'' +
+                ", searchable='" + searchable + '\'' +
+                ", searchCondition='" + searchCondition + '\'' +
+                ", searchFieldName='" + searchFieldName + '\'' +
+                ", showInList='" + showInList + '\'' +
                 '}';
     }
 }

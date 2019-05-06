@@ -3,10 +3,9 @@ package io.snello.cms.controller;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
-import io.snello.cms.management.AppConstants;
-import io.snello.cms.util.JsonUtils;
-import io.snello.cms.util.TableKeyUtils;
 import io.snello.cms.service.ApiService;
+import io.snello.util.TableKeyUtils;
+import io.snello.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +16,9 @@ import java.util.Map;
 
 import static io.micronaut.http.HttpResponse.ok;
 import static io.micronaut.http.HttpResponse.serverError;
+import static io.snello.cms.management.AppConstants.*;
 
-@Controller(AppConstants.API_PATH)
+@Controller(API_PATH)
 public class ApiController {
 
     Logger logger = LoggerFactory.getLogger(ApiController.class);
@@ -30,55 +30,56 @@ public class ApiController {
     }
 
 
-    @Get(AppConstants.TABLE_PATH_PARAM)
+    @Get(TABLE_PATH_PARAM)
     public HttpResponse<?> list(HttpRequest<?> request,
                                 @NotNull String table,
-                                @Nullable @QueryValue(AppConstants.SORT_PARAM) String sort,
-                                @Nullable @QueryValue(AppConstants.LIMIT_PARAM) String limit,
-                                @Nullable @QueryValue(AppConstants.START_PARAM) String start
-    ) throws Exception {
+                                @Nullable @QueryValue(SORT_PARAM) String sort,
+                                @Nullable @QueryValue(LIMIT_PARAM) String limit,
+                                @Nullable @QueryValue(START_PARAM) String start) throws Exception {
         if (sort != null)
-            logger.info("sort: " + sort);
+            logger.info(SORT_DOT_DOT + sort);
         if (limit != null)
-            logger.info("limit: " + limit);
+            logger.info(LIMIT_DOT_DOT + limit);
         if (start != null)
-            logger.info("start: " + start);
+            logger.info(START_DOT_DOT + start);
         debug(request, null);
         Integer l = limit == null ? 10 : Integer.valueOf(limit);
         Integer s = start == null ? 0 : Integer.valueOf(start);
+        long count = apiService.count(table, request.getParameters());
         return ok(apiService.list(table, request.getParameters(), sort, l, s))
-                .header(AppConstants.SIZE_HEADER_PARAM, "" + apiService.count(table, request.getParameters()));
+                .header(SIZE_HEADER_PARAM, "" + count)
+                .header(TOTAL_COUNT_HEADER_PARAM, "" + count);
     }
 
 
-    @Get(AppConstants.TABLE_PATH_PARAM + AppConstants.UUID_PATH_PARAM)
+    @Get(TABLE_PATH_PARAM + UUID_PATH_PARAM)
     public HttpResponse<?> fetch(HttpRequest<?> request, @NotNull String table, @NotNull String uuid) throws Exception {
         debug(request, null);
         String key = apiService.table_key(table);
-        return ok(apiService.fetch(table, uuid, key));
+        return ok(apiService.fetch(request.getParameters(), table, uuid, key));
     }
 
 
-    @Get(AppConstants.TABLE_PATH_PARAM + AppConstants.UUID_PATH_PARAM + AppConstants.EXTRA_PATH_PARAM)
+    @Get(TABLE_PATH_PARAM + UUID_PATH_PARAM + EXTRA_PATH_PARAM)
     public HttpResponse<?> get(HttpRequest<?> request, @NotNull String table, @NotNull String uuid, @NotNull String path,
-                               @Nullable @QueryValue(AppConstants.SORT_PARAM) String sort,
-                               @Nullable @QueryValue(AppConstants.LIMIT_PARAM) String limit,
-                               @Nullable @QueryValue(AppConstants.START_PARAM) String start) throws Exception {
+                               @Nullable @QueryValue(SORT_PARAM) String sort,
+                               @Nullable @QueryValue(LIMIT_PARAM) String limit,
+                               @Nullable @QueryValue(START_PARAM) String start) throws Exception {
         debug(request, path);
         if (path == null) {
-            throw new Exception("errore non c'e niente");
+            throw new Exception(MSG_PATH_IS_EMPTY);
         }
         if (start == null) {
-            start = AppConstants._0;
+            start = _0;
         }
         if (limit == null) {
-            limit = AppConstants._10;
+            limit = _10;
         }
         logger.info("path accessorio: " + path);
         if (path.contains("/")) {
-            String[] pars = path.split("/");
+            String[] pars = path.split(BASE_PATH);
             if (pars.length > 1) {
-                return ok(apiService.fetch(pars[0], pars[1], AppConstants.UUID));
+                return ok(apiService.fetch(request.getParameters(), pars[0], pars[1], UUID));
             } else {
                 return ok(apiService.list(pars[0], request.getParameters(), sort, Integer.valueOf(limit), Integer.valueOf(start)));
             }
@@ -87,7 +88,7 @@ public class ApiController {
         }
     }
 
-    @Post(AppConstants.TABLE_PATH_PARAM)
+    @Post(TABLE_PATH_PARAM)
     public HttpResponse<?> post(@Body String body, @NotNull String table) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
         String key = apiService.table_key(table);
@@ -96,7 +97,7 @@ public class ApiController {
         return ok(map);
     }
 
-    @Put(AppConstants.TABLE_PATH_PARAM + AppConstants.UUID_PATH_PARAM)
+    @Put(TABLE_PATH_PARAM + UUID_PATH_PARAM)
     public HttpResponse<?> put(@Body String body, @NotNull String table, @NotNull String uuid) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
         String key = apiService.table_key(table);
@@ -104,7 +105,7 @@ public class ApiController {
         return ok(map);
     }
 
-    @Delete(AppConstants.TABLE_PATH_PARAM + AppConstants.UUID_PATH_PARAM)
+    @Delete(TABLE_PATH_PARAM + UUID_PATH_PARAM)
     public HttpResponse<?> delete(HttpRequest<?> request, @NotNull String table, @NotNull String uuid) throws Exception {
         debug(request, null);
         String key = apiService.table_key(table);
@@ -130,5 +131,15 @@ public class ApiController {
         request.getParameters().forEach(param -> System.out.print("," + param.getKey() + ":" + param.getValue()));
         logger.info("------------");
     }
+
+
+//    @Error(global = true)
+//    public HttpResponse<JsonError> error(HttpRequest request, Throwable e) {
+//        JsonError error = new JsonError("Errore: " + e.getMessage())
+//                .link(Link.SELF, Link.of(request.getUri()));
+//
+//        return HttpResponse.<JsonError>status(HttpStatus.BAD_REQUEST, e.getMessage())
+//                .body(error);
+//    }
 
 }

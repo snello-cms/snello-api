@@ -8,7 +8,7 @@ import io.snello.cms.management.AppConstants;
 import io.snello.cms.model.events.FieldDefinitionCreateUpdateEvent;
 import io.snello.cms.model.events.FieldDefinitionDeleteEvent;
 import io.snello.cms.service.ApiService;
-import io.snello.cms.util.JsonUtils;
+import io.snello.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,15 +19,17 @@ import java.util.Map;
 
 import static io.micronaut.http.HttpResponse.ok;
 import static io.micronaut.http.HttpResponse.serverError;
+import static io.snello.cms.management.AppConstants.FIELD_DEFINITIONS_PATH;
 
-@Controller(AppConstants.FIELD_DEFINITIONS_PATH)
+@Controller(FIELD_DEFINITIONS_PATH)
 public class FieldDefinitionsController {
 
 
     @Inject
     ApiService apiService;
 
-    static String table = AppConstants.FIELD_DEFINITIONS;
+    String table = AppConstants.FIELD_DEFINITIONS;
+    static String default_sort = " name asc ";
 
 
     @Inject
@@ -36,27 +38,30 @@ public class FieldDefinitionsController {
 
     Logger logger = LoggerFactory.getLogger(FieldDefinitionsController.class);
 
-    @Get("/")
+    @Get(AppConstants.BASE_PATH)
     public HttpResponse<?> list(HttpRequest<?> request,
                                 @Nullable @QueryValue(AppConstants.SORT_PARAM) String sort,
                                 @Nullable @QueryValue(AppConstants.LIMIT_PARAM) String limit,
                                 @Nullable @QueryValue(AppConstants.START_PARAM) String start) throws Exception {
         if (sort != null)
-            logger.info("sort: " + sort);
+            logger.info(AppConstants.SORT_DOT_DOT + sort);
+        else
+            sort = default_sort;
         if (limit != null)
-            logger.info("limit: " + limit);
+            logger.info(AppConstants.LIMIT_DOT_DOT + limit);
         if (start != null)
-            logger.info("start: " + start);
+            logger.info(AppConstants.START_DOT_DOT + start);
         Integer l = limit == null ? 10 : Integer.valueOf(limit);
         Integer s = start == null ? 0 : Integer.valueOf(start);
         return ok(apiService.list(table, request.getParameters(), sort, l, s))
-                .header(AppConstants.SIZE_HEADER_PARAM, "" + apiService.count(table, request.getParameters()));
+                .header(AppConstants.SIZE_HEADER_PARAM, AppConstants.EMPTY + apiService.count(table, request.getParameters()))
+                .header(AppConstants.TOTAL_COUNT_HEADER_PARAM, AppConstants.EMPTY + apiService.count(table, request.getParameters()));
     }
 
 
     @Get(AppConstants.UUID_PATH_PARAM)
     public HttpResponse<?> fetch(HttpRequest<?> request, @NotNull String uuid) throws Exception {
-        return ok(apiService.fetch(table, uuid, AppConstants.UUID));
+        return ok(apiService.fetch(null, table, uuid, AppConstants.UUID));
     }
 
 

@@ -1,4 +1,4 @@
-package io.snello.cms.util;
+package io.snello.util;
 
 import org.mvel2.MVEL;
 

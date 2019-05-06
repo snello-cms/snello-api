@@ -1,15 +1,20 @@
-package io.snello.cms.util;
+package io.snello.cms.repository.mysql;
+
+import io.snello.util.SqlHelper;
 
 import java.sql.*;
 import java.util.*;
 
-public class SqlUtils {
+import static io.snello.cms.management.DbConstants.*;
+import static io.snello.cms.repository.mysql.MysqlConstants.*;
+
+public class MysqlSqlUtils {
 
 
     public static List<Map<String, Object>> list(final ResultSet rs)
             throws Exception {
-        final var rsmd = rs.getMetaData();
-        final var columnCount = rsmd.getColumnCount();
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int columnCount = rsmd.getColumnCount();
         List<Map<String, Object>> lista = new ArrayList<>();
         while (rs.next()) {
             lista.add(row(rs, rsmd, columnCount));
@@ -20,8 +25,8 @@ public class SqlUtils {
 
     public static Map<String, Object> single(ResultSet rs) throws Exception {
         if (rs.next()) {
-            final var rsmd = rs.getMetaData();
-            final var columnCount = rsmd.getColumnCount();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            int columnCount = rsmd.getColumnCount();
             return row(rs, rsmd, columnCount);
         }
         return null;
@@ -29,36 +34,36 @@ public class SqlUtils {
 
     private static Map<String, Object> row(ResultSet rs, ResultSetMetaData rsmd, int columnCount) throws Exception {
         final Map<String, Object> map = new HashMap<>();
-        for (var i = 1; i <= columnCount; i++) {
+        for (int i = 1; i <= columnCount; i++) {
             map.put(rsmd.getColumnLabel(i), rs.getObject(i));
         }
         return map;
     }
 
     public static String create(String table, Map<String, Object> params) {
-        StringJoiner columns = new StringJoiner(",", "INSERT INTO " + table + " ( ", " ) ");
-        StringJoiner values = new StringJoiner(",", " VALUES ( ", " )");
+        StringJoiner columns = new StringJoiner(DELIMITER, INSERT_INTO + escape(table) + _OPEN_, _CLOSE_);
+        StringJoiner values = new StringJoiner(DELIMITER, _VALUES_ + _OPEN_, _CLOSE_);
         params.forEach(
                 (key, value) -> {
-                    columns.add("`" + key + "`");
-                    values.add("?");
+                    columns.add(ESCAPE + key + ESCAPE);
+                    values.add(PARAM);
                 }
         );
         return columns.toString() + values.toString();
     }
 
     public static String update(String table, Map<String, Object> params, Map<String, Object> keys, List<Object> in) {
-        StringJoiner toSet = new StringJoiner("=?, ", "UPDATE " + table + " SET ", "=? ");
-        StringJoiner where = new StringJoiner(",", " WHERE ", " ");
+        StringJoiner toSet = new StringJoiner(PARAM_COND_SEPARED_, UPDATE_ + escape(table) + _SET_, PARAM_COND_);
+        StringJoiner where = new StringJoiner(DELIMITER, _WHERE_, SPACE);
         params.forEach(
                 (key, value) -> {
                     in.add(value);
-                    toSet.add("`" + key + "`");
+                    toSet.add(ESCAPE + key + ESCAPE);
                 }
         );
         keys.forEach(
                 (key, value) -> {
-                    where.add(key + "=?");
+                    where.add(key + PARAM_COND_);
                     in.add(value);
                 }
         );
@@ -67,14 +72,14 @@ public class SqlUtils {
 
 
     public static String find(String table, Map<String, Object> keys, Map<String, Object> in) {
-        StringJoiner where = new StringJoiner(",", " WHERE ", " ");
+        StringJoiner where = new StringJoiner(DELIMITER, _WHERE_, SPACE);
         keys.forEach(
                 (key, value) -> {
-                    where.add(key + "=?");
-                    in.put("k_" + key, value);
+                    where.add(key + PARAM_COND_);
+                    in.put(PREFIX_ + key, value);
                 }
         );
-        return "select * FROM " + table + where.toString();
+        return SELECT_FROM + escape(table) + where.toString();
     }
 
     public static void executeQueryCreate(Connection connection, String query, Map<String, Object> map, String table_key) throws Exception {
@@ -95,6 +100,14 @@ public class SqlUtils {
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
+        }
+    }
+
+    public static boolean executeQuery(Connection connection, String query, List<Object> values) throws Exception {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            SqlHelper.fillStatement(preparedStatement, values);
+            int updated = preparedStatement.executeUpdate();
+            return updated >= 0;
         }
     }
 
@@ -120,11 +133,16 @@ public class SqlUtils {
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             SqlHelper.fillStatement(preparedStatement, in);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                return SqlUtils.list(resultSet);
+                return MysqlSqlUtils.list(resultSet);
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
         }
         return null;
+    }
+
+
+    public static String escape(String name) {
+        return ESCAPE + name + ESCAPE;
     }
 }

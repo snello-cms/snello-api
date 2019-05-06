@@ -1,4 +1,4 @@
-package io.snello.cms.util;
+package io.snello.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

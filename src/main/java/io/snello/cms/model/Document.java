@@ -16,17 +16,6 @@ public class Document {
     public String table_key;
 
 
-    public static String creationQuery = "CREATE TABLE IF NOT EXISTS `documents` (\n" +
-            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `original_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `path` varchar(255) COLLATE utf8mb4_unicode_ci ,\n" +
-            "  `mimetype` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `size` int(12),\n" +
-            "  `table_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `table_key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  PRIMARY KEY (uuid)\n" +
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     public Document() {
     }

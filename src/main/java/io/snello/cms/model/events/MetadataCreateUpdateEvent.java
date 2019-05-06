@@ -18,7 +18,7 @@ public class MetadataCreateUpdateEvent {
     @Override
     public String toString() {
         return "MetadataCreateUpdateEvent{" +
-                "metadata=" + metadata +
+                "selectQuery=" + metadata +
                 '}';
     }
 }
