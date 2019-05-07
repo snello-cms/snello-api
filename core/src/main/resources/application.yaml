@@ -51,10 +51,10 @@ micronaut:
     type: fs
   s3:
     endpoint: s3.amazonaws.com
-    accesskey: AKIAJ5F5BXCDFPEJDCUA
-    secretkey: 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
+    accesskey: xxxxx
+    secretkey: xxxxx
     region: eu-central-1
-    bucketname: portale-si
+    bucketname: xxxx
 ---
 jackson:
   serialization:
