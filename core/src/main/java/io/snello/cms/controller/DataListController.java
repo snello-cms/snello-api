@@ -6,7 +6,7 @@ import io.micronaut.http.annotation.Get;
 import io.snello.cms.model.Condition;
 import io.snello.cms.model.FieldDefinition;
 import io.snello.cms.model.Metadata;
-import io.snello.cms.service.MetadataService;
+import io.snello.cms.MetadataService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

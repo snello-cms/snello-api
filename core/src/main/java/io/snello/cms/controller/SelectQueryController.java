@@ -4,7 +4,7 @@ import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
-import io.snello.cms.service.ApiService;
+import io.snello.cms.ApiService;
 import io.snello.cms.model.events.SelectQueryCreateUpdateEvent;
 import io.snello.cms.model.events.SelectQueryDeleteEvent;
 import io.snello.util.JsonUtils;

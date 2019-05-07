@@ -3,7 +3,7 @@ package io.snello.cms.controller;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
-import io.snello.cms.service.ApiService;
+import io.snello.cms.ApiService;
 import io.snello.util.TableKeyUtils;
 import io.snello.util.JsonUtils;
 import org.slf4j.Logger;

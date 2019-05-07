@@ -1,7 +1,7 @@
 package io.snello.util;
 
 import io.snello.cms.model.Metadata;
-import io.snello.cms.service.ApiService;
+import io.snello.cms.ApiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

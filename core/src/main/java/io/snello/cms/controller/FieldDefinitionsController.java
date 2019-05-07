@@ -7,7 +7,7 @@ import io.micronaut.http.annotation.*;
 import io.snello.cms.management.AppConstants;
 import io.snello.cms.model.events.FieldDefinitionCreateUpdateEvent;
 import io.snello.cms.model.events.FieldDefinitionDeleteEvent;
-import io.snello.cms.service.ApiService;
+import io.snello.cms.ApiService;
 import io.snello.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

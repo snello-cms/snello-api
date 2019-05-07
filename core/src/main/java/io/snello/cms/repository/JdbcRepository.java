@@ -62,4 +62,7 @@ public interface JdbcRepository {
     String fieldDefinition2Sql(FieldDefinition fieldDefinition);
 
     String createTableSql(Metadata metadata, List<FieldDefinition> fields);
+
+    String dropTableQuery();
+    String truncateTableQuery();
 }

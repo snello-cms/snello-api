@@ -7,7 +7,7 @@ import io.micronaut.http.annotation.*;
 import io.snello.cms.model.Metadata;
 import io.snello.cms.model.events.MetadataCreateUpdateEvent;
 import io.snello.cms.model.events.MetadataDeleteEvent;
-import io.snello.cms.service.ApiService;
+import io.snello.cms.ApiService;
 import io.snello.util.JsonUtils;
 import io.snello.util.MetadataUtils;
 import org.slf4j.Logger;
