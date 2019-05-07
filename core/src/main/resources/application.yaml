@@ -47,28 +47,8 @@ micronaut:
           secret:
             generator:
               secret: "${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}"
-  storage:
-    type: fs
-  s3:
-    endpoint: s3.amazonaws.com
-    accesskey: xxxxx
-    secretkey: xxxxx
-    region: eu-central-1
-    bucketname: xxxx
 ---
 jackson:
   serialization:
     writeDatesAsTimestamps: false
   dateFormat: yyyy-MM-dd HH:mm:ss
----
-datasources:
-  default:
-    url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:matcms}?verifyServerCertificate=false&useSSL=${JDBC_USE_SSL:false}
-    username: ${JDBC_USERNAME:matcms}
-    password: ${JDBC_PASSWORD:matcms}
-    driverClassName: ${JDBC_DRIVER:com.mysql.jdbc.Driver}
-    testOnBorrow: true
-    validationQuery: select 1
-    removeAbandoned: true
-    removeAbandonedOnBorrow: true
-    removeAbandonedOnMaintenance: true

@@ -1,0 +1,15 @@
+---
+micronaut:
+  application:
+    name: snello-api
+datasources:
+  default:
+    url:  jdbc:postgresql://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:matcms}
+    username: ${JDBC_USERNAME:matcms}
+    password: ${JDBC_PASSWORD:matcms}
+    driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
+    testOnBorrow: true
+    validationQuery: select 1
+    removeAbandoned: true
+    removeAbandonedOnBorrow: true
+    removeAbandonedOnMaintenance: true
