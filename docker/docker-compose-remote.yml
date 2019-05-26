@@ -1,0 +1,42 @@
+version: '3'
+services:
+   phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    logging:
+      driver: none
+    expose:
+      - "9999"
+    ports:
+      - "9999:80"
+  matcms-admin:
+    restart: always
+    image: docker.io/snellocms/matcms-admin
+    volumes:
+      - ./webapp:/usr/share/nginx/html
+      - ./webapp/files:/usr/share/nginx/html/files
+    expose:
+      - "80"
+    ports:
+      - "80:80"
+    depends_on:
+      - matcms-api
+    links:
+      - matcms-api
+  matcms-api:
+    restart: always
+    image: docker.io/snellocms/matcms-api
+    volumes:
+      - ./webapp/files:/home/snello/files
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
+    environment:
+      JDBC_HOST: mysql-remote-server
+      JDBC_PORT: 3306
+      JDBC_DB: matcms
+      JDBC_USERNAME: matcms
+      JDBC_PASSWORD: matcms
+      JDBC_DRIVER: com.mysql.jdbc.Driver
+      WEB_PATH: "/home/snello/files/"
+      TZ: "Europe/Rome"

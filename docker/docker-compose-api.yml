@@ -1,0 +1,52 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7
+    restart: always
+    expose:
+      - "3306"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: matcms
+      MYSQL_DATABASE: matcms
+      MYSQL_USER: matcms
+      MYSQL_PASSWORD: matcms
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --max-connections=1000, --wait-timeout=300, --interactive-timeout=300]
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    logging:
+      driver: none
+    depends_on:
+      - mysql
+    links:
+      - mysql:db
+    expose:
+      - "9999"
+    ports:
+      - "9999:80"
+  matcms-api:
+    restart: always
+    image: snellocms/matcms-api
+    volumes:
+      - ./webapp/files:/home/snello/files
+    expose:
+      - "8080"
+      - "8787"
+    ports:
+      - "8080:8080"
+      - "8787:8787"
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    environment:
+      JDBC_HOST: mysql
+      JDBC_PORT: 3306
+      JDBC_DB: matcms
+      JDBC_USERNAME: matcms
+      JDBC_PASSWORD: matcms
+      JDBC_DRIVER: com.mysql.jdbc.Driver
+      WEB_PATH: "/home/snello/files/"
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787"
+      TZ: "Europe/Rome"

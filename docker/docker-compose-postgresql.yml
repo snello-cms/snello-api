@@ -1,0 +1,18 @@
+version: '3'
+services:
+  postgresql:
+    image: postgres:9.6.10-alpine
+    environment:
+      POSTGRES_PASSWORD: matcms
+      POSTGRES_USER: matcms
+      POSTGRES_DB: matcms
+    ports:
+      - '5432:5432'
+  pgadmin4:
+    image: fenglc/pgadmin4
+    ports:
+      - '5050:5050'
+    links:
+      - postgresql:postgresql
+    depends_on:
+      - postgresql

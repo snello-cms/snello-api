@@ -1,0 +1,4 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Sun Feb 03 16:34:41 CET 2019
+@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1549208081119
+https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact org.apache.maven.doxia\:doxia-core\:jar\:1.4 from/to central (https\://repo.maven.apache.org/maven2)\: /Users/fiorenzo/.m2/repository/org/apache/maven/doxia/doxia-core/1.4/doxia-core-1.4.jar.part (No such file or directory)
