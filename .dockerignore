@@ -1,9 +1,0 @@
-.git
-.cache
-.idea
-target/*
-.dockerignore
-dependency-reduced-pom.xml
-micronaut-cli.yml
-pom.xml
-README.md
