@@ -9,7 +9,7 @@
         <exec.mainClass>io.snello.Application</exec.mainClass>
         <jdk.version>1.8</jdk.version>
         <minio.version>4.0.1</minio.version>
-        <h2.version>1.4.196</h2.version>
+        <h2.version>1.4.199</h2.version>
         <junit.version>4.12</junit.version>
         <logback.version>1.2.3</logback.version>
         <micronaut.version>1.1.0</micronaut.version>
