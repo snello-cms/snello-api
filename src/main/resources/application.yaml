@@ -1,7 +1,7 @@
 ---
 micronaut:
   application:
-    name: matcms
+    name: snello-api
   server:
     cors:
       enabled: true
