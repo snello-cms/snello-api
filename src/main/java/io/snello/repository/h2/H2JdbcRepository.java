@@ -330,11 +330,16 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     public void batch(String[] queries) throws Exception {
+        final int batchSize = 5;
+        int count = 0;
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
             for (String query : queries) {
                 logger.info("BATCH QUERY: " + query);
                 statement.addBatch(query);
+                if(++count % batchSize == 0) {
+                    statement.executeBatch();
+                }
             }
             statement.executeBatch();
             statement.close();

@@ -1,0 +1,75 @@
+---
+micronaut:
+  application:
+    name: snello-all-in-one
+  server:
+    cors:
+      enabled: true
+      configurations:
+        all:
+          exposedHeaders:
+            - Authorization
+            - authorization
+            - Origin
+            - origin
+            - X-Requested-With
+            - x-request-with
+            - Content-Type
+            - content-type
+            - Accept
+            - accept
+            - X-total-count
+            - x-total-count
+            - size
+            - Size
+    port: 8080
+    maxRequestSize: 100MB
+    multipart:
+      maxFileSize: 100MB
+  router:
+    static-resources:
+      default:
+        enabled: true
+        mapping: /files/**
+        paths:
+          - file:/home/snello/files
+      admin:
+        enabled: true
+        mapping: /admin/**
+        paths:
+          - classpath:admin
+  security:
+    enabled: true
+    endpoints:
+      login:
+        enabled: true
+      oauth:
+        enabled: true
+    token:
+      jwt:
+        enabled: true
+        signatures:
+          secret:
+            generator:
+              secret: "pleaseUseSnelloInAllYourNewWebsites"
+  storage:
+    type: fs
+  db:
+    type: h2
+---
+jackson:
+  serialization:
+    writeDatesAsTimestamps: false
+  dateFormat: yyyy-MM-dd HH:mm:ss
+---
+datasources:
+  default:
+    url:  jdbc:h2:./db/repository
+    username: sa
+    password: ''
+    driverClassName: org.h2.Driver
+    testOnBorrow: true
+    validationQuery: select 1
+    removeAbandoned: true
+    removeAbandonedOnBorrow: true
+    removeAbandonedOnMaintenance: true
