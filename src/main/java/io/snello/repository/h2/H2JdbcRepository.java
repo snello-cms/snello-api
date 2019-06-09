@@ -396,7 +396,7 @@ public class H2JdbcRepository implements JdbcRepository {
             logger.info("password not found for username: " + username);
             throw new Exception("invalid username/password");
         }
-        String passwordOnDb = (String) map.get("password");
+        String passwordOnDb = (String) map.get("PASSWORD");
         String encrPassword = PasswordUtils.createPassword(password);
         if (encrPassword.equals(passwordOnDb)) {
             return new UserDetails(username, getRoles(username));
@@ -457,7 +457,7 @@ public class H2JdbcRepository implements JdbcRepository {
                 sb.append(",").append(fieldDefinition2Sql(fieldDefinition));
             }
         }
-        sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(")  ENGINE=INNODB;");
+        sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(") ;");
         logger.info("QUERY CREATION TABLE: " + sb.toString());
         return sb.toString();
     }
