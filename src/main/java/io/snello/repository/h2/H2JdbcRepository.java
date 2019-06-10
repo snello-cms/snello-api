@@ -87,7 +87,8 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationUserEditRole,
                 creationContentsViewRole,
                 creationContentsEditRole,
-                creationPublicdataEditRole
+                creationPublicdataEditRole,
+                creationChangePasswordTokenQueries
         };
     }
 

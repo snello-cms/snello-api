@@ -87,7 +87,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 creationUserEditRole,
                 creationContentsViewRole,
                 creationContentsEditRole,
-                creationPublicdataEditRole
+                creationPublicdataEditRole,
+                creationChangePasswordTokenQueries
         };
     }
 

@@ -87,7 +87,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 creationUserEditRole,
                 creationContentsViewRole,
                 creationContentsEditRole,
-                creationPublicdataEditRole
+                creationPublicdataEditRole,
+                creationChangePasswordTokenQueries
         };
     }
 

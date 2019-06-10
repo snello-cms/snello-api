@@ -51,6 +51,8 @@ public class AppConstants {
     public static final String UUID_PATH_PARAM_CREATE = UUID_PATH_PARAM + "/create";
     public static final String UUID_PATH_PARAM_DELETE = UUID_PATH_PARAM + "/delete";
     public static final String UUID_PATH_PARAM_TRUNCATE = UUID_PATH_PARAM + "/truncate";
+    public static final String UUID_PATH_PARAM_VERIFY = UUID_PATH_PARAM + "/verify";
+    public static final String UUID_PATH_PARAM_CHANGE = UUID_PATH_PARAM + "/change";
     public static final String DOWNLOAD_PATH = "/download";
     public static final String SORT_PARAM = "_sort";
     public static final String DELETE_PARAM = "delete";
@@ -91,7 +93,9 @@ public class AppConstants {
 
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
+    public static final String CONFIRM_PASSWORD = "confirm_password";
     public static final String EMAIL = "email";
+    public static final String TOKEN = "token";
     public static final String CREATION_DATE = "creation_date";
     public static final String LAST_UPDATE_DATE = "last_update_date";
     public static final String ROLE = "role";

@@ -110,6 +110,15 @@ public class MysqlConstants {
             "  PRIMARY KEY (username)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+
+    public static String creationChangePasswordTokenQueries = "CREATE TABLE IF NOT EXISTS `changepasswordtokens` (\n" +
+            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `email` varchar(255) NOT NULL,\n" +
+            "  `token` varchar(255) NOT NULL,\n" +
+            "  `creation_date` datetime ,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationRolesQueries = "CREATE TABLE IF NOT EXISTS `roles` (\n" +
             "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +

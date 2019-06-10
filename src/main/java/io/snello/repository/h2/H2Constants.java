@@ -111,6 +111,14 @@ public class H2Constants {
             "  PRIMARY KEY (username)\n" +
             ") ;";
 
+    public static String creationChangePasswordTokenQueries = "CREATE TABLE IF NOT EXISTS changepasswordtokens (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  email varchar(255) NOT NULL,\n" +
+            "  token varchar(255) NOT NULL,\n" +
+            "  creation_date datetime ,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ;";
+
     public static String creationRolesQueries = "CREATE TABLE IF NOT EXISTS roles (\n" +
             "  name varchar(255) NOT NULL,\n" +
             "  description varchar(255) NOT NULL,\n" +
