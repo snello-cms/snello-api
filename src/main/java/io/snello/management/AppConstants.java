@@ -14,6 +14,7 @@ public class AppConstants {
     public static final String PUBLIC_DATA = "publicdata";
     public static final String SELECT_QUERY = "selectqueries";
     public static final String USERS = "users";
+    public static final String CHANGE_PASSWORD = "changepassword";
     public static final String ROLES = "roles";
     public static final String URL_MAP_RULES = "urlmaprules";
     public static final String USER_ROLES = "userroles";
@@ -32,6 +33,7 @@ public class AppConstants {
     public static final String IDENTITY_PATH = API_PATH + BASE_PATH + IDENTITY;
 
     public static final String USERS_PATH = API_PATH + BASE_PATH + USERS;
+    public static final String CHANGE_PASSORD_PATH = API_PATH + BASE_PATH + CHANGE_PASSWORD;
     public static final String ROLES_PATH = API_PATH + BASE_PATH + ROLES;
     public static final String USER_ROLES_PATH = API_PATH + BASE_PATH + USER_ROLES;
 
@@ -58,8 +60,15 @@ public class AppConstants {
     public static final String TOTAL_COUNT_HEADER_PARAM = "x-total-count";
 
     public static final String DB_TYPE = "micronaut.db.type";
+    public static final String EMAIL_TYPE = "micronaut.email.type";
     public static final String STORAGE_TYPE = "micronaut.storage.type";
     public static final String SYSTEM_DOCUMENTS_BASE_PATH = "micronaut.router.static-resources.files.paths";
+    public static final String EMAIL_SMTP_PORT = "micronaut.email.smtp_port";
+    public static final String EMAIL_SMTP_AUTH = "micronaut.email.smtp_auth";
+    public static final String EMAIL_SMTP_STARTSSL_ENABLE = "micronaut.email.starttls_enable";
+    public static final String EMAIL_SMTP_HOST = "micronaut.email.smtp_host";
+    public static final String EMAIL_SMTP_USERNAME = "micronaut.email.smtp_username";
+    public static final String EMAIL_SMTP_PASSWORD = "micronaut.email.smtp_password";
     public static final String S3_ENDPOINT = "micronaut.s3.endpoint";
     public static final String S3_ACCESS_KEY = "micronaut.s3.accesskey";
     public static final String S3_SECRET_KEY = "micronaut.s3.secretkey";
@@ -82,6 +91,9 @@ public class AppConstants {
 
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
+    public static final String EMAIL = "email";
+    public static final String CREATION_DATE = "creation_date";
+    public static final String LAST_UPDATE_DATE = "last_update_date";
     public static final String ROLE = "role";
     public static final String NAME = "name";
     public static final String JOIN = "join";

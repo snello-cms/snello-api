@@ -27,7 +27,7 @@ import java.util.*;
 
 import static io.snello.management.AppConstants.DB_TYPE;
 import static io.snello.management.DbConstants.*;
-import static io.snello.repository.h2.H2lConstants.*;
+import static io.snello.repository.h2.H2Constants.*;
 
 @Singleton
 @Requires(property = DB_TYPE, value = "h2")

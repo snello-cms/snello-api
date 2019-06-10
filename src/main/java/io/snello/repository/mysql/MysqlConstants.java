@@ -105,6 +105,8 @@ public class MysqlConstants {
             "  `surname` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `active` boolean DEFAULT true,\n" +
+            "  `creation_date` datetime ,\n" +
+            "  `last_update_date` datetime ,\n" +
             "  PRIMARY KEY (username)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 

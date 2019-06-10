@@ -5,14 +5,15 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
 import io.snello.management.AppConstants;
 import io.snello.service.ApiService;
-import io.snello.util.PasswordUtils;
 import io.snello.util.JsonUtils;
+import io.snello.util.PasswordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 import java.util.Map;
 
 import static io.micronaut.http.HttpResponse.ok;
@@ -61,6 +62,7 @@ public class UsersController {
         map.put(UUID, map.get(AppConstants.USERNAME));
         String pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
         map.put(AppConstants.PASSWORD, pwd);
+        map.put(AppConstants.CREATION_DATE, new Date());
         map = apiService.create(table, map, UUID);
         return ok(map);
     }
@@ -72,6 +74,7 @@ public class UsersController {
         if (pwd != null && !pwd.trim().isEmpty()) {
             pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
             map.put(AppConstants.PASSWORD, pwd);
+            map.put(AppConstants.LAST_UPDATE_DATE, new Date());
         }
         map = apiService.merge(table, map, uuid, UUID);
         return ok(map);

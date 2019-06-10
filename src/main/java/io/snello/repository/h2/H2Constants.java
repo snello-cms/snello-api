@@ -1,6 +1,6 @@
 package io.snello.repository.h2;
 
-public class H2lConstants {
+public class H2Constants {
 
     public static final String COUNT_QUERY = " SELECT COUNT(*) AS SIZE_OF FROM ";
     public static final String DELETE_FROM = "DELETE FROM ";
@@ -106,6 +106,8 @@ public class H2lConstants {
             "  surname varchar(255) DEFAULT NULL,\n" +
             "  email varchar(255) DEFAULT NULL,\n" +
             "  active boolean DEFAULT true,\n" +
+            "  creation_date datetime ,\n" +
+            "  last_update_date datetime ,\n" +
             "  PRIMARY KEY (username)\n" +
             ") ;";
 

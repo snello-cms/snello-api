@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.*;
 
 import static io.snello.management.DbConstants.*;
-import static io.snello.repository.h2.H2lConstants.*;
+import static io.snello.repository.h2.H2Constants.*;
 
 public class H2SqlUtils {
 

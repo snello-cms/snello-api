@@ -8,6 +8,8 @@
     <properties>
         <exec.mainClass>io.snello.Application</exec.mainClass>
         <jdk.version>1.8</jdk.version>
+        <mail.version>1.5.0-b01</mail.version>
+        <java-mail.version>1.6.2</java-mail.version>
         <minio.version>4.0.1</minio.version>
         <h2.version>1.4.199</h2.version>
         <junit.version>4.12</junit.version>
@@ -139,6 +141,21 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>${minio.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>${mail.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>javax.mail-api</artifactId>
+            <version>${java-mail.version}</version>
+            <scope>compile</scope>
         </dependency>
 
 
