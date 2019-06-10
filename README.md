@@ -19,7 +19,7 @@ snello backend api
 
 
 **GESTIONE METADATI**
-- gestione dei modelli di contenuti (stile STRAPI.. MA MEGLIO)
+- gestione dei modelli di contenuti (stile STRAPI..)
 - vedi: nz.fiore.cms.util.ParamUtils:
 
     static final String EQU = "=";
