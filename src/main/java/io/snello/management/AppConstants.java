@@ -59,7 +59,7 @@ public class AppConstants {
 
     public static final String DB_TYPE = "micronaut.db.type";
     public static final String STORAGE_TYPE = "micronaut.storage.type";
-    public static final String SYSTEM_DOCUMENTS_BASE_PATH = "micronaut.router.static-resources.default.paths";
+    public static final String SYSTEM_DOCUMENTS_BASE_PATH = "micronaut.router.static-resources.files.paths";
     public static final String S3_ENDPOINT = "micronaut.s3.endpoint";
     public static final String S3_ACCESS_KEY = "micronaut.s3.accesskey";
     public static final String S3_SECRET_KEY = "micronaut.s3.secretkey";

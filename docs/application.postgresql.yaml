@@ -30,9 +30,14 @@ micronaut:
     static-resources:
       default:
         enabled: true
+        mapping: /**
+        paths:
+          - file:${WEB_PATH:"/home/snello/public"}
+      files:
+        enabled: true
         mapping: /files/**
         paths:
-          - file:${WEB_PATH:"/Users/fiorenzo/IdeaProjectsSnello/matcms/docker/webapp/files/"}
+          - file:${WEB_FILES_PATH:"/home/snello/public/files"}
   security:
     enabled: true
     endpoints:
@@ -59,9 +64,9 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:postgresql://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:matcms}
-    username: ${JDBC_USERNAME:matcms}
-    password: ${JDBC_PASSWORD:matcms}
+    url:  jdbc:postgresql://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:snello}
+    username: ${JDBC_USERNAME:snello}
+    password: ${JDBC_PASSWORD:snello}
     driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
     testOnBorrow: true
     validationQuery: select 1

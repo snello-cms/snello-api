@@ -30,14 +30,14 @@ micronaut:
     static-resources:
       default:
         enabled: true
+        mapping: /**
+        paths:
+          - file:${WEB_PATH:"/home/snello/public"}
+      files:
+        enabled: true
         mapping: /files/**
         paths:
-          - file:/home/snello/files
-      admin:
-        enabled: true
-        mapping: /admin/**
-        paths:
-          - classpath:admin
+          - file:${WEB_FILES_PATH:"/home/snello/public/files"}
   security:
     enabled: true
     endpoints:
@@ -51,7 +51,7 @@ micronaut:
         signatures:
           secret:
             generator:
-              secret: "pleaseUseSnelloInAllYourNewWebsites"
+              secret: "${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}"
   storage:
     type: fs
   db:
