@@ -365,9 +365,16 @@ public class H2JdbcRepository implements JdbcRepository {
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
             PreparedStatement preparedStatement = connection.prepareStatement(SHOW_TABLES);
-            preparedStatement.setObject(1, tableName);
+            List<Map<String, Object>> list = null;
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
+                list = H2SqlUtils.list(resultSet);
+            }
+            for (Map<String, Object> map : list) {
+                if (!map.containsKey("table_name")) {
+                    continue;
+                }
+                String table_name_found = (String) map.get("table_name");
+                if (table_name_found.toLowerCase().equals(tableName.toLowerCase())) {
                     return true;
                 }
             }
