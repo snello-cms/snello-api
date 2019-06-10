@@ -396,7 +396,7 @@ public class H2JdbcRepository implements JdbcRepository {
             logger.info("password not found for username: " + username);
             throw new Exception("invalid username/password");
         }
-        String passwordOnDb = (String) map.get("PASSWORD");
+        String passwordOnDb = (String) map.get("password");
         String encrPassword = PasswordUtils.createPassword(password);
         if (encrPassword.equals(passwordOnDb)) {
             return new UserDetails(username, getRoles(username));
