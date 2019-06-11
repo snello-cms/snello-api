@@ -62,9 +62,12 @@ public class SwaggerController {
 
     public void addMetadata(StringBuffer stringBuffer) throws Exception {
         Collection<Metadata> metadataList = metadataService.metadataMap().values();
+        if (metadataList.isEmpty()) {
+            return;
+        }
         for (Metadata metadata : metadataList) {
             stringBuffer.append("paths:\n" +
-                    "  /api/" + metadata.table_name + "+:\n" +
+                    "  /api/" + metadata.table_name + ":\n" +
                     "    get:\n" +
                     "      description: \"" + metadata.description + "\"\n" +
                     "      operationId: list\n" +
@@ -86,10 +89,13 @@ public class SwaggerController {
     }
 
     public void addSelectquery(StringBuffer stringBuffer) throws Exception {
-        Collection<SelectQuery> metadataList = metadataService.selectqueryMap().values();
-        for (SelectQuery selectQuery : metadataList) {
+        Collection<SelectQuery> selectQueries = metadataService.selectqueryMap().values();
+        if (selectQueries.isEmpty()) {
+            return;
+        }
+        for (SelectQuery selectQuery : selectQueries) {
             stringBuffer.append("paths:\n" +
-                    "  /api/" + selectQuery.query_name + "+:\n" +
+                    "  /api/" + selectQuery.query_name + ":\n" +
                     "    get:\n" +
                     "      description: \"" + selectQuery.query_name + "\"\n" +
                     "      operationId: list\n" +
