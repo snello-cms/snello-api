@@ -23,7 +23,7 @@ public class SwaggerController {
         StringBuffer stringBuffer = new StringBuffer("openapi: 3.0.1\n" +
                 "info:\n" +
                 "  title: Snello CMS" +
-                "  description: Snello  CMSAPI\n" +
+                "  description: Snello  CMS API\n" +
                 "  contact:\n" +
                 "    name: Fred\n" +
                 "    url: http://localhost:8080\n" +
