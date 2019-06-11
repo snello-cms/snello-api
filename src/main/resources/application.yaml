@@ -28,7 +28,7 @@ micronaut:
       maxFileSize: 100MB
   router:
     static-resources:
-      default:
+      files:
         enabled: true
         mapping: /files/**
         paths:

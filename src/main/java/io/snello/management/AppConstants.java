@@ -21,6 +21,8 @@ public class AppConstants {
     public static final String IDENTITY = "identity";
 
 
+    public static final String SWAGGER_PATH = "/swagger";
+
     public static final String CONDITIONS_PATH = API_PATH + BASE_PATH + CONDITIONS;
     public static final String DATALIST_PATH = API_PATH + BASE_PATH + DATALISTS;
     public static final String DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS;
@@ -65,12 +67,12 @@ public class AppConstants {
     public static final String EMAIL_TYPE = "micronaut.email.type";
     public static final String STORAGE_TYPE = "micronaut.storage.type";
     public static final String SYSTEM_DOCUMENTS_BASE_PATH = "micronaut.router.static-resources.files.paths";
-    public static final String EMAIL_SMTP_PORT = "micronaut.email.smtp_port";
-    public static final String EMAIL_SMTP_AUTH = "micronaut.email.smtp_auth";
-    public static final String EMAIL_SMTP_STARTSSL_ENABLE = "micronaut.email.starttls_enable";
-    public static final String EMAIL_SMTP_HOST = "micronaut.email.smtp_host";
-    public static final String EMAIL_SMTP_USERNAME = "micronaut.email.smtp_username";
-    public static final String EMAIL_SMTP_PASSWORD = "micronaut.email.smtp_password";
+    public static final String EMAIL_SMTP_PORT = "micronaut.email.smtp-port";
+    public static final String EMAIL_SMTP_AUTH = "micronaut.email.smtp-auth";
+    public static final String EMAIL_SMTP_STARTSSL_ENABLE = "micronaut.email.starttls-enable";
+    public static final String EMAIL_SMTP_HOST = "micronaut.email.smtp-host";
+    public static final String EMAIL_SMTP_USERNAME = "micronaut.email.smtp-username";
+    public static final String EMAIL_SMTP_PASSWORD = "micronaut.email.smtp-password";
     public static final String S3_ENDPOINT = "micronaut.s3.endpoint";
     public static final String S3_ACCESS_KEY = "micronaut.s3.accesskey";
     public static final String S3_SECRET_KEY = "micronaut.s3.secretkey";
