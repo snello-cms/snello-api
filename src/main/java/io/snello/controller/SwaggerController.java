@@ -11,7 +11,7 @@ import java.util.Collection;
 
 import static io.snello.management.AppConstants.SWAGGER_PATH;
 
-@Controller(SWAGGER_PATH)
+//@Controller(SWAGGER_PATH)
 public class SwaggerController {
 
     @Inject
@@ -25,12 +25,12 @@ public class SwaggerController {
                 "  title: Snello CMS" +
                 "  description: Snello  CMS API\n" +
                 "  contact:\n" +
-                "    name: Fred\n" +
-                "    url: http://localhost:8080\n" +
+                "    name: snello.io\n" +
+                "    url: https://snello.io\n" +
                 "    email: me@snello.io\n" +
                 "  license:\n" +
                 "    name: Apache 2.0\n" +
-                "    url: http://fsnello.io\n" +
+                "    url: http://snello.io\n" +
                 "  version: \"0.0.1\"\n" +
                 "paths:\n" +
                 "  /api/{name}:\n" +

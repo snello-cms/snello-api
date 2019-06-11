@@ -211,6 +211,7 @@ public class MetadataService {
             this.fielddefinitionsMap = new TreeMap<>();
 
             List<Map<String, Object>> liste = jdbcRepository.list(FIELD_DEFINITIONS, " metadata_name asc ");
+            if (liste != null) {
                 for (Map<String, Object> map : liste) {
                     FieldDefinition fieldDefinition = new FieldDefinition(map);
                     if (fielddefinitionsMap.containsKey(fieldDefinition.metadata_name)) {
@@ -222,6 +223,7 @@ public class MetadataService {
                         fieldDefinitions.add(fieldDefinition);
                         fielddefinitionsMap.put(fieldDefinition.metadata_name, fieldDefinitions);
                     }
+                }
             }
         }
         return this.fielddefinitionsMap;

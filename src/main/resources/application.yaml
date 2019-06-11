@@ -33,6 +33,9 @@ micronaut:
         mapping: /files/**
         paths:
           - file:${WEB_PATH:"/Users/fiorenzo/IdeaProjectsSnello/matcms/docker/webapp/files/"}
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
   security:
     enabled: true
     endpoints:
