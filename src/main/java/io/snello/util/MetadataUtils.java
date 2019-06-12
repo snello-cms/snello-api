@@ -19,6 +19,7 @@ public class MetadataUtils {
             case SELECT_QUERY:
             case USERS:
             case USER_ROLES:
+            case CHANGE_PASSWORD_TOKENS:
                 return true;
             default:
                 return false;

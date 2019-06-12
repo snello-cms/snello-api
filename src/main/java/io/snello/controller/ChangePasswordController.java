@@ -52,7 +52,7 @@ public class ChangePasswordController {
             changePasswordTokenMap.put(EMAIL, uuid);
             changePasswordTokenMap.put(TOKEN, token);
             changePasswordTokenMap.put(CREATION_DATE, new Date());
-            changePasswordTokenMap = apiService.create("changepasswordtokens", changePasswordTokenMap, UUID);
+            changePasswordTokenMap = apiService.create(CHANGE_PASSWORD_TOKENS, changePasswordTokenMap, UUID);
             return ok(changePasswordTokenMap);
         }
         return serverError();
@@ -61,7 +61,7 @@ public class ChangePasswordController {
     @Post(UUID_PATH_PARAM_VERIFY)
     public HttpResponse<?> verify(@Body String body, @NotNull String uuid) throws Exception {
         Map<String, Object> mapVerify = JsonUtils.fromJson(body);
-        Map<String, Object> tokenMap = apiService.fetch(null, "changepasswordtokens",
+        Map<String, Object> tokenMap = apiService.fetch(null, CHANGE_PASSWORD_TOKENS,
                 (String) mapVerify.get(TOKEN), TOKEN);
         if (tokenMap != null && tokenMap.containsKey(EMAIL)
                 && tokenMap.get(EMAIL).equals(uuid)
@@ -74,7 +74,7 @@ public class ChangePasswordController {
     @Post(UUID_PATH_PARAM_CHANGE)
     public HttpResponse<?> change(@Body String body, @NotNull String uuid) throws Exception {
         Map<String, Object> mapVerify = JsonUtils.fromJson(body);
-        Map<String, Object> tokenMap = apiService.fetch(null, "changepasswordtokens",
+        Map<String, Object> tokenMap = apiService.fetch(null, CHANGE_PASSWORD_TOKENS,
                 (String) mapVerify.get(TOKEN), TOKEN);
         boolean tokenValido = false;
         boolean pwdValida = false;

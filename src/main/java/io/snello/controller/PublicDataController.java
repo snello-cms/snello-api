@@ -3,28 +3,26 @@ package io.snello.controller;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.*;
 import io.micronaut.http.multipart.CompletedFileUpload;
+import io.snello.model.ResourceFile;
+import io.snello.util.JsonUtils;
+import io.snello.util.ResourceFileUtils;
 import io.snello.util.ZipUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static io.micronaut.http.HttpResponse.ok;
-import static io.snello.management.AppConstants.PUBLIC_DATA_PATH;
-import static io.snello.management.AppConstants.SYSTEM_DOCUMENTS_BASE_PATH;
-import static io.snello.management.AppConstants.ZIP;
-import static io.snello.management.AppConstants.DOT_ZIP;
-import static io.snello.management.AppConstants.FILES;
-import static io.snello.management.AppConstants.EMPTY;
-import static io.snello.management.AppConstants.FILE_DOT_DOT;
+import static io.snello.management.AppConstants.*;
 
 @Controller(PUBLIC_DATA_PATH)
 public class PublicDataController {
@@ -63,7 +61,7 @@ public class PublicDataController {
                     }
                 }
             }
-            File tempFile = File.createTempFile(UUID.randomUUID().toString(), DOT_ZIP);
+            File tempFile = File.createTempFile(java.util.UUID.randomUUID().toString(), DOT_ZIP);
             Files.write(tempFile.toPath(), file.getBytes());
             ZipUtils.unzip(tempFile.getAbsolutePath(), path.toFile().getAbsolutePath());
             tempFile.delete();
@@ -82,6 +80,100 @@ public class PublicDataController {
             }
         }
         return directoryToBeDeleted.delete();
+    }
+
+    @Get("/folders/{folderEncoded}")
+    public HttpResponse<?> resourceFileList(@Nullable String folderEncoded) {
+        String folderName = null;
+        if (folderEncoded != null && !folderEncoded.trim().isEmpty()) {
+            byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
+            folderName = new String(decodedBytes);
+        } else {
+            folderName = basePaths.get(0);
+        }
+        try {
+            File[] allContents = new File(folderName).listFiles();
+            return ok(ResourceFileUtils.fromFiles(allContents));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return HttpResponse.serverError();
+    }
+
+    @Post("/folders/{folderEncoded}")
+    public HttpResponse<?> createFolder(@Nullable String folderEncoded, @Body String body) throws Exception {
+        Map<String, Object> map = JsonUtils.fromJson(body);
+        String folderName = null;
+        if (folderEncoded != null && !folderEncoded.trim().isEmpty()) {
+            byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
+            folderName = new String(decodedBytes);
+        } else {
+            folderName = basePaths.get(0);
+        }
+        try {
+            ResourceFile resourceFile = new ResourceFile(map, folderName);
+            File file = new File(resourceFile.path);
+            boolean rs = file.mkdir();
+            return ok(rs);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return HttpResponse.serverError();
+    }
+
+    @Delete("/folders/{folderEncoded}")
+    public HttpResponse<?> deleteFolderOrFile(@NotNull String folderEncoded) throws Exception {
+        String folderName = null;
+        if (folderEncoded != null && !folderEncoded.trim().isEmpty()) {
+            byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
+            folderName = new String(decodedBytes);
+        }
+        try {
+            File file = new File(folderName);
+            ResourceFileUtils.deleteDir(file);
+            return ok();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return HttpResponse.serverError();
+    }
+
+    @Put("/folders/{folderEncoded}/{newName}")
+    public HttpResponse<?> renameFolderOrFile(@NotNull String folderEncoded, @NotNull String newName) throws Exception {
+        byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
+        String folderName = new String(decodedBytes);
+        try {
+            File file = new File(folderName);
+            String newfolderName = folderName.replace(file.getName(), newName);
+            File newFile = new File(newfolderName);
+            file.renameTo(newFile);
+            return ok();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return HttpResponse.serverError();
+    }
+
+    @Post("/folders/{folderEncoded}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public HttpResponse<?> createFile(@Nullable String folderEncoded, CompletedFileUpload file) {
+        if (file == null) {
+            return null;
+        }
+        try {
+            String folderName = null;
+            if (folderEncoded != null && !folderEncoded.trim().isEmpty()) {
+                byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
+                folderName = new String(decodedBytes);
+            } else {
+                folderName = basePaths.get(0);
+            }
+            Files.write(Path.of(folderName), file.getBytes());
+            return ok();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return HttpResponse.serverError();
     }
 
 }

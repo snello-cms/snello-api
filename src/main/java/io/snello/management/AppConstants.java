@@ -18,6 +18,7 @@ public class AppConstants {
     public static final String ROLES = "roles";
     public static final String URL_MAP_RULES = "urlmaprules";
     public static final String USER_ROLES = "userroles";
+    public static final String CHANGE_PASSWORD_TOKENS = "changepasswordtokens";
     public static final String IDENTITY = "identity";
 
 
