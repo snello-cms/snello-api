@@ -138,7 +138,7 @@ public class PublicDataController {
         return HttpResponse.serverError();
     }
 
-    @Put("/folders/{folderEncoded}/{newName}")
+    @Put("/folders/{folderEncoded}/rename/{newName}")
     public HttpResponse<?> renameFolderOrFile(@NotNull String folderEncoded, @NotNull String newName) throws Exception {
         byte[] decodedBytes = Base64.getDecoder().decode(folderEncoded);
         String folderName = new String(decodedBytes);
@@ -154,7 +154,7 @@ public class PublicDataController {
         return HttpResponse.serverError();
     }
 
-    @Post("/folders/{folderEncoded}")
+    @Post("/folders/{folderEncoded}/files")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public HttpResponse<?> createFile(@Nullable String folderEncoded, CompletedFileUpload file) {
         if (file == null) {
