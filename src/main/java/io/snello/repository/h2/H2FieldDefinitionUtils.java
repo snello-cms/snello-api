@@ -13,24 +13,24 @@ public class H2FieldDefinitionUtils {
     static Logger logger = LoggerFactory.getLogger(H2FieldDefinitionUtils.class);
 
 
-    //inputType: text,
-//                    text => type: textarea (todo), inputType: null,
-//                    number => type: input, inputType: number,
-//                boolean => type: checkbox, inputType: null,
-//                    date => type: date, inputType: null,
-//                    email=> type: input, inputType: email,
-//                    password => type: input, inputType: password,
-//                    enum => type: select, inputType: null,
-//                    media => type: media(todo), inputType: null
+    //input_type: text,
+//                    text => type: textarea (todo), input_type: null,
+//                    number => type: input, input_type: number,
+//                boolean => type: checkbox, input_type: null,
+//                    date => type: date, input_type: null,
+//                    email=> type: input, input_type: email,
+//                    password => type: input, input_type: password,
+//                    enum => type: select, input_type: null,
+//                    media => type: media(todo), input_type: null
     public static String sql(FieldDefinition fieldDefinition) throws Exception {
         StringBuffer sb = new StringBuffer();
         switch (fieldDefinition.type) {
             case "input": {
-                if (fieldDefinition.inputType == null) {
-                    logger.info("fieldDefinition.inputType  IS NULL: " + fieldDefinition.toString());
-                    throw new Exception(" fieldDefinition.inputType  IS NULL");
+                if (fieldDefinition.input_type == null) {
+                    logger.info("fieldDefinition.input_type  IS NULL: " + fieldDefinition.toString());
+                    throw new Exception(" fieldDefinition.input_type  IS NULL");
                 }
-                switch (fieldDefinition.inputType) {
+                switch (fieldDefinition.input_type) {
                     case "text":
                     case "password":
                     case "email":

@@ -176,7 +176,7 @@ public class SnelloBuilder {
         this.metadataDsl.fieldDefinition.name = name;
         this.metadataDsl.fieldDefinition.label = label;
         this.metadataDsl.fieldDefinition.type = "input";
-        this.metadataDsl.fieldDefinition.inputType = "text";
+        this.metadataDsl.fieldDefinition.input_type = "text";
         return this;
     }
 
@@ -238,13 +238,13 @@ public class SnelloBuilder {
 
     public SnelloBuilder text() {
         this.metadataDsl.fieldDefinition.type = "input";
-        this.metadataDsl.fieldDefinition.inputType = "text";
+        this.metadataDsl.fieldDefinition.input_type = "text";
         return this;
     }
 
     public SnelloBuilder number() {
         this.metadataDsl.fieldDefinition.type = "input";
-        this.metadataDsl.fieldDefinition.inputType = "number";
+        this.metadataDsl.fieldDefinition.input_type = "number";
         return this;
     }
 
@@ -270,13 +270,13 @@ public class SnelloBuilder {
 
     public SnelloBuilder password() {
         this.metadataDsl.fieldDefinition.type = "input";
-        this.metadataDsl.fieldDefinition.inputType = "password";
+        this.metadataDsl.fieldDefinition.input_type = "password";
         return this;
     }
 
     public SnelloBuilder email() {
         this.metadataDsl.fieldDefinition.type = "input";
-        this.metadataDsl.fieldDefinition.inputType = "email";
+        this.metadataDsl.fieldDefinition.input_type = "email";
         return this;
     }
 
@@ -297,15 +297,15 @@ public class SnelloBuilder {
     }
 
 
-    public SnelloBuilder showInList() {
-        this.metadataDsl.fieldDefinition.showInList = true;
+    public SnelloBuilder show_in_list() {
+        this.metadataDsl.fieldDefinition.show_in_list = true;
         return this;
     }
 
-    public SnelloBuilder isSearchable(String searchCondition, String searchFieldName) {
+    public SnelloBuilder isSearchable(String search_Condition, String search_field_name) {
         this.metadataDsl.fieldDefinition.searchable = true;
-        this.metadataDsl.fieldDefinition.searchCondition = searchCondition;
-        this.metadataDsl.fieldDefinition.searchFieldName = searchFieldName;
+        this.metadataDsl.fieldDefinition.search_condition = search_Condition;
+        this.metadataDsl.fieldDefinition.search_field_name = search_field_name;
         return this;
     }
 

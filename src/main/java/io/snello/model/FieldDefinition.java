@@ -14,7 +14,7 @@ public class FieldDefinition {
     // input|button|select|date|radiobutton|checkbox
     public String type;
     // html password, text, number, radio, checkbox, color, date, datetime-local, email, month, number, range, search, tel, time, url, week
-    public String inputType;
+    public String input_type;
     // stringa seperata da ","
     public String options;
     // SERVE X RAGGRUPPARE NELLA PAGINA DI EDITING
@@ -48,14 +48,14 @@ public class FieldDefinition {
     //    static final String GTE = "_gte";
     //    static final String CNT = "_contains";
     //    static final String NCNT = "_ncontains";
-    public String searchCondition;
+    public String search_condition;
     // composizione del name + la codiione scelta
     // -> es: search on "name": (EQU) name, (LIKE) name_contains,(NOT LIKE) name_ncontains,
     // -> es: search on  "age": (EQU) age, (<) age_lt,(>) age_gt, (<=) age_lte, (>=) age_gte
-    public String searchFieldName;
+    public String search_field_name;
 
     //definisce se il campo deve essere visto nella lista
-    public boolean showInList;
+    public boolean show_in_list;
 
 
 
@@ -88,8 +88,8 @@ public class FieldDefinition {
         if (map.get("type") instanceof String) {
             fieldDefinition.type = (String) map.get("type");
         }
-        if (map.get("inputType") instanceof String) {
-            fieldDefinition.inputType = (String) map.get("inputType");
+        if (map.get("input_type") instanceof String) {
+            fieldDefinition.input_type = (String) map.get("input_type");
         }
         if (map.get("options") instanceof String) {
             fieldDefinition.options = (String) map.get("options");
@@ -138,15 +138,15 @@ public class FieldDefinition {
         if (map.get("searchable") instanceof Boolean) {
             fieldDefinition.searchable = (Boolean) map.get("searchable");
         }
-        if (map.get("searchCondition") instanceof String) {
-            fieldDefinition.searchCondition = (String) map.get("searchCondition");
+        if (map.get("search_condition") instanceof String) {
+            fieldDefinition.search_condition = (String) map.get("search_condition");
         }
-        if (map.get("searchFieldName") instanceof String) {
-            fieldDefinition.searchFieldName = (String) map.get("searchFieldName");
+        if (map.get("search_field_name") instanceof String) {
+            fieldDefinition.search_field_name = (String) map.get("search_field_name");
         }
 
-        if (map.get("showInList") instanceof Boolean) {
-            fieldDefinition.showInList = (Boolean) map.get("showInList");
+        if (map.get("show_in_list") instanceof Boolean) {
+            fieldDefinition.show_in_list = (Boolean) map.get("show_in_list");
         }
         return fieldDefinition;
     }
@@ -172,8 +172,8 @@ public class FieldDefinition {
         if (this.type != null) {
             map.put("type", this.type);
         }
-        if (this.inputType != null) {
-            map.put("inputType", this.inputType);
+        if (this.input_type != null) {
+            map.put("input_type", this.input_type);
         }
         if (this.options != null) {
             map.put("options", this.options);
@@ -215,13 +215,13 @@ public class FieldDefinition {
             map.put("join_table_select_fields", this.join_table_select_fields);
         }
             map.put("searchable", this.searchable);
-        if (this.searchCondition != null) {
-            map.put("searchCondition", this.searchCondition);
+        if (this.search_condition != null) {
+            map.put("search_condition", this.search_condition);
         }
-        if (this.searchFieldName != null) {
-            map.put("searchFieldName", this.searchFieldName);
+        if (this.search_field_name != null) {
+            map.put("search_field_name", this.search_field_name);
         }
-        map.put("showInList", this.showInList);
+        map.put("show_in_list", this.show_in_list);
         return map;
     }
 
@@ -233,7 +233,7 @@ public class FieldDefinition {
                 ", name='" + name + '\'' +
                 ", label='" + label + '\'' +
                 ", type='" + type + '\'' +
-                ", inputType='" + inputType + '\'' +
+                ", input_type='" + input_type + '\'' +
                 ", options='" + options + '\'' +
                 ", group_name='" + group_name + '\'' +
                 ", tab_name='" + tab_name + '\'' +
@@ -249,9 +249,9 @@ public class FieldDefinition {
                 ", join_table_select_fields='" + join_table_select_fields + '\'' +
                 ", pattern='" + pattern + '\'' +
                 ", searchable='" + searchable + '\'' +
-                ", searchCondition='" + searchCondition + '\'' +
-                ", searchFieldName='" + searchFieldName + '\'' +
-                ", showInList='" + showInList + '\'' +
+                ", search_condition='" + search_condition + '\'' +
+                ", search_field_name='" + search_field_name + '\'' +
+                ", show_in_list='" + show_in_list + '\'' +
                 '}';
     }
 }

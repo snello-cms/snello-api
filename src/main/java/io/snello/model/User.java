@@ -13,7 +13,7 @@ public class User {
     public Date last_update_date;
     public boolean active = true;
 
-    public List<UserRole> userRoles;
+    public List<UserRole> user_roles;
     
     public User() {
     }

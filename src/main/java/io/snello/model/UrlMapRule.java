@@ -16,7 +16,7 @@ public class UrlMapRule {
     //*  e.g. 'ROLE_USER','ROLE_ADMIN'
     public String access;
     // If the provided http method is null, the pattern will match all methods.
-    public String httpMethods;
+    public String http_methods;
 
     public UrlMapRule() {
 
@@ -25,11 +25,11 @@ public class UrlMapRule {
     public UrlMapRule(String uuid,
                       String pattern,
                       String access,
-                      String httpMethods) {
+                      String http_methods) {
         this.uuid = uuid;
         this.pattern = pattern;
         this.access = access;
-        this.httpMethods = httpMethods;
+        this.http_methods = http_methods;
     }
 
 
@@ -45,8 +45,8 @@ public class UrlMapRule {
             accessList = Arrays.asList(access.split(",|;"));
         }
 
-        if (httpMethods != null && !httpMethods.trim().isEmpty()) {
-            String[] ms = httpMethods.split(",|;");
+        if (http_methods != null && !http_methods.trim().isEmpty()) {
+            String[] ms = http_methods.split(",|;");
             for (String mms : ms) {
                 HttpMethod httpMethodEnum = HttpMethod.valueOf(mms.trim());
                 urls.add(new InterceptUrlMapPattern(pattern, accessList, httpMethodEnum));
@@ -63,7 +63,7 @@ public class UrlMapRule {
                 "uuid='" + uuid + '\'' +
                 ", pattern='" + pattern + '\'' +
                 ", access='" + access + '\'' +
-                ", httpMethods='" + httpMethods + '\'' +
+                ", http_methods='" + http_methods + '\'' +
                 '}';
     }
 
@@ -78,8 +78,8 @@ public class UrlMapRule {
             urlMapRule.access = (String) map.get("access");
         }
 
-        if (map.get("httpMethods") instanceof String) {
-            urlMapRule.httpMethods = (String) map.get("httpMethods");
+        if (map.get("http_methods") instanceof String) {
+            urlMapRule.http_methods = (String) map.get("http_methods");
         }
         return urlMapRule;
     }

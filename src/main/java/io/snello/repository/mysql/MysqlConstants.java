@@ -48,7 +48,7 @@ public class MysqlConstants {
             "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `label` varchar(255) COLLATE utf8mb4_unicode_ci  NOT NULL,\n" +
             "  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `inputType` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `input_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `options` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `group_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `tab_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
@@ -64,9 +64,9 @@ public class MysqlConstants {
             "  `join_table_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `join_table_select_fields` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `searchable` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  `searchCondition` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `searchFieldName` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `showInList` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
+            "  `search_condition` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `search_field_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `show_in_list` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
     
@@ -138,7 +138,7 @@ public class MysqlConstants {
             "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `pattern` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `access` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `httpMethods` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `http_methods` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 

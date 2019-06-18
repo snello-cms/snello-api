@@ -45,7 +45,7 @@ public class PostgresqlConstants {
             "  \"name\" varchar(255) NOT NULL,\n" +
             "  \"label\" varchar(255)  NOT NULL,\n" +
             "  \"type\" varchar(255) NOT NULL,\n" +
-            "  \"inputType\" varchar(255) DEFAULT NULL,\n" +
+            "  \"input_type\" varchar(255) DEFAULT NULL,\n" +
             "  \"options\" varchar(255) DEFAULT NULL,\n" +
             "  \"group_name\" varchar(255) DEFAULT NULL,\n" +
             "  \"tab_name\" varchar(255) DEFAULT NULL,\n" +
@@ -61,9 +61,9 @@ public class PostgresqlConstants {
             "  \"join_table_key\" varchar(100) DEFAULT NULL,\n" +
             "  \"join_table_select_fields\" varchar(100) DEFAULT NULL,\n" +
             "  \"searchable\" BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  \"searchCondition\" varchar(100) DEFAULT NULL,\n" +
-            "  \"searchFieldName\" varchar(100) DEFAULT NULL,\n" +
-            "  \"showInList\" BOOLEAN NOT NULL DEFAULT FALSE,\n" +
+            "  \"search_condition\" varchar(100) DEFAULT NULL,\n" +
+            "  \"search_field_name\" varchar(100) DEFAULT NULL,\n" +
+            "  \"show_in_list\" BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ";
 
@@ -135,7 +135,7 @@ public class PostgresqlConstants {
             "  \"uuid\" varchar(255) NOT NULL,\n" +
             "  \"pattern\" varchar(255) NOT NULL,\n" +
             "  \"access\" varchar(255) NOT NULL,\n" +
-            "  \"httpMethods\" varchar(255) NOT NULL,\n" +
+            "  \"http_methods\" varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ";
 
