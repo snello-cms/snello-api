@@ -25,7 +25,7 @@ public class MetadataService {
 
     Map<String, Metadata> metadataMap;
     Map<String, SelectQuery> selectqueryMap;
-    Map<String, List<FieldDefinition>> fielddefinitionsMap;
+    Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
     Map<String, List<Condition>> conditionsMap;
 
     @Inject
@@ -139,18 +139,18 @@ public class MetadataService {
     @Async
     void createOrUpdateFieldDefinition(FieldDefinitionCreateUpdateEvent fieldDefinitionCreateUpdateEvent) {
         logger.info("new FieldDefinitionCreateUpdateEvent " + fieldDefinitionCreateUpdateEvent.toString());
-        List<FieldDefinition> fieldDefinitions = null;
+        Map<String, FieldDefinition> fieldDefinitions = null;
         try {
             if (fielddefinitionsMap().containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name)) {
                 fieldDefinitions = fielddefinitionsMap().get(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name);
             } else {
-                fieldDefinitions = new ArrayList<>();
+                fieldDefinitions = new HashMap<>();
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        if (!fieldDefinitions.contains(fieldDefinitionCreateUpdateEvent.fieldDefinition)) {
-            fieldDefinitions.add(fieldDefinitionCreateUpdateEvent.fieldDefinition);
+        if (!fieldDefinitions.containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid)) {
+            fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
         }
         try {
             fielddefinitionsMap().put(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name, fieldDefinitions);
@@ -164,10 +164,10 @@ public class MetadataService {
     void deleteFieldDefinition(FieldDefinitionDeleteEvent fieldDefinitionDeleteEvent) {
         logger.info("new FieldDefinitionDeleteEvent " + fieldDefinitionDeleteEvent.toString());
         try {
-            for (List<FieldDefinition> fieldDefinitions : fielddefinitionsMap().values()) {
-                for (FieldDefinition fieldDefinition : fieldDefinitions) {
+            for (Map<String, FieldDefinition> fieldDefinitions : fielddefinitionsMap().values()) {
+                for (FieldDefinition fieldDefinition : fieldDefinitions.values()) {
                     if (fieldDefinition.uuid.equals(fieldDefinitionDeleteEvent.uuid)) {
-                        fieldDefinitions.remove(fieldDefinition);
+                        fieldDefinitions.remove(fieldDefinition.uuid);
                         break;
                     }
                 }
@@ -193,11 +193,11 @@ public class MetadataService {
         }
         if (metadata.creation_query == null) {
             logger.info("no creation query found in metedata object...i need to createTableFromMetadata...");
-            List<FieldDefinition> fields = fielddefinitionsMap().get(metadata.table_name);
+            Map<String, FieldDefinition> fields = fielddefinitionsMap().get(metadata.table_name);
             if (fields == null || fields.size() == 0) {
                 throw new Exception("selectQuery without fields: " + metadata.toString());
             }
-            String sqlQuery = jdbcRepository.createTableSql(metadata, fields);
+            String sqlQuery = jdbcRepository.createTableSql(metadata, new ArrayList<>(fields.values()));
             jdbcRepository.batch(new String[]{sqlQuery});
         } else {
             logger.info("creation query foud in metedata object: " + metadata.creation_query);
@@ -207,7 +207,7 @@ public class MetadataService {
     }
 
 
-    public Map<String, List<FieldDefinition>> fielddefinitionsMap() throws Exception {
+    public Map<String, Map<String, FieldDefinition>> fielddefinitionsMap() throws Exception {
         if (this.fielddefinitionsMap == null) {
             this.fielddefinitionsMap = new TreeMap<>();
 
@@ -216,12 +216,12 @@ public class MetadataService {
                 for (Map<String, Object> map : liste) {
                     FieldDefinition fieldDefinition = new FieldDefinition(map);
                     if (fielddefinitionsMap.containsKey(fieldDefinition.metadata_name)) {
-                        List<FieldDefinition> fieldDefinitions = fielddefinitionsMap.get(fieldDefinition.metadata_name);
-                        fieldDefinitions.add(fieldDefinition);
+                        Map<String, FieldDefinition> fieldDefinitions = fielddefinitionsMap.get(fieldDefinition.metadata_name);
+                        fieldDefinitions.put(fieldDefinition.uuid, fieldDefinition);
                         fielddefinitionsMap.put(fieldDefinition.metadata_name, fieldDefinitions);
                     } else {
-                        List<FieldDefinition> fieldDefinitions = new ArrayList<>();
-                        fieldDefinitions.add(fieldDefinition);
+                        Map<String, FieldDefinition> fieldDefinitions = new HashMap<>();
+                        fieldDefinitions.put(fieldDefinition.uuid, fieldDefinition);
                         fielddefinitionsMap.put(fieldDefinition.metadata_name, fieldDefinitions);
                     }
                 }
@@ -291,7 +291,7 @@ public class MetadataService {
     }
 
     public List<FieldDefinition> fielddefinitions(String metadata_name) throws Exception {
-        return fielddefinitionsMap().get(metadata_name);
+        return new ArrayList<>(fielddefinitionsMap().get(metadata_name).values());
     }
 
     public List<Condition> conditions(String metadata_name) throws Exception {
