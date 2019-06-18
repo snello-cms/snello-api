@@ -59,7 +59,7 @@ public interface JdbcRepository {
 
     String escape(String name);
 
-    String fieldDefinition2Sql(FieldDefinition fieldDefinition);
+    String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception;
 
-    String createTableSql(Metadata metadata, List<FieldDefinition> fields);
+    String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception;
 }

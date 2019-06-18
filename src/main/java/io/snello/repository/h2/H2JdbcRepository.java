@@ -446,12 +446,12 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String fieldDefinition2Sql(FieldDefinition fieldDefinition) {
+    public String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception {
         return H2FieldDefinitionUtils.sql(fieldDefinition);
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) {
+    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception{
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         if (metadata.table_key_type.equals("autoincrement")) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");

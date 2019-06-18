@@ -1,11 +1,16 @@
 package io.snello.repository.h2;
 
 import io.snello.model.FieldDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.snello.repository.h2.H2SqlUtils.escape;
 
 
 public class H2FieldDefinitionUtils {
+
+
+    static Logger logger = LoggerFactory.getLogger(H2FieldDefinitionUtils.class);
 
 
     //inputType: text,
@@ -17,10 +22,14 @@ public class H2FieldDefinitionUtils {
 //                    password => type: input, inputType: password,
 //                    enum => type: select, inputType: null,
 //                    media => type: media(todo), inputType: null
-    public static String sql(FieldDefinition fieldDefinition) {
+    public static String sql(FieldDefinition fieldDefinition) throws Exception {
         StringBuffer sb = new StringBuffer();
         switch (fieldDefinition.type) {
             case "input": {
+                if (fieldDefinition.inputType == null) {
+                    logger.info("fieldDefinition.inputType  IS NULL: " + fieldDefinition.toString());
+                    throw new Exception(" fieldDefinition.inputType  IS NULL");
+                }
                 switch (fieldDefinition.inputType) {
                     case "text":
                     case "password":
