@@ -45,7 +45,7 @@ public class H2FieldDefinitionUtils {
                 }
             }
             case "textarea":
-                return escape(fieldDefinition.name) + " text default null";
+                return escape(fieldDefinition.name) + " VARCHAR default null";
             case "date":
                 return escape(fieldDefinition.name) + " date default null";
             case "datetime":
