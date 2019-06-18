@@ -100,7 +100,7 @@ public class MetadataController {
             throw new Exception(MSG_TABLE_NAME_IS_EMPTY);
         }
         if (MetadataUtils.isReserved(map.get(TABLE_NAME))) {
-            throw new Exception(MSG_TABLE_NAME_IS_EMPTY);
+            throw new Exception(MSG_TABLE_NAME_IS_RESERVED);
         }
         map.put(UUID, java.util.UUID.randomUUID().toString());
         map = apiService.create(table, map, UUID);
