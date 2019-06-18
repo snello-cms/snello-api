@@ -1,6 +1,7 @@
 package io.snello.repository.mysql;
 
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.discovery.event.ServiceStartedEvent;
 import io.micronaut.http.HttpParameters;
 import io.micronaut.runtime.event.annotation.EventListener;
@@ -9,6 +10,7 @@ import io.micronaut.security.authentication.UserDetails;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
+import io.snello.model.events.DbCreatedEvent;
 import io.snello.repository.JdbcRepository;
 import io.snello.util.ConditionUtils;
 import io.snello.util.ParamUtils;
@@ -17,6 +19,7 @@ import io.snello.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -36,9 +39,14 @@ public class MysqlJdbcRepository implements JdbcRepository {
     DataSource dataSource;
     Logger logger = LoggerFactory.getLogger(getClass());
 
+
+    @Inject
+    ApplicationEventPublisher eventPublisher;
+
     public MysqlJdbcRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
+
 
     @EventListener
     @Async
@@ -49,6 +57,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        eventPublisher.publishEvent(new DbCreatedEvent());
     }
 
     @Override

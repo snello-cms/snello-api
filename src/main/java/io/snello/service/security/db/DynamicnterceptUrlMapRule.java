@@ -5,7 +5,6 @@ import io.micronaut.core.util.PathMatcher;
 import io.micronaut.http.HttpMethod;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.runtime.event.annotation.EventListener;
-import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.micronaut.scheduling.annotation.Async;
 import io.micronaut.security.config.InterceptUrlMapPattern;
 import io.micronaut.security.rules.SecurityRule;
@@ -13,6 +12,7 @@ import io.micronaut.security.rules.SecurityRuleResult;
 import io.micronaut.security.rules.SensitiveEndpointRule;
 import io.micronaut.web.router.RouteMatch;
 import io.snello.model.UrlMapRule;
+import io.snello.model.events.DbCreatedEvent;
 import io.snello.model.events.UrlMapRuleCreateUpdateEvent;
 import io.snello.model.events.UrlMapRuleDeleteEvent;
 import io.snello.repository.JdbcRepository;
@@ -48,8 +48,8 @@ public class DynamicnterceptUrlMapRule
     }
 
     @EventListener
-    public void onStartup(ServerStartupEvent event) {
-        logger.info("DynamicnterceptUrlMapRule load");
+    public void onStartup(DbCreatedEvent event) {
+        logger.info("DbCreatedEvent event load");
         load();
     }
 
