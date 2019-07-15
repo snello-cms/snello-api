@@ -25,8 +25,6 @@ RUN apk add --no-cache tzdata \
 
 
 RUN mkdir -p /home/snello/public/files
-RUN mkdir -p /home/snello/db
-COPY  override/public/index.html /home/snello/public/
 COPY --from=builder_api /tmp/target/snello*.jar $SNELLO_HOME/snello.jar
 
 RUN chown -R ${SNELLO_USER}:${SNELLO_GROUP} ${SNELLO_HOME}
