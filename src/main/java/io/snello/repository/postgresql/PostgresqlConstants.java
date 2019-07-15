@@ -102,8 +102,8 @@ public class PostgresqlConstants {
             "  \"surname\" varchar(255) DEFAULT NULL,\n" +
             "  \"email\" varchar(255) DEFAULT NULL,\n" +
             "  \"active\" boolean DEFAULT true,\n" +
-            "  \"creation_date\" datetime ,\n" +
-            "  \"last_update_date\" datetime ,\n" +
+            "  \"creation_date\" timestamp ,\n" +
+            "  \"last_update_date\" timestamp ,\n" +
             "  PRIMARY KEY (username)\n" +
             ") ";
 
@@ -111,7 +111,7 @@ public class PostgresqlConstants {
             "  \"uuid\" varchar(255) NOT NULL,\n" +
             "  \"email\" varchar(255) NOT NULL,\n" +
             "  \"token\" varchar(255) NOT NULL,\n" +
-            "  \"creation_date\" datetime ,\n" +
+            "  \"creation_date\" timestamp ,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ";
 
