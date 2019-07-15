@@ -62,7 +62,7 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:matcms}?verifyServerCertificate=false&useSSL=${JDBC_USE_SSL:false}
+    url:  jdbc:${JDBC_TYPE:mysql}://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:matcms}?verifyServerCertificate=false&useSSL=${JDBC_USE_SSL:false}
     username: ${JDBC_USERNAME:matcms}
     password: ${JDBC_PASSWORD:matcms}
     driverClassName: ${JDBC_DRIVER:com.mysql.jdbc.Driver}

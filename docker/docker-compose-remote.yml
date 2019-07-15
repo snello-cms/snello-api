@@ -33,10 +33,10 @@ services:
       - "8080:8080"
     environment:
       JDBC_HOST: mysql-remote-server
-      JDBC_PORT: 3306
+      JDBC_PORT: 5432
       JDBC_DB: matcms
       JDBC_USERNAME: matcms
       JDBC_PASSWORD: matcms
-      JDBC_DRIVER: com.mysql.jdbc.Driver
+      JDBC_DRIVER: org.postgresql.Driver
       WEB_PATH: "/home/snello/files/"
       TZ: "Europe/Rome"
