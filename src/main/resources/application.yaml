@@ -62,10 +62,10 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:${JDBC_TYPE:mysql}://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:matcms}?verifyServerCertificate=false&useSSL=${JDBC_USE_SSL:false}
-    username: ${JDBC_USERNAME:matcms}
-    password: ${JDBC_PASSWORD:matcms}
-    driverClassName: ${JDBC_DRIVER:com.mysql.jdbc.Driver}
+    url:  jdbc:${jdbc.type:postgresql}://${jdbc.host:localhost}:${jdbc.port:5432}/${jdbc.db:snello}
+    username: ${jdbc.username:snello}
+    password: ${jdbc.password:snello}
+    driverClassName: ${jdbc.driver:org.postgresql.Driver}
     testOnBorrow: true
     validationQuery: select 1
     removeAbandoned: true

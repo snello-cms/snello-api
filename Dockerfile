@@ -1,7 +1,7 @@
 ### STAGE 1: GIT CLONE admin project AND api project ###
 FROM alpine/git  as gitter
 WORKDIR /app
-RUN git clone https://github.com/snello-cms/snello-api.git
+RUN git clone  --depth 1 https://github.com/snello-cms/snello-api.git
 
 ### STAGE 4: MAVEN build api project, OVERRIDING application.yaml file ###
 FROM maven:3.6.1-jdk-11-slim as builder_api
