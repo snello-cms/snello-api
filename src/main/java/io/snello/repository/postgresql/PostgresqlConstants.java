@@ -11,7 +11,7 @@ public class PostgresqlConstants {
 
     public static final String ESCAPE = "";
 
-    public static final String LOGIN_QUERY = "SELECT password FROM users WHERE username = ? and active = 1";
+    public static final String LOGIN_QUERY = "SELECT password FROM users WHERE username = ? and active = true";
     public static final String ROLES_QUERY = "SELECT role FROM userroles WHERE username = ?";
     public static String INSERT_ROLE_QUERY = "INSERT INTO userroles (username, role) VALUES (?, ?) ON CONFLICT (username, role) DO NOTHING;";
 
