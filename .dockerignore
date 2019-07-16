@@ -1,0 +1,14 @@
+.git
+.cache
+.idea
+.dockerignore
+db/*
+docs/*
+src/*
+README.md
+docker/*
+micronaut-cli.yml
+pom.xml
+README.md
+snello.iml
+snello-api.iml
