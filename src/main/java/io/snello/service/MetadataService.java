@@ -64,8 +64,6 @@ public class MetadataService {
     }
 
 
-
-
     @EventListener
     @Async
     void createOrUpdateMetadata(MetadataCreateUpdateEvent metadataCreateUpdateEvent) {
@@ -149,9 +147,10 @@ public class MetadataService {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        if (!fieldDefinitions.containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid)) {
-            fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
-        }
+//        if (!fieldDefinitions.containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid)) {
+//            fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
+//        }
+        fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
         try {
             fielddefinitionsMap().put(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name, fieldDefinitions);
         } catch (Exception e) {
