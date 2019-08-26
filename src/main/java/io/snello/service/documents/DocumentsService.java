@@ -19,5 +19,5 @@ public interface DocumentsService {
     boolean delete(String path) throws Exception;
 
 
-    StreamedFile streamingOutput(String uuid, String folder, String mediatype) throws Exception;
+    StreamedFile streamingOutput(String path, String mediatype) throws Exception;
 }

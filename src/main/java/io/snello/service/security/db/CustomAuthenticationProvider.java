@@ -15,8 +15,7 @@ import javax.inject.Singleton;
 
 @Singleton
 public class CustomAuthenticationProvider
-        implements AuthenticationProvider
-{
+        implements AuthenticationProvider {
 
 
     Logger logger = LoggerFactory.getLogger(CustomAuthenticationProvider.class);
@@ -35,8 +34,8 @@ public class CustomAuthenticationProvider
             }
             return Flowable.just(user);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return Flowable.just(null);
+            logger.error(e.getMessage());
+            return Flowable.empty();
         }
     }
 

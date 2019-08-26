@@ -37,6 +37,27 @@ public class PostgresqlConstants {
             "  table_key varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ";
+    public static String creationQueryDraggables = "CREATE TABLE IF NOT EXISTS draggables (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  description varchar(255),\n" +
+            "  template varchar(255) ,\n" +
+            "  style varchar(255),\n" +
+            "  image varchar(255),\n" +
+            "  vars varchar(255),\n" +
+            "  dynamics varchar(255),\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            " ) ";
+
+    public static String creationQueryDroppables = "CREATE TABLE IF NOT EXISTS droppables (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  description varchar(255),\n" +
+            "  draggables varchar(255) ,\n" +
+            "  values varchar(255),\n" +
+            "  dynamics varchar(255),\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            " ) ";
 
     public static String creationQueryFieldDefinitions = "CREATE TABLE IF NOT EXISTS fielddefinitions (\n" +
             "  uuid varchar(255) NOT NULL,\n" +

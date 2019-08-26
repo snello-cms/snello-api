@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.multipart.CompletedFileUpload;
+import io.micronaut.http.server.types.files.FileCustomizableResponseType;
 import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
@@ -15,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -100,13 +103,14 @@ public class S3Service implements DocumentsService {
         map.put(TABLE_NAME, table_name);
         map.put(TABLE_KEY, table_key);
         minioClient.putObject(s3_bucket_name, name, file.getInputStream(), file.getSize(), file.getContentType().toString());
+        logger.info("document uploaded!");
         return map;
     }
 
     @Override
-    public StreamedFile streamingOutput(String uuid, String folder, String mediatype) throws Exception {
-        minioClient.statObject(s3_bucket_name, folder + uuid);
-        InputStream input = minioClient.getObject(S3_BUCKET_NAME, folder + uuid);
+    public StreamedFile streamingOutput(String path, String mediatype) throws Exception {
+        minioClient.statObject(s3_bucket_name, path);
+        InputStream input = minioClient.getObject(s3_bucket_name, path);
         return new StreamedFile(input, new MediaType(mediatype));
     }
 
@@ -117,4 +121,6 @@ public class S3Service implements DocumentsService {
         minioClient.removeObject(s3_bucket_name, filename);
         return true;
     }
+
+
 }

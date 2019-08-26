@@ -28,14 +28,14 @@ public class ApiService {
     }
 
 
-    public Metadata metadata(String metedata_name) throws Exception {
-        Metadata metadata = metadataService.metadataMap().get(metedata_name);
+    public Metadata metadata(String metadata_name) throws Exception {
+        Metadata metadata = metadataService.metadataMap().get(metadata_name);
         return metadata;
     }
 
 
-    public String table_key(String metedata_name) throws Exception {
-        Metadata metadata = metadataService.metadataMap().get(metedata_name);
+    public String table_key(String metadata_name) throws Exception {
+        Metadata metadata = metadataService.metadataMap().get(metadata_name);
         return metadata.table_key;
     }
 

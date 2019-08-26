@@ -1,7 +1,7 @@
 ---
 micronaut:
   application:
-    name: matcms
+    name: snellocms
   server:
     cors:
       enabled: true
@@ -28,14 +28,16 @@ micronaut:
       maxFileSize: 100MB
   router:
     static-resources:
+      default:
+        enabled: true
+        mapping: /**
+        paths:
+          - file:${web.path:"/home/snello/public"}
       files:
         enabled: true
         mapping: /files/**
         paths:
-          - file:${WEB_PATH:"/Users/fiorenzo/IdeaProjectsSnello/matcms/docker/webapp/files/"}
-      swagger:
-        paths: classpath:META-INF/swagger
-        mapping: /swagger/**
+          - file:${web.files.path:"/home/snello/public/files"}
   security:
     enabled: true
     endpoints:
@@ -49,11 +51,11 @@ micronaut:
         signatures:
           secret:
             generator:
-              secret: "${JWT_GENERATOR_SIGNATURE_SECRET:pleaseChangeThisSecretForANewOne}"
+              secret: "${jwt.generator.signature.secret:pleaseChangeThisSecretForANewOne}"
   storage:
     type: fs
   db:
-    type: mysql
+    type: postgresql
 ---
 jackson:
   serialization:
@@ -62,10 +64,10 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:${jdbc.type:postgresql}://${jdbc.host:localhost}:${jdbc.port:5432}/${jdbc.db:snello}
-    username: ${jdbc.username:snello}
-    password: ${jdbc.password:snello}
-    driverClassName: ${jdbc.driver:org.postgresql.Driver}
+    url:  jdbc:postgresql://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:snello}
+    username: ${JDBC_USERNAME:snello}
+    password: ${JDBC_PASSWORD:snello}
+    driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
     testOnBorrow: true
     validationQuery: select 1
     removeAbandoned: true

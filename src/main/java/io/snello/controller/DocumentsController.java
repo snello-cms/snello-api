@@ -5,6 +5,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.http.multipart.CompletedFileUpload;
+import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.http.server.types.files.SystemFile;
 import io.snello.service.ApiService;
 import io.snello.service.documents.DocumentsService;
@@ -31,7 +32,7 @@ public class DocumentsController {
     @Inject
     ApiService apiService;
 
-     String table = DOCUMENTS;
+    String table = DOCUMENTS;
 
     @Inject
     DocumentsService documentsService;
@@ -60,16 +61,21 @@ public class DocumentsController {
     }
 
     @Get(UUID_PATH_PARAM + DOWNLOAD_PATH)
-    public SystemFile download(@NotNull String uuid) throws Exception {
+    public StreamedFile download(@NotNull String uuid) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
-        File file = null;
-        if (map != null) {
-            String pathComplete = documentsService.basePath(EMPTY) + BASE_PATH + map.get(DOCUMENT_PATH);
-            file = Path.of(pathComplete).toFile();
-        }
+//        File file = null;
+//        if (map != null) {
+//            String pathComplete = documentsService.basePath(EMPTY) + BASE_PATH + map.get(DOCUMENT_PATH);
+//            file = Path.of(pathComplete).toFile();
+//        }
+
 //        return new AttachedFile(file, (String) map.get(DOCUMENT_ORIGINAL_NAME));
-        return new SystemFile(file);
+        String path = (String) map.get(DOCUMENT_PATH);
+        String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
+        return documentsService.streamingOutput(path, mimetype);
+
     }
+
 
     @Post(consumes = MediaType.MULTIPART_FORM_DATA)
     public HttpResponse<?> post(CompletedFileUpload file,

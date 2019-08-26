@@ -3,10 +3,7 @@ package io.snello.service;
 import io.micronaut.discovery.event.ServiceStartedEvent;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
-import io.snello.model.Condition;
-import io.snello.model.FieldDefinition;
-import io.snello.model.Metadata;
-import io.snello.model.SelectQuery;
+import io.snello.model.*;
 import io.snello.model.events.*;
 import io.snello.repository.JdbcRepository;
 import org.slf4j.Logger;
@@ -27,6 +24,8 @@ public class MetadataService {
     Map<String, SelectQuery> selectqueryMap;
     Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
     Map<String, List<Condition>> conditionsMap;
+    Map<String, Draggable> draggablesMap;
+    Map<String, Droppable> droppablesMap;
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -34,6 +33,61 @@ public class MetadataService {
 
     public MetadataService() {
 
+    }
+
+
+    @EventListener
+    @Async
+    void createOrUpdateDraggable(DraggableCreateUpdateEvent draggableCreateUpdateEvent) {
+        logger.info("new DraggableCreateUpdateEvent " + draggableCreateUpdateEvent.toString());
+        try {
+            draggablesMap().put(draggableCreateUpdateEvent.draggable.uuid, draggableCreateUpdateEvent.draggable);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    @EventListener
+    @Async
+    void deleteDraggable(DraggableDeleteEvent draggableDeleteEvent) {
+        logger.info("new DraggableDeleteEvent " + draggableDeleteEvent.toString());
+        try {
+            for (Draggable draggable : draggablesMap().values()) {
+                if (draggable.uuid.equals(draggableDeleteEvent.uuid)) {
+                    draggablesMap().remove(draggable.uuid);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
+    @EventListener
+    @Async
+    void createOrUpdateDroppable(DroppableCreateUpdateEvent droppableCreateUpdateEvent) {
+        logger.info("new DroppableCreateUpdateEvent " + droppableCreateUpdateEvent.toString());
+        try {
+            droppablesMap().put(droppableCreateUpdateEvent.droppable.uuid, droppableCreateUpdateEvent.droppable);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    @EventListener
+    @Async
+    void deleteDroppable(DroppableDeleteEvent droppableDeleteEvent) {
+        logger.info("new DroppableDeleteEvent " + droppableDeleteEvent.toString());
+        try {
+            for (Droppable droppable : droppablesMap().values()) {
+                if (droppable.uuid.equals(droppableDeleteEvent.uuid)) {
+                    droppablesMap().remove(droppable.uuid);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     @EventListener
@@ -227,6 +281,34 @@ public class MetadataService {
             }
         }
         return this.fielddefinitionsMap;
+    }
+
+    public Map<String, Draggable> draggablesMap() throws Exception {
+        if (this.draggablesMap == null) {
+            this.draggablesMap = new TreeMap<>();
+            List<Map<String, Object>> liste = jdbcRepository.list(DRAGGABLES, " name asc ");
+            if (liste != null) {
+                for (Map<String, Object> map : liste) {
+                    Draggable draggable = new Draggable(map);
+                    draggablesMap.put(draggable.uuid, draggable);
+                }
+            }
+        }
+        return this.draggablesMap;
+    }
+
+    public Map<String, Droppable> droppablesMap() throws Exception {
+        if (this.droppablesMap == null) {
+            this.droppablesMap = new TreeMap<>();
+            List<Map<String, Object>> liste = jdbcRepository.list(DROPPABLES, " name asc ");
+            if (liste != null) {
+                for (Map<String, Object> map : liste) {
+                    Droppable droppable = new Droppable(map);
+                    droppablesMap.put(droppable.uuid, droppable);
+                }
+            }
+        }
+        return this.droppablesMap;
     }
 
     public Map<String, Metadata> metadataMap() throws Exception {

@@ -1,6 +1,7 @@
 package io.snello.util;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
@@ -10,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 public class PasswordUtils implements Serializable
 {
 
-   static Logger logger = Logger.getLogger(PasswordUtils.class);
+   static  Logger logger = LoggerFactory.getLogger(PasswordUtils.class);
 
    private static final long serialVersionUID = 1L;
 

@@ -41,6 +41,28 @@ public class MysqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+    public static String creationQueryDraggables = "CREATE TABLE IF NOT EXISTS draggables (\n" +
+            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `template` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `style` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `vars` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `dynamics` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationQueryDroppables = "CREATE TABLE IF NOT EXISTS droppables (\n" +
+            "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `draggables` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `values` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `dynamics` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationQueryFieldDefinitions = "CREATE TABLE IF NOT EXISTS `fielddefinitions` (\n" +
             "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `metadata_uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +

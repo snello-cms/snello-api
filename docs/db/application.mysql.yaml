@@ -64,7 +64,7 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:mysql://${jdbc.host:localhost}:${jdbc.port:3306}/${jdbc.db:snello}?verifyServerCertificate=false&useSSL=${jdbc.use.ssl:false}
+    url:  jdbc:mysql://${jdbc.host:localhost}:${jdbc.port:3306}/${jdbc.db:snello}?allowPublicKeyRetrieval=TRUE&useSSL=FALSE;
     username: ${jdbc.username:snello}
     password: ${jdbc.password:snello}
     driverClassName: com.mysql.jdbc.Driver

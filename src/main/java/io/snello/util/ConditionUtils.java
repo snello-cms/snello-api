@@ -2,7 +2,8 @@ package io.snello.util;
 
 import io.micronaut.http.HttpParameters;
 import io.snello.model.Condition;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ import static io.snello.util.ParamUtils.*;
 
 public class ConditionUtils {
 
-    static Logger logger = Logger.getLogger(ConditionUtils.class);
+    static Logger logger = LoggerFactory.getLogger(ConditionUtils.class);
 
 
     public static void where(HttpParameters httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) {

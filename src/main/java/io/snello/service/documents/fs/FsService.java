@@ -86,9 +86,9 @@ public class FsService implements DocumentsService {
     }
 
     @Override
-    public StreamedFile streamingOutput(String uuid, String folder, String mediatype) throws Exception {
+    public StreamedFile streamingOutput(String path, String mediatype) throws Exception {
         String basePath = basePaths.get(0);
-        InputStream input = Files.newInputStream(Paths.get(basePath, folder + uuid));
+        InputStream input = Files.newInputStream(Paths.get(basePath, path));
         return new StreamedFile(input, new MediaType(mediatype));
     }
 }

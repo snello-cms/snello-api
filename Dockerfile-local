@@ -1,17 +1,23 @@
-FROM openjdk:11.0.1-jre-slim-stretch
-
+FROM adoptopenjdk/openjdk11:alpine-jre
 ENV SNELLO_HOME=/home/snello \
     SNELLO_USER=snello \
     SNELLO_GROUP=snello \
-    SNELLO_PGUID=2000 \
-    SNELLO_PUID=2000
-RUN useradd -ms /bin/bash snello
+    SNELLO_PGUID=1000 \
+    SNELLO_PUID=1000
+
+RUN apk add --no-cache tzdata \
+ && cp /usr/share/zoneinfo/Europe/Rome /etc/localtime \
+ && addgroup -g ${SNELLO_PGUID} -S ${SNELLO_GROUP} \
+ && adduser -h ${SNELLO_HOME} -s /sbin/nologin -G ${SNELLO_GROUP} -S -D -u ${SNELLO_PUID} ${SNELLO_USER}
+
+
+RUN mkdir -p /home/snello/public/files
 COPY target/snello*.jar $SNELLO_HOME/snello.jar
-RUN chown -R snello $SNELLO_HOME
+
+RUN chown -R ${SNELLO_USER}:${SNELLO_GROUP} ${SNELLO_HOME}
+RUN chmod -R 755 ${SNELLO_HOME}
+
 WORKDIR ${SNELLO_HOME}
 USER ${SNELLO_USER}
-RUN mkdir /home/snello/files
+# update ownership
 CMD java ${JAVA_OPTS} -jar snello.jar
-
-
-HEALTHCHECK --interval=1m --timeout=3s CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit

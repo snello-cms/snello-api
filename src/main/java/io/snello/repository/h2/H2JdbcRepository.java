@@ -66,6 +66,8 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationQueryFieldDefinitions,
                 creationQueryConditions,
                 creationQueryDocuments,
+                creationQueryDraggables,
+                creationQueryDroppables,
                 creationQuerySelectQueries,
                 creationUsersQueries,
                 creationRolesQueries,
