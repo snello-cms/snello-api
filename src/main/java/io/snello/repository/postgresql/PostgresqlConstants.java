@@ -53,6 +53,7 @@ public class PostgresqlConstants {
             "  uuid varchar(255) NOT NULL,\n" +
             "  name varchar(255) NOT NULL,\n" +
             "  description varchar(255),\n" +
+            "  html varchar(255),\n" +
             "  draggables varchar(255) ,\n" +
             "  values varchar(255),\n" +
             "  dynamics varchar(255),\n" +
@@ -214,6 +215,12 @@ public class PostgresqlConstants {
 
     public static String creationUserViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('users_view', 'users view rule', 'metadatas', 'users', 'view') ON CONFLICT (name) DO NOTHING;";
     public static String creationUserEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('users_edit', 'users edit rule', 'metadatas', 'users', 'edit') ON CONFLICT (name) DO NOTHING;";
+
+    public static String creationDroppableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('droppables_view', 'droppables view rule', 'metadatas', 'droppables', 'view') ON CONFLICT (name) DO NOTHING;";
+    public static String creationDroppableEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('droppables_edit', 'droppables edit rule', 'metadatas', 'droppables', 'edit') ON CONFLICT (name) DO NOTHING;";
+
+    public static String creationDraggableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_view', 'draggables view rule', 'metadatas', 'draggables', 'view') ON CONFLICT (name) DO NOTHING;";
+    public static String creationDraggableEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_edit', 'draggables edit rule', 'metadatas', 'draggables', 'edit') ON CONFLICT (name) DO NOTHING;";
 
 
     public static String creationAdminUserRole = "INSERT INTO userroles (username, role) VALUES ('admin', 'admin') ON CONFLICT (username, role) DO NOTHING;";

@@ -8,6 +8,7 @@ public class Droppable {
     public String name;
     public String description;
     public String draggables;
+    public String html;
     public String values;
     public String dynamics;
 
@@ -28,6 +29,9 @@ public class Droppable {
         }
         if (map.get("description") instanceof String) {
             draggable.description = (String) map.get("description");
+        }
+        if (map.get("html") instanceof String) {
+            draggable.html = (String) map.get("html");
         }
         if (map.get("draggables") instanceof String) {
             draggable.draggables = (String) map.get("draggables");
