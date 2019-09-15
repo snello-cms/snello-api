@@ -10,6 +10,7 @@ public class AppConstants {
     public static final String DRAGGABLES = "draggables";
     public static final String DROPPABLES = "droppables";
     public static final String DOCUMENTS = "documents";
+    public static final String IMAGES = "images";
     public static final String FIELD_DEFINITIONS = "fielddefinitions";
     public static final String LINKS = "links";
     public static final String METADATAS = "metadatas";
@@ -29,6 +30,7 @@ public class AppConstants {
     public static final String CONDITIONS_PATH = API_PATH + BASE_PATH + CONDITIONS;
     public static final String DATALIST_PATH = API_PATH + BASE_PATH + DATALISTS;
     public static final String DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS;
+    public static final String IMAGES_PATH = API_PATH + BASE_PATH + IMAGES;
     public static final String DRAGGABLES_PATH = API_PATH + BASE_PATH + DRAGGABLES;
     public static final String DROPPABLES_PATH = API_PATH + BASE_PATH + DROPPABLES;
     public static final String FIELD_DEFINITIONS_PATH = API_PATH + BASE_PATH + FIELD_DEFINITIONS;
@@ -60,6 +62,9 @@ public class AppConstants {
     public static final String UUID_PATH_PARAM_TRUNCATE = UUID_PATH_PARAM + "/truncate";
     public static final String UUID_PATH_PARAM_VERIFY = UUID_PATH_PARAM + "/verify";
     public static final String UUID_PATH_PARAM_CHANGE = UUID_PATH_PARAM + "/change";
+    public static final String UUID_PATH_PARAM_CROP = UUID_PATH_PARAM + "/crop";
+    public static final String UUID_PATH_PARAM_MOGRIFY = UUID_PATH_PARAM + "/mogrify";
+    public static final String UUID_PATH_PARAM_RESIZE = UUID_PATH_PARAM + "/resize";
     public static final String DOWNLOAD_PATH = "/download";
     public static final String SORT_PARAM = "_sort";
     public static final String DELETE_PARAM = "delete";
@@ -130,7 +135,6 @@ public class AppConstants {
     public static final String MSG_QUERY_NAME_IS_RESERVED = "query name is a reserved word";
     public static final String MSG_USERNAME_IS_EMPTY = "username is empty";
     public static final String MSG_NOT_IMPLEMENTED = "not implemented! (please delete and after create)";
-
 
 
 }

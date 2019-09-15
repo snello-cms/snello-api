@@ -63,13 +63,6 @@ public class DocumentsController {
     @Get(UUID_PATH_PARAM + DOWNLOAD_PATH)
     public StreamedFile download(@NotNull String uuid) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
-//        File file = null;
-//        if (map != null) {
-//            String pathComplete = documentsService.basePath(EMPTY) + BASE_PATH + map.get(DOCUMENT_PATH);
-//            file = Path.of(pathComplete).toFile();
-//        }
-
-//        return new AttachedFile(file, (String) map.get(DOCUMENT_ORIGINAL_NAME));
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
         return documentsService.streamingOutput(path, mimetype);

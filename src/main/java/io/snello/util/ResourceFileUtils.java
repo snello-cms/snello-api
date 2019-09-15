@@ -29,4 +29,13 @@ public class ResourceFileUtils {
         }
         file.delete();
     }
+
+    public static String getExtension(String filename) throws Exception {
+        if (filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf(".") + 1);
+        }
+        return null;
+    }
+
+
 }

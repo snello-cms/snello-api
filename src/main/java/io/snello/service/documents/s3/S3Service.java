@@ -4,22 +4,26 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.multipart.CompletedFileUpload;
-import io.micronaut.http.server.types.files.FileCustomizableResponseType;
 import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.minio.MinioClient;
 import io.snello.management.AppConstants;
 import io.snello.service.documents.DocumentsService;
+import io.snello.util.MimeUtils;
+import io.snello.util.ResourceFileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static io.snello.management.AppConstants.*;
 
@@ -56,11 +60,6 @@ public class S3Service implements DocumentsService {
 
     public void init() {
         try {
-//            Minio('s3.amazonaws.com',
-//                    access_key='AKIAJ5F5BXCDFPEJDCUA',
-//                    secret_key='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',
-//                    region="eu-central-1",
-//                    secure=True)
             logger.info("s3 s3_endpoint: " + s3_endpoint + ",s3_access_key: " + s3_access_key + ",s3_secret_key: "
                     + s3_secret_key + ",s3_bucket_name: " + s3_bucket_name);
             minioClient = new MinioClient(
@@ -108,6 +107,31 @@ public class S3Service implements DocumentsService {
     }
 
     @Override
+    public Map<String, Object> write(File file, String uuid, String table_name) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        String extension = ResourceFileUtils.getExtension(file.getName());
+        String name = table_name + "/" + uuid + "." + extension;
+        minioClient.putObject(s3_bucket_name, name, file.getAbsolutePath());
+        map.put(TABLE_NAME, table_name);
+        map.put(DOCUMENT_PATH, name);
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> write(byte[] bytes, String uuid, String table_name, String extension) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        String name = table_name + "/" + uuid + "." + extension;
+        InputStream stream = new ByteArrayInputStream(bytes);
+        int size = bytes.length;
+        String contentType = MimeUtils.getContentType(name);
+        minioClient.putObject(s3_bucket_name, name, stream, size, contentType);
+        map.put(TABLE_NAME, table_name);
+        map.put(TABLE_NAME, table_name);
+        map.put(DOCUMENT_PATH, name);
+        return map;
+    }
+
+    @Override
     public StreamedFile streamingOutput(String path, String mediatype) throws Exception {
         minioClient.statObject(s3_bucket_name, path);
         InputStream input = minioClient.getObject(s3_bucket_name, path);
@@ -120,6 +144,15 @@ public class S3Service implements DocumentsService {
         minioClient.statObject(s3_bucket_name, filename);
         minioClient.removeObject(s3_bucket_name, filename);
         return true;
+    }
+
+    @Override
+    public File getFile(String path) throws Exception {
+        String ext = ResourceFileUtils.getExtension(path);
+        File temp = File.createTempFile(java.util.UUID.randomUUID().toString(), ext);
+        InputStream inputStream = minioClient.getObject(s3_bucket_name, path);
+        Files.copy(inputStream, temp.toPath());
+        return temp;
     }
 
 

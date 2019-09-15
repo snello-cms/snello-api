@@ -12,6 +12,7 @@ services:
     image: dpage/pgadmin4
     ports:
       - '5050:5050'
+      - '85:80'
     links:
       - postgresql:postgresql
     depends_on:

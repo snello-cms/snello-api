@@ -9,15 +9,18 @@ import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.runtime.server.event.ServerStartupEvent;
 import io.snello.management.AppConstants;
 import io.snello.service.documents.DocumentsService;
+import io.snello.util.ResourceFileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,14 +57,19 @@ public class FsService implements DocumentsService {
         return path + "/";
     }
 
-    @Override
-    public Map<String, Object> upload(CompletedFileUpload file, String uuid, String table_name, String table_key) throws Exception {
+    private Path verifyPath(String table_name) throws Exception {
         Path path = Path.of(basePath(table_name));
         if (Files.exists(path)) {
             logger.info("path already existent: " + path);
         } else {
             path = Files.createDirectory(path);
         }
+        return path;
+    }
+
+    @Override
+    public Map<String, Object> upload(CompletedFileUpload file, String uuid, String table_name, String table_key) throws Exception {
+        Path path = verifyPath(table_name);
         String extension = file.getContentType().get().getExtension();
         File tempFile = File.createTempFile(uuid, "." + extension, path.toFile());
         Files.write(tempFile.toPath(), file.getBytes());
@@ -78,6 +86,32 @@ public class FsService implements DocumentsService {
     }
 
     @Override
+    public Map<String, Object> write(File file, String uuid, String table_name) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        Path path = verifyPath(table_name);
+        String extension = ResourceFileUtils.getExtension(file.getName());
+        File copied = File.createTempFile(uuid, "." + extension, path.toFile());
+        Files.copy(file.toPath(), copied.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        map.put(TABLE_NAME, table_name);
+        map.put(DOCUMENT_PATH, copied.getParentFile().getName() + "/" + copied.getName());
+
+        return map;
+    }
+
+    public Map<String, Object> write(byte[] bytes, String uuid, String table_name, String extension) throws Exception {
+        Map<String, Object> map = new HashMap<>();
+        Path path = verifyPath(table_name);
+        File copied = File.createTempFile(uuid, "." + extension, path.toFile());
+        try (FileOutputStream stream = new FileOutputStream(copied)) {
+            stream.write(bytes);
+        }
+        map.put(TABLE_NAME, table_name);
+        map.put(DOCUMENT_PATH, copied.getParentFile().getName() + "/" + copied.getName());
+        return map;
+    }
+
+
+    @Override
     public boolean delete(String filepath) throws Exception {
         String basePath = basePaths.get(0);
         Path path = Paths.get(basePath, filepath);
@@ -86,9 +120,17 @@ public class FsService implements DocumentsService {
     }
 
     @Override
+    public File getFile(String path) throws Exception {
+        String basePath = basePaths.get(0);
+        return Paths.get(basePath, path).toFile();
+    }
+
+    @Override
     public StreamedFile streamingOutput(String path, String mediatype) throws Exception {
         String basePath = basePaths.get(0);
         InputStream input = Files.newInputStream(Paths.get(basePath, path));
         return new StreamedFile(input, new MediaType(mediatype));
     }
+
+
 }
