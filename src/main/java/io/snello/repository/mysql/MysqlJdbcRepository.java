@@ -1,5 +1,6 @@
 package io.snello.repository.mysql;
 
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.discovery.event.ServiceStartedEvent;
@@ -28,7 +29,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
 
-import static io.snello.management.AppConstants.DB_TYPE;
+import static io.snello.management.AppConstants.*;
 import static io.snello.management.DbConstants.*;
 import static io.snello.repository.mysql.MysqlConstants.*;
 
@@ -39,6 +40,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
     DataSource dataSource;
     Logger logger = LoggerFactory.getLogger(getClass());
 
+    @Property(name = JDBC_DB)
+    String jdbc_db;
 
     @Inject
     ApplicationEventPublisher eventPublisher;
@@ -336,7 +339,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
 
     public boolean delete(String table, String table_key, String uuid) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
-            logger.info("DELETE QUERY: " + DELETE_FROM  + table + _WHERE_ + table_key + " = ? ");
+            logger.info("DELETE QUERY: " + DELETE_FROM + table + _WHERE_ + table_key + " = ? ");
             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_FROM + MysqlSqlUtils.escape(table) + _WHERE_
                     + MysqlSqlUtils.escape(table_key) + " = ?");
             preparedStatement.setObject(1, uuid);
@@ -375,7 +378,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
     public boolean verifyTable(String tableName) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
-            PreparedStatement preparedStatement = connection.prepareStatement(SHOW_TABLES);
+            PreparedStatement preparedStatement = connection.prepareStatement(SHOW_TABLES_INIT + jdbc_db + SHOW_TABLES_END);
             preparedStatement.setObject(1, tableName);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {

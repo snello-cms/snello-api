@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import static io.micronaut.http.HttpResponse.ok;
@@ -44,7 +45,11 @@ public class UsersController {
             logger.info(AppConstants.START_DOT_DOT + start);
         Integer l = limit == null ? 10 : Integer.valueOf(limit);
         Integer s = start == null ? 0 : Integer.valueOf(start);
-        return ok(apiService.list(table, request.getParameters(), sort, l, s))
+        List<Map<String, Object>> list = apiService.list(table, request.getParameters(), sort, l, s);
+        for (Map<String, Object> uu : list) {
+            uu.put(AppConstants.PASSWORD, "");
+        }
+        return ok(list)
                 .header(AppConstants.SIZE_HEADER_PARAM, "" + apiService.count(table, request.getParameters()))
                 .header(AppConstants.TOTAL_COUNT_HEADER_PARAM, "" + apiService.count(table, request.getParameters()));
     }
@@ -52,7 +57,9 @@ public class UsersController {
 
     @Get(AppConstants.UUID_PATH_PARAM)
     public HttpResponse<?> fetch(HttpRequest<?> request, @NotNull String uuid) throws Exception {
-        return ok(apiService.fetch(null, table, uuid, UUID));
+        Map<String, Object> user = apiService.fetch(null, table, uuid, UUID);
+        user.put(AppConstants.PASSWORD, "");
+        return ok(user);
     }
 
 
@@ -64,6 +71,7 @@ public class UsersController {
         map.put(AppConstants.PASSWORD, pwd);
         map.put(AppConstants.CREATION_DATE, new Date());
         map = apiService.create(table, map, UUID);
+        map.put(AppConstants.PASSWORD, "");
         return ok(map);
     }
 
@@ -77,6 +85,7 @@ public class UsersController {
             map.put(AppConstants.LAST_UPDATE_DATE, new Date());
         }
         map = apiService.merge(table, map, uuid, UUID);
+        map.put(AppConstants.PASSWORD, "");
         return ok(map);
     }
 
@@ -88,7 +97,6 @@ public class UsersController {
         }
         return serverError();
     }
-
 
 
 }

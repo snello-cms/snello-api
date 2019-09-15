@@ -4,7 +4,8 @@ public class MysqlConstants {
 
     public static final String COUNT_QUERY = " SELECT COUNT(*) AS SIZE_OF FROM ";
     public static final String DELETE_FROM = "DELETE FROM ";
-    public static final String SHOW_TABLES = "SHOW TABLES FROM `matcms` LIKE ?";
+    public static final String SHOW_TABLES_INIT = "SHOW TABLES FROM ";
+    public static final String SHOW_TABLES_END = " LIKE ?";
     public static final String SELECT_FROM = " SELECT * FROM ";
     public static final String INSERT_INTO = "INSERT INTO ";
     public static final String TRUNCATE_TABLE = "TRUNCATE TABLE ";
