@@ -9,8 +9,8 @@ public class Droppable {
     public String description;
     public String draggables;
     public String html;
-    public String values;
-    public String dynamics;
+    public String static_values;
+    public String dynamic_values;
 
     public Droppable() {
     }
@@ -36,11 +36,11 @@ public class Droppable {
         if (map.get("draggables") instanceof String) {
             draggable.draggables = (String) map.get("draggables");
         }
-        if (map.get("values") instanceof String) {
-            draggable.values = (String) map.get("values");
+        if (map.get("static_values") instanceof String) {
+            draggable.static_values = (String) map.get("static_values");
         }
-        if (map.get("dynamics") instanceof String) {
-            draggable.dynamics = (String) map.get("dynamics");
+        if (map.get("dynamic_values") instanceof String) {
+            draggable.dynamic_values = (String) map.get("dynamic_values");
         }
         return draggable;
     }

@@ -10,8 +10,8 @@ public class Draggable {
     public String template;
     public String style;
     public String image; //(serve per la composizione a drag and drop nei droppables)
-    public String vars; // (separate da ;)
-    public String dynamics; // (separate da ;)
+    public String static_vars; // (separate da ;)
+    public String dynamic_vars; // (separate da ;)
 
     public Draggable() {
     }
@@ -40,11 +40,11 @@ public class Draggable {
         if (map.get("image") instanceof String) {
             draggable.image = (String) map.get("image");
         }
-        if (map.get("vars") instanceof String) {
-            draggable.vars = (String) map.get("vars");
+        if (map.get("static_vars") instanceof String) {
+            draggable.static_vars = (String) map.get("static_vars");
         }
-        if (map.get("dynamics") instanceof String) {
-            draggable.dynamics = (String) map.get("dynamics");
+        if (map.get("dynamic_vars") instanceof String) {
+            draggable.dynamic_vars = (String) map.get("dynamic_vars");
         }
         return draggable;
     }

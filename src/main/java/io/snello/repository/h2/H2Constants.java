@@ -49,8 +49,8 @@ public class H2Constants {
             "  template varchar(255) ,\n" +
             "  style varchar(255) NOT NULL,\n" +
             "  image int(12),\n" +
-            "  vars varchar(255) NOT NULL,\n" +
-            "  dynamics varchar(255) NOT NULL,\n" +
+            "  static_vars varchar(255) NOT NULL,\n" +
+            "  dynamic_vars varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ;";
 
@@ -60,8 +60,8 @@ public class H2Constants {
             "  description varchar(255) NOT NULL,\n" +
             "  html varchar(255) NOT NULL,\n" +
             "  draggables varchar(255) ,\n" +
-            "  values varchar(255) NOT NULL,\n" +
-            "  dynamics varchar(255) NOT NULL,\n" +
+            "  static_values varchar(255) NOT NULL,\n" +
+            "  dynamic_values varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ;";
 
@@ -93,7 +93,7 @@ public class H2Constants {
             "  show_in_list BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ;";
-    
+
     public static String creationQueryMetadatas = "CREATE TABLE IF NOT EXISTS metadatas (\n" +
             "  uuid varchar(255) NOT NULL,\n" +
             "  table_name varchar(255) NOT NULL,\n" +
@@ -166,17 +166,16 @@ public class H2Constants {
             ") ;";
 
     public static String creationLinksQueries = "CREATE TABLE IF NOT EXISTS links (\n" +
-             "  name varchar(255) NOT NULL,\n" +
-             "  labels varchar(255) NOT NULL,\n" +
-             "  metadata_name varchar(100) DEFAULT NULL,\n" +
-             "  metadata_key varchar(255) DEFAULT NULL,\n" +
-             "  metadata_searchable_field varchar(255) DEFAULT NULL,\n" +
-             "  metadata_lock_field varchar(255) DEFAULT NULL,\n" +
-             "  metadata_generated_uuid varchar(255) DEFAULT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  labels varchar(255) NOT NULL,\n" +
+            "  metadata_name varchar(100) DEFAULT NULL,\n" +
+            "  metadata_key varchar(255) DEFAULT NULL,\n" +
+            "  metadata_searchable_field varchar(255) DEFAULT NULL,\n" +
+            "  metadata_lock_field varchar(255) DEFAULT NULL,\n" +
+            "  metadata_generated_uuid varchar(255) DEFAULT NULL,\n" +
             "  created BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-             "  PRIMARY KEY (name)\n" +
+            "  PRIMARY KEY (name)\n" +
             ") ;";
-
 
 
     public static String creationAdminUser = "INSERT IGNORE INTO users (username, password, name, surname, email, active) VALUES ('admin', 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 'admin', 'admin', 'admin@snello.io', '1');";

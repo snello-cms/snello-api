@@ -44,8 +44,8 @@ public class PostgresqlConstants {
             "  template varchar(255) ,\n" +
             "  style varchar(255),\n" +
             "  image varchar(255),\n" +
-            "  vars varchar(255),\n" +
-            "  dynamics varchar(255),\n" +
+            "  static_vars varchar(255),\n" +
+            "  dynamic_vars varchar(255),\n" +
             "  PRIMARY KEY (uuid)\n" +
             " ) ";
 
@@ -55,8 +55,8 @@ public class PostgresqlConstants {
             "  description varchar(255),\n" +
             "  html varchar(255),\n" +
             "  draggables varchar(255) ,\n" +
-            "  values varchar(255),\n" +
-            "  dynamics varchar(255),\n" +
+            "  static_values varchar(255),\n" +
+            "  dynamic_values varchar(255),\n" +
             "  PRIMARY KEY (uuid)\n" +
             " ) ";
 
