@@ -33,7 +33,6 @@ public class H2FieldDefinitionUtils {
                 switch (fieldDefinition.input_type) {
                     case "text":
                     case "password":
-                    case "tinymce":
                     case "email":
                         sb.append(escape(fieldDefinition.name)).append(" varchar(200)  NOT NULL ");
                         if (fieldDefinition.default_value != null && fieldDefinition.default_value.trim().isEmpty()) {
@@ -55,6 +54,7 @@ public class H2FieldDefinitionUtils {
                 }
             }
             case "textarea":
+            case "tinymce":
                 return escape(fieldDefinition.name) + " VARCHAR default null";
             case "date":
                 return escape(fieldDefinition.name) + " date default null";
