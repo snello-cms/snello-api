@@ -220,11 +220,11 @@ public class H2Constants {
     public static String creationUserViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('users_view', 'users view rule', 'metadatas', 'users', 'view');";
     public static String creationUserEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('users_edit', 'users edit rule', 'metadatas', 'users', 'edit');";
 
-    public static String creationDroppableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('droppables_view', 'droppables view rule', 'metadatas', 'droppables', 'view') ON CONFLICT (name) DO NOTHING;";
+    public static String creationDroppableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('droppables_view', 'droppables view rule', 'metadatas', 'droppables', 'view');";
     public static String creationDroppableEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('droppables_edit', 'droppables edit rule', 'metadatas', 'droppables', 'edit') ON CONFLICT (name) DO NOTHING;";
 
-    public static String creationDraggableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_view', 'draggables view rule', 'metadatas', 'draggables', 'view') ON CONFLICT (name) DO NOTHING;";
-    public static String creationDraggableEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_edit', 'draggables edit rule', 'metadatas', 'draggables', 'edit') ON CONFLICT (name) DO NOTHING;";
+    public static String creationDraggableViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_view', 'draggables view rule', 'metadatas', 'draggables', 'view');";
+    public static String creationDraggableEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('draggables_edit', 'draggables edit rule', 'metadatas', 'draggables', 'edit');";
 
 
     public static String creationAdminUserRole = "INSERT IGNORE INTO userroles (username, role) VALUES ('admin', 'admin');";
