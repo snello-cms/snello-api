@@ -25,7 +25,6 @@ public class PostgresqlFieldDefinitionUtils {
                     case "text":
                     case "password":
                     case "email":
-                    case "tinymce":
                         sb.append(escape(fieldDefinition.name)).append(" varchar(200)  NOT NULL ");
                         if (fieldDefinition.default_value != null && fieldDefinition.default_value.trim().isEmpty()) {
                             sb.append(" DEFAULT '" + fieldDefinition.default_value + "' ");
@@ -46,6 +45,7 @@ public class PostgresqlFieldDefinitionUtils {
                 }
             }
             case "textarea":
+            case "tinymce":
                 return escape(fieldDefinition.name) + " text default null";
             case "date":
                 return escape(fieldDefinition.name) + " date default null";
