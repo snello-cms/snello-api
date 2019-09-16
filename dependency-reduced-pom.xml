@@ -30,7 +30,7 @@
               <path>
                 <groupId>io.micronaut.configuration</groupId>
                 <artifactId>micronaut-openapi</artifactId>
-                <version>${micronaut.version}</version>
+                <version>${micronaut.openapi.version}</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -99,7 +99,7 @@
     <dependency>
       <groupId>io.micronaut</groupId>
       <artifactId>micronaut-inject-java</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -138,8 +138,8 @@
     <java-mail.version>1.6.2</java-mail.version>
     <h2.version>1.4.199</h2.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <micronaut.openapi.version>1.1.2</micronaut.openapi.version>
-    <micronaut.version>1.2.0</micronaut.version>
+    <micronaut.openapi.version>1.2.0</micronaut.openapi.version>
+    <micronaut.version>1.2.2</micronaut.version>
     <mail.version>1.5.0-b01</mail.version>
     <postgresql.version>42.2.6</postgresql.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
