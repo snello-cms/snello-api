@@ -28,8 +28,7 @@ import static io.snello.management.AppConstants.URL_MAP_RULES;
 
 @Singleton
 public class DynamicnterceptUrlMapRule
-        implements SecurityRule
-{
+        implements SecurityRule {
 
     Logger logger = LoggerFactory.getLogger(getClass());
     private boolean first = true;
@@ -85,7 +84,6 @@ public class DynamicnterceptUrlMapRule
     }
 
 
-
 //        this.patternList.add(new InterceptUrlMapPattern("/books", Arrays.asList("isAuthenticated()"), null));
 //        this.patternList.add(new InterceptUrlMapPattern("/books/grails", Arrays.asList("ROLE_GRAILS", "ROLE_GROOVY"), GET));
 //        this.patternList.add(new InterceptUrlMapPattern("/users/admin", Arrays.asList("ADMIN", "USER"), GET));
@@ -133,12 +131,16 @@ public class DynamicnterceptUrlMapRule
                 .filter(p -> p.getHttpMethod().map(method -> method.equals(httpMethod)).orElse(true))
                 .filter(p -> pathMatcher.matches(p.getPattern(), path))
                 .findFirst();
+        if (matchedPattern.isEmpty()) {
+            logger.info("REAL check RESULT: no pattern to match " + SecurityRuleResult.ALLOWED);
+            return SecurityRuleResult.ALLOWED;
+        }
 
         SecurityRuleResult realResut = matchedPattern
                 .map(pattern -> compareRoles(pattern.getAccess(), getRoles(claims)))
                 .orElse(SecurityRuleResult.UNKNOWN);
         logger.info("REAL check RESULT: " + realResut.toString());
-        return SecurityRuleResult.ALLOWED;
+        return realResut;
     }
 
     protected List<String> getRoles(Map<String, Object> claims) {
@@ -147,11 +149,10 @@ public class DynamicnterceptUrlMapRule
             roles.add("isAnonymous()");
         } else {
             if (!claims.isEmpty()) {
-                Object rolesObject = claims.get("access");
+                Object rolesObject = claims.get("roles");
                 if (rolesObject != null) {
                     if (rolesObject instanceof Iterable) {
                         Iterator var4 = ((Iterable) rolesObject).iterator();
-
                         while (var4.hasNext()) {
                             Object o = var4.next();
                             roles.add(o.toString());
@@ -161,20 +162,29 @@ public class DynamicnterceptUrlMapRule
                     }
                 }
             }
-
-            roles.add("isAnonymous()");
-            roles.add("isAuthenticated()");
+//            roles.add("isAnonymous()");
+//            roles.add("isAuthenticated()");
         }
 
         return roles;
     }
 
     protected SecurityRuleResult compareRoles(List<String> requiredRoles, List<String> grantedRoles) {
+        if (requiredRoles.contains("isAnonymous()")) {
+            logger.info("isAnonymous => ALL ROLES ARE OK");
+            return SecurityRuleResult.ALLOWED;
+        }
+        if (requiredRoles.contains("isAuthenticated()") && grantedRoles != null && !grantedRoles.isEmpty()) {
+            logger.info("isAuthenticated => THE USER HAVE SOME RULE");
+            return SecurityRuleResult.ALLOWED;
+        }
         requiredRoles = new ArrayList<>(requiredRoles);
         requiredRoles.retainAll(grantedRoles);
         if (requiredRoles.isEmpty()) {
+            logger.info("no required role!!");
             return SecurityRuleResult.REJECTED;
         } else {
+            logger.info("required role is present!");
             return SecurityRuleResult.ALLOWED;
         }
     }
