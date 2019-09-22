@@ -108,37 +108,41 @@ public class LinksController {
     @Get(UUID_PATH_PARAM_CREATE)
     public HttpResponse<?> create(@NotNull String uuid) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, NAME);
-        Link link = new Link(map);
-        link.created = true;
+        map.put(CREATED, true);
         apiService.merge(table, map, uuid, NAME);
-        Metadata metadataOriginal =metadataService.metadata(link.metadata_name);
+        Link link = new Link(map);
+        Metadata metadataOriginal = metadataService.metadata(link.metadata_name);
         Metadata metadata = new Metadata();
-        metadata.table_name= link.name;
+        metadata.table_name = link.name;
         metadata.uuid = java.util.UUID.randomUUID().toString();
         metadata.table_key = UUID;
         metadata.table_key_type = UUID;
+        metadata.created = true;
         apiService.create(METADATAS, metadata.toMap(), UUID);
-        MetadataCreateUpdateEvent metadataCreateUpdateEvent = new MetadataCreateUpdateEvent(metadata);
-        eventPublisher.publishEvent(metadataCreateUpdateEvent);
 
         String[] fields = link.labels.split(COMMA);
-        List<FieldDefinition> fieldDefinitions= new ArrayList<>();
-        for (String name: fields) {
+        List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+        for (String name : fields) {
             FieldDefinition fieldDefinition = new FieldDefinition();
             fieldDefinition.uuid = java.util.UUID.randomUUID().toString();
-            fieldDefinition.label=name;
-            fieldDefinition.name=name;
+            fieldDefinition.label = name;
+            fieldDefinition.searchable = true;
+            fieldDefinition.search_condition = "contains";
+            fieldDefinition.search_field_name = name + "_contains";
+            fieldDefinition.show_in_list = true;
+            fieldDefinition.name = name;
             fieldDefinition.type = JOIN;
             fieldDefinition.metadata_name = metadata.table_name;
             fieldDefinition.metadata_uuid = metadata.uuid;
             fieldDefinition.join_table_key = metadataOriginal.table_key;
             fieldDefinition.join_table_name = metadataOriginal.table_name;
+            fieldDefinition.join_table_select_fields = link.metadata_searchable_field;
             fieldDefinitions.add(fieldDefinition);
             apiService.create(FIELD_DEFINITIONS, fieldDefinition.toMap(), UUID);
-            FieldDefinitionCreateUpdateEvent fieldDefinitionCreateUpdateEvent = new FieldDefinitionCreateUpdateEvent(fieldDefinition);
-            eventPublisher.publishEvent(fieldDefinitionCreateUpdateEvent);
         }
-        metadataService.createTableFromMetadata(metadata.uuid);
+        metadataService.createTableFromMetadataAndFields(metadata, fieldDefinitions);
+        MetadataCreateUpdateEvent metadataCreateUpdateEvent = new MetadataCreateUpdateEvent(metadata);
+        eventPublisher.publishEvent(metadataCreateUpdateEvent);
         return ok();
     }
 }

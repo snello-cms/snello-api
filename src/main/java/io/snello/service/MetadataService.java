@@ -40,24 +40,31 @@ public class MetadataService {
         throw new Exception("metadata not existent!");
     }
 
-    public Metadata createTableFromMetadata(String uuid) throws Exception {
-        Metadata metadata = byUUid(uuid);
+    public Metadata createTableFromMetadataAndFields(Metadata metadata, List<FieldDefinition> fieldDefinitions) throws Exception {
         if (jdbcRepository.verifyTable(metadata.table_name)) {
             throw new Exception("table already existent!");
         }
         if (metadata.creation_query == null) {
             logger.info("no creation query found in metedata object...i need to createTableFromMetadata...");
-            Map<String, FieldDefinition> fields = fielddefinitionsMap().get(metadata.table_name);
-            if (fields == null || fields.size() == 0) {
+            if (fieldDefinitions == null || fieldDefinitions.size() == 0) {
                 throw new Exception("selectQuery without fields: " + metadata.toString());
             }
-            String sqlQuery = jdbcRepository.createTableSql(metadata, new ArrayList<>(fields.values()));
-            jdbcRepository.batch(new String[]{sqlQuery});
+            String sqlQuery = jdbcRepository.createTableSql(metadata, fieldDefinitions);
+            jdbcRepository.executeQuery(sqlQuery);
         } else {
             logger.info("creation query foud in metedata object: " + metadata.creation_query);
-            jdbcRepository.batch(new String[]{metadata.creation_query});
+            jdbcRepository.executeQuery(metadata.creation_query);
         }
         return metadata;
+    }
+
+    public Metadata createTableFromMetadata(String uuid) throws Exception {
+        Metadata metadata = byUUid(uuid);
+        Map<String, FieldDefinition> fields = fielddefinitionsMap().get(metadata.table_name);
+        if (fields == null || fields.size() == 0) {
+            throw new Exception("selectQuery without fields: " + metadata.toString());
+        }
+        return createTableFromMetadataAndFields(metadata, new ArrayList<>(fields.values()));
     }
 
 
