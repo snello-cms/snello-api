@@ -1,10 +1,6 @@
 package io.snello.service;
 
-import io.micronaut.discovery.event.ServiceStartedEvent;
-import io.micronaut.runtime.event.annotation.EventListener;
-import io.micronaut.scheduling.annotation.Async;
 import io.snello.model.*;
-import io.snello.model.events.*;
 import io.snello.repository.JdbcRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,201 +29,6 @@ public class MetadataService {
 
     public MetadataService() {
 
-    }
-
-
-    @EventListener
-    @Async
-    void createOrUpdateDraggable(DraggableCreateUpdateEvent draggableCreateUpdateEvent) {
-        logger.info("new DraggableCreateUpdateEvent " + draggableCreateUpdateEvent.toString());
-        try {
-            draggablesMap().put(draggableCreateUpdateEvent.draggable.uuid, draggableCreateUpdateEvent.draggable);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteDraggable(DraggableDeleteEvent draggableDeleteEvent) {
-        logger.info("new DraggableDeleteEvent " + draggableDeleteEvent.toString());
-        try {
-            for (Draggable draggable : draggablesMap().values()) {
-                if (draggable.uuid.equals(draggableDeleteEvent.uuid)) {
-                    draggablesMap().remove(draggable.uuid);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-    
-    @EventListener
-    @Async
-    void createOrUpdateDroppable(DroppableCreateUpdateEvent droppableCreateUpdateEvent) {
-        logger.info("new DroppableCreateUpdateEvent " + droppableCreateUpdateEvent.toString());
-        try {
-            droppablesMap().put(droppableCreateUpdateEvent.droppable.uuid, droppableCreateUpdateEvent.droppable);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteDroppable(DroppableDeleteEvent droppableDeleteEvent) {
-        logger.info("new DroppableDeleteEvent " + droppableDeleteEvent.toString());
-        try {
-            for (Droppable droppable : droppablesMap().values()) {
-                if (droppable.uuid.equals(droppableDeleteEvent.uuid)) {
-                    droppablesMap().remove(droppable.uuid);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void createOrUpdateSelectQuery(SelectQueryCreateUpdateEvent selectQueryCreateUpdateEvent) {
-        logger.info("new SelectQueryCreateUpdateEvent " + selectQueryCreateUpdateEvent.toString());
-        try {
-            selectqueryMap().put(selectQueryCreateUpdateEvent.selectQuery.query_name, selectQueryCreateUpdateEvent.selectQuery);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteSelectQuery(SelectQueryDeleteEvent selectQueryDeleteEvent) {
-        logger.info("new SelectQueryDeleteEvent " + selectQueryDeleteEvent.toString());
-        try {
-            for (SelectQuery selectQuery : selectqueryMap().values()) {
-                if (selectQuery.uuid.equals(selectQueryDeleteEvent.uuid)) {
-                    selectqueryMap().remove(selectQuery.query_name);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-
-    @EventListener
-    @Async
-    void createOrUpdateMetadata(MetadataCreateUpdateEvent metadataCreateUpdateEvent) {
-        logger.info("new MetadataCreateUpdateEvent " + metadataCreateUpdateEvent.toString());
-        try {
-            metadataMap().put(metadataCreateUpdateEvent.metadata.table_name, metadataCreateUpdateEvent.metadata);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteMetadata(MetadataDeleteEvent metadataDeleteEvent) {
-        logger.info("new MetadataDeleteEvent " + metadataDeleteEvent.toString());
-        try {
-            for (Metadata metadata : metadataMap().values()) {
-                if (metadata.uuid.equals(metadataDeleteEvent.uuid)) {
-                    metadataMap().remove(metadata.table_name);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void createOrUpdateCondition(ConditionCreateUpdateEvent conditionCreateUpdateEvent) {
-        logger.info("new ConditionCreateUpdateEvent " + conditionCreateUpdateEvent.toString());
-        List<Condition> conditions = null;
-        try {
-            if (conditionsMap().containsKey(conditionCreateUpdateEvent.condition.metadata_name)) {
-                conditions = conditionsMap().get(conditionCreateUpdateEvent.condition.metadata_name);
-            } else {
-                conditions = new ArrayList<>();
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        if (!conditions.contains(conditionCreateUpdateEvent.condition)) {
-            conditions.add(conditionCreateUpdateEvent.condition);
-        }
-        try {
-            conditionsMap().put(conditionCreateUpdateEvent.condition.metadata_name, conditions);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteCondition(ConditionDeleteEvent conditionDeleteEvent) {
-        logger.info("new ConditionDeleteEvent " + conditionDeleteEvent.toString());
-        try {
-            for (List<Condition> conditions : conditionsMap().values()) {
-                for (Condition condition : conditions) {
-                    if (condition.uuid.equals(conditionDeleteEvent.uuid)) {
-                        conditions.remove(condition);
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void createOrUpdateFieldDefinition(FieldDefinitionCreateUpdateEvent fieldDefinitionCreateUpdateEvent) {
-        logger.info("new FieldDefinitionCreateUpdateEvent " + fieldDefinitionCreateUpdateEvent.toString());
-        Map<String, FieldDefinition> fieldDefinitions = null;
-        try {
-            if (fielddefinitionsMap().containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name)) {
-                fieldDefinitions = fielddefinitionsMap().get(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name);
-            } else {
-                fieldDefinitions = new HashMap<>();
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-//        if (!fieldDefinitions.containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid)) {
-//            fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
-//        }
-        fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
-        try {
-            fielddefinitionsMap().put(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name, fieldDefinitions);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @EventListener
-    @Async
-    void deleteFieldDefinition(FieldDefinitionDeleteEvent fieldDefinitionDeleteEvent) {
-        logger.info("new FieldDefinitionDeleteEvent " + fieldDefinitionDeleteEvent.toString());
-        try {
-            for (Map<String, FieldDefinition> fieldDefinitions : fielddefinitionsMap().values()) {
-                for (FieldDefinition fieldDefinition : fieldDefinitions.values()) {
-                    if (fieldDefinition.uuid.equals(fieldDefinitionDeleteEvent.uuid)) {
-                        fieldDefinitions.remove(fieldDefinition.uuid);
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
     }
 
     public Metadata byUUid(String uuid) throws Exception {
@@ -379,19 +180,13 @@ public class MetadataService {
         return conditionsMap().get(metadata_name);
     }
 
-    @EventListener
-    @Async
-    public void onLoad(final ServiceStartedEvent event) {
-        logger.info("START METADATA SERVICE AT STARTUP: " + event.toString());
-        try {
-            metadataMap();
-            fielddefinitionsMap();
-            conditionsMap();
-            selectqueryMap();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+    public String initTableKey(String table, String table_key) throws Exception {
+        if (metadataMap().containsKey(table)) {
+            Metadata metadata = metadataMap().get(table);
+            return metadata.table_key;
         }
-        logger.info("END METADATA SERVICE AT STARTUP: " + event.toString());
+        return table_key;
     }
+
 
 }

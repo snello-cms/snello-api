@@ -193,7 +193,7 @@ public class PostgresqlConstants {
 
 
     public static String creationLinksViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('links_view', 'links view rule', 'metadatas', 'links', 'view') ON CONFLICT (name) DO NOTHING;";
-    public static String creationLinksEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('flinks_edit', 'links edit rule', 'metadatas', 'links', 'edit') ON CONFLICT (name) DO NOTHING;";
+    public static String creationLinksEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('links_edit', 'links edit rule', 'metadatas', 'links', 'edit') ON CONFLICT (name) DO NOTHING;";
 
 
     public static String creationMetadatasViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('metadatas_view', 'metadatas metadatas rule', 'metadatas', 'metadatas', 'view') ON CONFLICT (name) DO NOTHING;";

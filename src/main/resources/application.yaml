@@ -38,7 +38,7 @@ micronaut:
         mapping: /files/**
         paths:
           - file:/home/snello/public/files
-      admin:
+      snello-admin:
         enabled: true
         mapping: /snello-admin/**
         paths:

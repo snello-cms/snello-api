@@ -100,7 +100,12 @@ public class ApiController {
     @Put(TABLE_PATH_PARAM + UUID_PATH_PARAM)
     public HttpResponse<?> put(@Body String body, @NotNull String table, @NotNull String uuid) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
+        boolean renewSlug = TableKeyUtils.isSlug(apiService.metadata(table));
         String key = apiService.table_key(table);
+        if (renewSlug) {
+            logger.info("renew slug");
+            TableKeyUtils.generateUUid(map, apiService.metadata(table), apiService);
+        }
         map = apiService.merge(table, map, uuid, key);
         return ok(map);
     }

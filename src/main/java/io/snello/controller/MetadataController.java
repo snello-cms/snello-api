@@ -89,6 +89,7 @@ public class MetadataController {
     @Get(UUID_PATH_PARAM_TRUNCATE)
     public HttpResponse<?> truncateTable(@NotNull String uuid) throws Exception {
         apiService.truncateTable(uuid);
+
         return ok(apiService.fetch(null, table, uuid, UUID));
     }
 
@@ -125,7 +126,8 @@ public class MetadataController {
     @Delete(UUID_PATH_PARAM)
     public HttpResponse<?> delete(HttpRequest<?> request, @NotNull String uuid) throws Exception {
         boolean result = apiService.delete(table, uuid, UUID);
-        if (result) {
+        boolean deleteFieldDefinitionsByMetadataUuid = apiService.deleteFieldDefinitionsByMetadataUuid(uuid);
+        if (result && deleteFieldDefinitionsByMetadataUuid) {
             eventPublisher.publishEvent(new MetadataDeleteEvent(uuid));
             return ok();
         }

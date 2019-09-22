@@ -11,6 +11,14 @@ public class TableKeyUtils {
 
     static Logger logger = LoggerFactory.getLogger(TableKeyUtils.class);
 
+    public static boolean isSlug(Metadata metadata) {
+        switch (metadata.table_key_type) {
+            case "slug":
+                return true;
+            default:
+                return false;
+        }
+    }
 
     public static void generateUUid(Map<String, Object> map, Metadata metadata, ApiService apiService) throws Exception {
         switch (metadata.table_key_type) {

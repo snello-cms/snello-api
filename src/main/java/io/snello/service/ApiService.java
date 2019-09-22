@@ -1,6 +1,7 @@
 package io.snello.service;
 
 import io.micronaut.http.HttpParameters;
+import io.snello.management.AppConstants;
 import io.snello.model.Condition;
 import io.snello.model.Metadata;
 import io.snello.model.SelectQuery;
@@ -9,11 +10,11 @@ import io.snello.util.ParamUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.snello.repository.mysql.MysqlConstants.DROP_TABLE;
-import static io.snello.repository.mysql.MysqlConstants.TRUNCATE_TABLE;
+import static io.snello.repository.mysql.MysqlConstants.*;
 
 @Singleton
 public class ApiService {
@@ -100,13 +101,13 @@ public class ApiService {
 
     public Map<String, Object> create(String table, Map<String, Object> map, String table_key) throws Exception {
         table = initTable(table);
-        table_key = initTableKey(table, table_key);
+        table_key = metadataService.initTableKey(table, table_key);
         return jdbcRepository.create(table, table_key, map);
     }
 
     public Map<String, Object> merge(String table, Map<String, Object> map, String key, String table_key) throws Exception {
         table = initTable(table);
-        table_key = initTableKey(table, table_key);
+        table_key = metadataService.initTableKey(table, table_key);
         return jdbcRepository.update(table, table_key, map, key);
     }
 
@@ -163,15 +164,6 @@ public class ApiService {
     }
 
 
-    public String initTableKey(String table, String table_key) throws Exception {
-        if (metadataService.metadataMap().containsKey(table)) {
-            Metadata metadata = metadataService.metadataMap().get(table);
-            return metadata.table_key;
-        }
-        return table_key;
-    }
-
-
     public Map<String, Object> fetch(HttpParameters httpParameters, String table, String uuid, String table_key) throws Exception {
         String select_fields = ParamUtils.select_fields(httpParameters);
         if (metadataService.metadataMap().containsKey(table)) {
@@ -193,6 +185,12 @@ public class ApiService {
             }
         }
         return jdbcRepository.delete(table, table_key, uuid);
+    }
+
+    public boolean deleteFieldDefinitionsByMetadataUuid(String uuid) throws Exception {
+        List<Object> uuidList = new ArrayList<>();
+        uuidList.add(uuid);
+        return jdbcRepository.query(DELETE_FROM_FD, uuidList);
     }
 
     public void batch(String[] queries) throws Exception {
