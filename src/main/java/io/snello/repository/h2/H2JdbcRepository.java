@@ -3,7 +3,6 @@ package io.snello.repository.h2;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.discovery.event.ServiceStartedEvent;
-import io.micronaut.http.HttpParameters;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
 import io.micronaut.security.authentication.UserDetails;
@@ -106,7 +105,7 @@ public class H2JdbcRepository implements JdbcRepository {
         };
     }
 
-    public long count(String table, String alias_condition, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer select = new StringBuffer();
         List<Object> in = new LinkedList<>();
@@ -137,7 +136,7 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
 
-    public long count(String select_query, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String select_query, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         return 0;
     }
 
@@ -171,7 +170,7 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
 
-    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer();
@@ -228,7 +227,7 @@ public class H2JdbcRepository implements JdbcRepository {
 
     }
 
-    public List<Map<String, Object>> list(String query, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String query, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer(query);
@@ -352,7 +351,7 @@ public class H2JdbcRepository implements JdbcRepository {
             for (String query : queries) {
                 logger.info("BATCH QUERY: " + query);
                 statement.addBatch(query);
-                if(++count % batchSize == 0) {
+                if (++count % batchSize == 0) {
                     statement.executeBatch();
                 }
             }
@@ -465,7 +464,7 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception{
+    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception {
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         if (metadata.table_key_type.equals("autoincrement")) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");

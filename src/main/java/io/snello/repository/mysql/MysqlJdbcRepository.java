@@ -4,7 +4,6 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.discovery.event.ServiceStartedEvent;
-import io.micronaut.http.HttpParameters;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
 import io.micronaut.security.authentication.UserDetails;
@@ -110,7 +109,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
         };
     }
 
-    public long count(String table, String alias_condition, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer select = new StringBuffer();
         List<Object> in = new LinkedList<>();
@@ -141,7 +140,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
 
-    public long count(String select_query, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String select_query, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         return 0;
     }
 
@@ -175,7 +174,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
 
-    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer();
@@ -232,7 +231,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
 
     }
 
-    public List<Map<String, Object>> list(String query, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String query, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer(query);

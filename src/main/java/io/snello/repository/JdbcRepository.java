@@ -1,7 +1,6 @@
 package io.snello.repository;
 
 import io.micronaut.discovery.event.ServiceStartedEvent;
-import io.micronaut.http.HttpParameters;
 import io.micronaut.security.authentication.UserDetails;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
@@ -17,9 +16,9 @@ public interface JdbcRepository {
 
     String[] creationQueries();
 
-    long count(String table, String alias_condition, HttpParameters httpParameters, List<Condition> conditions) throws Exception;
+    long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception;
 
-    long count(String select_query, HttpParameters httpParameters, List<Condition> conditions) throws Exception;
+    long count(String select_query, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception;
 
     long count(String select_query) throws Exception;
 
@@ -30,9 +29,9 @@ public interface JdbcRepository {
 
     List<Map<String, Object>> list(String query) throws Exception;
 
-    List<Map<String, Object>> list(String query, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception;
+    List<Map<String, Object>> list(String query, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception;
 
-    List<Map<String, Object>> list(String table, String select_fields, String alias_condition, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception;
+    List<Map<String, Object>> list(String table, String select_fields, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception;
 
     Map<String, Object> create(String table, String table_key, Map<String, Object> map) throws Exception;
 

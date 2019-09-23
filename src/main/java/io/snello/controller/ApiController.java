@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import java.util.Map;
+import java.util.*;
 
 import static io.micronaut.http.HttpResponse.ok;
 import static io.micronaut.http.HttpResponse.serverError;
@@ -84,7 +84,10 @@ public class ApiController {
                 return ok(apiService.list(pars[0], request.getParameters(), sort, Integer.valueOf(limit), Integer.valueOf(start)));
             }
         } else {
-            return ok(apiService.list(path, request.getParameters(), sort, Integer.valueOf(limit), Integer.valueOf(start)));
+            Map<String, List<String>> parametersMap = request.getParameters().asMap();
+            parametersMap.put(table + "_id", Arrays.asList(new String[]{uuid}));
+            parametersMap.put("join_table", Arrays.asList(new String[]{table + "_" + path}));
+            return ok(apiService.list(path, parametersMap, sort, Integer.valueOf(limit), Integer.valueOf(start)));
         }
     }
 

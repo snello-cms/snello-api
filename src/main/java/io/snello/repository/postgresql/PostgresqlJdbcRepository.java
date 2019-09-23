@@ -3,7 +3,6 @@ package io.snello.repository.postgresql;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.ApplicationEventPublisher;
 import io.micronaut.discovery.event.ServiceStartedEvent;
-import io.micronaut.http.HttpParameters;
 import io.micronaut.runtime.event.annotation.EventListener;
 import io.micronaut.scheduling.annotation.Async;
 import io.micronaut.security.authentication.UserDetails;
@@ -107,7 +106,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         };
     }
 
-    public long count(String table, String alias_condition, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer select = new StringBuffer();
         List<Object> in = new LinkedList<>();
@@ -138,7 +137,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     }
 
 
-    public long count(String select_query, HttpParameters httpParameters, List<Condition> conditions) throws Exception {
+    public long count(String select_query, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
         return 0;
     }
 
@@ -172,7 +171,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     }
 
 
-    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String table, String select_fields, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer();
@@ -229,7 +228,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
 
     }
 
-    public List<Map<String, Object>> list(String query, HttpParameters httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String query, Map<String, List<String>> httpParameters, List<Condition> conditions, String sort, int limit, int start) throws Exception {
         StringBuffer where = new StringBuffer();
         StringBuffer order_limit = new StringBuffer();
         StringBuffer select = new StringBuffer(query);
@@ -336,7 +335,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
 
     public boolean delete(String table, String table_key, String uuid) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
-            logger.info("DELETE QUERY: " + DELETE_FROM  + table + _WHERE_ + table_key + " = ? ");
+            logger.info("DELETE QUERY: " + DELETE_FROM + table + _WHERE_ + table_key + " = ? ");
             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_FROM + PostgresqlSqlUtils.escape(table) + _WHERE_
                     + PostgresqlSqlUtils.escape(table_key) + " = ?");
             preparedStatement.setObject(1, uuid);

@@ -1,7 +1,6 @@
 package io.snello.service;
 
 import io.micronaut.http.HttpParameters;
-import io.snello.management.AppConstants;
 import io.snello.model.Condition;
 import io.snello.model.Metadata;
 import io.snello.model.SelectQuery;
@@ -54,7 +53,7 @@ public class ApiService {
                 alias_condition = metadata.alias_condition;
             }
         }
-        return jdbcRepository.count(table, alias_condition, httpParameters, conditions);
+        return jdbcRepository.count(table, alias_condition, httpParameters.asMap(), conditions);
     }
 
     public boolean exist(String table, String table_key, Object uuid) throws Exception {
@@ -62,7 +61,9 @@ public class ApiService {
     }
 
 
-    public List<Map<String, Object>> list(String table, HttpParameters httpParameters, String sort, int limit, int start) throws Exception {
+    public List<Map<String, Object>> list(String table, Map<String, List<String>> httpParameters, String sort, int limit,
+                                          int start) throws Exception {
+        // select fields:
         String select_fields = ParamUtils.select_fields(httpParameters);
         String alias_condition = null;
         List<Condition> conditions = null;
@@ -97,6 +98,11 @@ public class ApiService {
 
         }
         return jdbcRepository.list(table, select_fields, alias_condition, httpParameters, conditions, sort, limit, start);
+    }
+
+    public List<Map<String, Object>> list(String table, HttpParameters httpParameters, String sort, int limit,
+                                          int start) throws Exception {
+        return list(table, httpParameters.asMap(), sort, limit, start);
     }
 
     public Map<String, Object> create(String table, Map<String, Object> map, String table_key) throws Exception {
@@ -165,7 +171,7 @@ public class ApiService {
 
 
     public Map<String, Object> fetch(HttpParameters httpParameters, String table, String uuid, String table_key) throws Exception {
-        String select_fields = ParamUtils.select_fields(httpParameters);
+        String select_fields = ParamUtils.select_fields(httpParameters.asMap());
         if (metadataService.metadataMap().containsKey(table)) {
             Metadata metadata = metadataService.metadataMap().get(table);
             if (metadata.alias_table != null && !metadata.alias_table.trim().isEmpty()) {

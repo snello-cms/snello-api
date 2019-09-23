@@ -10,76 +10,76 @@ import java.util.Map;
 
 public class ParamUtils {
 
-  public  static final String AND = " AND ";
-  public  static final String _AND_ = "&&";
-  public  static final String _OR_ = "||";
-  public  static final String EQU = "=";
+    public static final String AND = " AND ";
+    public static final String _AND_ = "&&";
+    public static final String _OR_ = "||";
+    public static final String EQU = "=";
 
-  public  static final String NE = "_ne";
-  public  static final String _NE = "!=";
+    public static final String NE = "_ne";
+    public static final String _NE = "!=";
 
-  public  static final String LT = "_lt";
-  public  static final String _LT = "<";
+    public static final String LT = "_lt";
+    public static final String _LT = "<";
 
-  public  static final String GT = "_gt";
-  public  static final String _GT = ">";
+    public static final String GT = "_gt";
+    public static final String _GT = ">";
 
-  public  static final String LTE = "_lte";
-  public  static final String _LTE = "<=";
+    public static final String LTE = "_lte";
+    public static final String _LTE = "<=";
 
-  public  static final String GTE = "_gte";
-  public  static final String _GTE = ">=";
+    public static final String GTE = "_gte";
+    public static final String _GTE = ">=";
 
-  public  static final String CNT = "_contains";
-  public  static final String LIKE = "_like";
-  public  static final String _CNT = " LIKE ";
-
-
-  public  static final String CONTSS = "_containss";
-  public  static final String _LIKE = "%";
-
-  public  static final String RLIKE = "_rlike";
-  public  static final String LLIKE = "_llike";
-
-  public  static final String NCNT = "_ncontains";
-  public  static final String _NCNT = " NOT LIKE ";
-
-  public  static final String IN = "_in";
-  public  static final String _IN = " IN (?) ";
-
-  public  static final String NN = "_nn";
-  public  static final String _NN = " NOT NULL ";
-
-  public  static final String INN = "_inn";
-  public  static final String _INN = " IS NOT NULL ";
-
-  public  static final String NIE = "_nie";
-  public  static final String _NIE_ = " <> '' ";
-
-  public  static final String IE = "_ie";
-  public  static final String _IE = " = '' ";
+    public static final String CNT = "_contains";
+    public static final String LIKE = "_like";
+    public static final String _CNT = " LIKE ";
 
 
-  public  static final String SPACE = " ";
+    public static final String CONTSS = "_containss";
+    public static final String _LIKE = "%";
+
+    public static final String RLIKE = "_rlike";
+    public static final String LLIKE = "_llike";
+
+    public static final String NCNT = "_ncontains";
+    public static final String _NCNT = " NOT LIKE ";
+
+    public static final String IN = "_in";
+    public static final String _IN = " IN (?) ";
+
+    public static final String NN = "_nn";
+    public static final String _NN = " NOT NULL ";
+
+    public static final String INN = "_inn";
+    public static final String _INN = " IS NOT NULL ";
+
+    public static final String NIE = "_nie";
+    public static final String _NIE_ = " <> '' ";
+
+    public static final String IE = "_ie";
+    public static final String _IE = " = '' ";
+
+
+    public static final String SPACE = " ";
 
     // _limit=2 _start=1 _sort=page_title:desc
-  public  static final String _LIMIT = "_limit";
-  public  static final String _START = "_start";
-  public  static final String _SORT = "_sort";
-  public  static final String _SELECT_FIELDS = "select_fields";
+    public static final String _LIMIT = "_limit";
+    public static final String _START = "_start";
+    public static final String _SORT = "_sort";
+    public static final String _SELECT_FIELDS = "select_fields";
 
 
-    public static String select_fields(HttpParameters httpParameters) {
+    public static String select_fields(Map<String, List<String>> httpParameters) {
         if (httpParameters == null || httpParameters.isEmpty()) {
             return null;
         }
-        if (httpParameters.contains("select_fields") && httpParameters.get("select_fields") != null && !httpParameters.get("select_fields").trim().isEmpty()) {
-            return httpParameters.get("select_fields");
+        if (httpParameters.containsKey("select_fields") && httpParameters.get("select_fields") != null && !httpParameters.get("select_fields").isEmpty()) {
+            return httpParameters.get("select_fields").get(0);
         }
         return null;
     }
 
-    public static void where(HttpParameters httpParameters, StringBuffer where, List<Object> in) {
+    public static void where(Map<String, List<String>> httpParameters, StringBuffer where, List<Object> in) {
         if (httpParameters == null || httpParameters.isEmpty()) {
             return;
         }
@@ -93,7 +93,7 @@ public class ParamUtils {
             _contains: Contains
             _containss: Contains case sensitive
          */
-        for (Map.Entry<String, List<String>> key_value : httpParameters) {
+        for (Map.Entry<String, List<String>> key_value : httpParameters.entrySet()) {
             String key = key_value.getKey();
             String value;
             if (key.equals(_LIMIT) || key.equals(_START) || key.equals(_SORT) || key.equals(_SELECT_FIELDS)) {

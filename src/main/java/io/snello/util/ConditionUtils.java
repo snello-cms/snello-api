@@ -1,11 +1,11 @@
 package io.snello.util;
 
-import io.micronaut.http.HttpParameters;
 import io.snello.model.Condition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.snello.util.ParamUtils.*;
 
@@ -14,7 +14,7 @@ public class ConditionUtils {
     static Logger logger = LoggerFactory.getLogger(ConditionUtils.class);
 
 
-    public static void where(HttpParameters httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) {
+    public static void where(Map<String, List<String>> httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) {
         if (httpParameters == null || httpParameters.isEmpty()) {
             logger.info("no parameters");
             return;
@@ -39,10 +39,10 @@ public class ConditionUtils {
                 String value = null;
                 if (cond.endsWith(NN)) {
                     String keySimple1 = cond.substring(0, cond.length() - NN.length());
-                    if (!httpParameters.asMap().containsKey(keySimple1)) {
+                    if (!httpParameters.containsKey(keySimple1)) {
                         continue;
                     } else {
-                        value = httpParameters.get(keySimple1);
+                        value = httpParameters.get(keySimple1).get(0);
                         if (value == null) {
                             continue;
                         }
@@ -50,10 +50,10 @@ public class ConditionUtils {
                 }
                 if (cond.endsWith(NIE)) {
                     String keySimple2 = cond.substring(0, cond.length() - NIE.length());
-                    if (!httpParameters.asMap().containsKey(keySimple2)) {
+                    if (!httpParameters.containsKey(keySimple2)) {
                         continue;
                     } else {
-                        value = httpParameters.get(keySimple2);
+                        value = httpParameters.get(keySimple2).get(0);
                         if (value == null || value.trim().isEmpty()) {
                             continue;
                         }
@@ -61,10 +61,10 @@ public class ConditionUtils {
                 }
                 if (cond.contains(GT)) {
                     String keySimple = cond.substring(0, cond.length() - GT.length());
-                    if (!httpParameters.asMap().containsKey(keySimple)) {
+                    if (!httpParameters.containsKey(keySimple)) {
                         continue;
                     } else {
-                        value = httpParameters.get(keySimple);
+                        value = httpParameters.get(keySimple).get(0);
                         if (value == null || Integer.valueOf(value) < 1) {
                             continue;
                         }
@@ -73,7 +73,7 @@ public class ConditionUtils {
                 if (value != null) {
                     String[] params = condition.query_params.split(";");
                     for (String param : params) {
-                        Object obj = httpParameters.asMap().get(param);
+                        Object obj = httpParameters.get(param).get(0);
                         in.add(obj);
                     }
                     if (where.length() > 0) {
@@ -89,7 +89,7 @@ public class ConditionUtils {
 //                if (result) {
 //                    String[] params = condition.query_params.split(";");
 //                    for (String param : params) {
-//                        Object obj = httpParameters.asMap().get(param);
+//                        Object obj = httpParameters.get(param);
 //                        in.add(obj);
 //                    }
 //                    if (where.length() > 0) {
