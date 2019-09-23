@@ -231,4 +231,9 @@ public class MysqlConstants {
 
     public static String creationAdminUserRole = "INSERT IGNORE INTO `userroles` (`username`, `role`) VALUES ('admin', 'admin');";
 
+    public static String joinTableQuery = "CREATE TABLE IF NOT EXISTS `%1$s` ( " +
+            "`%2$s` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, " +
+            "%3$s varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL, " +
+            "id int NOT NULL AUTO_INCREMENT, PRIMARY KEY (id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
 }

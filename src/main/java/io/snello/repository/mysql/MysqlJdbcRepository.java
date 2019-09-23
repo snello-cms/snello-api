@@ -446,6 +446,11 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
+    public String getJoinTableQuery() {
+        return joinTableQuery;
+    }
+
+    @Override
     public String escape(String name) {
         return MysqlSqlUtils.escape(name);
     }
@@ -456,7 +461,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) {
+    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries) {
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         if (metadata.table_key_type.equals("autoincrement")) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");
@@ -468,6 +473,10 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 sb.append(",").append(fieldDefinition.sql_definition);
             } else {
                 sb.append(",").append(fieldDefinition2Sql(fieldDefinition));
+            }
+            if ("multijoin".equals(fieldDefinition.type)) {
+                joiQueries.add(String.format(getJoinTableQuery(), metadata.table_key + "_" + fieldDefinition.join_table_name,
+                        metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
             }
         }
         sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(")  ENGINE=INNODB;");

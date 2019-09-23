@@ -225,4 +225,10 @@ public class PostgresqlConstants {
 
     public static String creationAdminUserRole = "INSERT INTO userroles (username, role) VALUES ('admin', 'admin') ON CONFLICT (username, role) DO NOTHING;";
 
+
+    public static String joinTableQuery = "CREATE TABLE IF NOT EXISTS %1$s ( " +
+            "%2$s varchar(255) NOT NULL, " +
+            "%3$s varchar(255) NOT NULL, " +
+            "id SERIAL PRIMARY KEY )";
+
 }

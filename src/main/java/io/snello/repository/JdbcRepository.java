@@ -55,10 +55,11 @@ public interface JdbcRepository {
 
     String getUserRoleQuery();
 
+    String getJoinTableQuery();
 
     String escape(String name);
 
     String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception;
 
-    String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception;
+    String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries) throws Exception;
 }

@@ -84,12 +84,18 @@ public class ApiController {
                 return ok(apiService.list(pars[0], request.getParameters(), sort, Integer.valueOf(limit), Integer.valueOf(start)));
             }
         } else {
-            Map<String, List<String>> parametersMap = request.getParameters().asMap();
+            Map<String, List<String>> parametersMap = null;
+            if (request.getParameters() != null) {
+                parametersMap = request.getParameters().asMap();
+            } else {
+                parametersMap = new HashMap<>();
+            }
             parametersMap.put(table + "_id", Arrays.asList(new String[]{uuid}));
             parametersMap.put("join_table", Arrays.asList(new String[]{table + "_" + path}));
             return ok(apiService.list(path, parametersMap, sort, Integer.valueOf(limit), Integer.valueOf(start)));
         }
     }
+
 
     @Post(TABLE_PATH_PARAM)
     public HttpResponse<?> post(@Body String body, @NotNull String table) throws Exception {

@@ -93,7 +93,7 @@ public class H2JdbcRepository implements JdbcRepository {
 
 RUN IN DEBUG MODE
 docker-compose -f docker/docker-compose-mysq.yml up
-java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -jar target/snello-api-0.1.ja
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -jar target/snello-api-0.1.jar
 ng serve
 
 first login:

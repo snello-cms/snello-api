@@ -49,8 +49,12 @@ public class MetadataService {
             if (fieldDefinitions == null || fieldDefinitions.size() == 0) {
                 throw new Exception("selectQuery without fields: " + metadata.toString());
             }
-            String sqlQuery = jdbcRepository.createTableSql(metadata, fieldDefinitions);
+            List<String> relatedTables = new ArrayList<>();
+            String sqlQuery = jdbcRepository.createTableSql(metadata, fieldDefinitions, relatedTables);
             jdbcRepository.executeQuery(sqlQuery);
+            for (String qq : relatedTables) {
+                jdbcRepository.executeQuery(qq);
+            }
         } else {
             logger.info("creation query foud in metedata object: " + metadata.creation_query);
             jdbcRepository.executeQuery(metadata.creation_query);

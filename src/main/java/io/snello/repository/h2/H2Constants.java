@@ -229,4 +229,5 @@ public class H2Constants {
 
     public static String creationAdminUserRole = "INSERT IGNORE INTO userroles (username, role) VALUES ('admin', 'admin');";
 
+    public static String joinTableQuery = "CREATE TABLE IF NOT EXISTS %1$s ( %2$s varchar_ignorecase(100), %3$s varchar_ignorecase(100), id IDENTITY NOT NULL PRIMARY KEY )";
 }

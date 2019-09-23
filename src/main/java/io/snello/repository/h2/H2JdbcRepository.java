@@ -112,8 +112,17 @@ public class H2JdbcRepository implements JdbcRepository {
         select.append(COUNT_QUERY);
         if (alias_condition != null)
             where.append(alias_condition);
-        ParamUtils.where(httpParameters, where, in);
-        ConditionUtils.where(httpParameters, conditions, where, in);
+
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
+            ParamUtils.where(httpParameters, where, in);
+        }
+
         try (
                 Connection connection = dataSource.getConnection()) {
 
@@ -196,8 +205,20 @@ public class H2JdbcRepository implements JdbcRepository {
             }
         }
 
-        ParamUtils.where(httpParameters, where, in);
-        ConditionUtils.where(httpParameters, conditions, where, in);
+//        ParamUtils.where(httpParameters, where, in);
+//        ConditionUtils.where(httpParameters, conditions, where, in);
+
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
+            ParamUtils.where(httpParameters, where, in);
+        }
+
+
         if (start == 0 && limit == 0) {
             logger.info("no limits");
         } else {
@@ -217,7 +238,6 @@ public class H2JdbcRepository implements JdbcRepository {
             }
         }
         try (Connection connection = dataSource.getConnection()) {
-
             if (where.length() > 0) {
                 where = new StringBuffer(_WHERE_).append(where);
             }
@@ -454,6 +474,11 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     @Override
+    public String getJoinTableQuery() {
+        return joinTableQuery;
+    }
+
+    @Override
     public String escape(String name) {
         return H2SqlUtils.escape(name);
     }
@@ -464,7 +489,7 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields) throws Exception {
+    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries) throws Exception {
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         if (metadata.table_key_type.equals("autoincrement")) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");
@@ -476,6 +501,10 @@ public class H2JdbcRepository implements JdbcRepository {
                 sb.append(",").append(fieldDefinition.sql_definition);
             } else {
                 sb.append(",").append(fieldDefinition2Sql(fieldDefinition));
+            }
+            if ("multijoin".equals(fieldDefinition.type)) {
+                joiQueries.add(String.format(getJoinTableQuery(), metadata.table_key + "_" + fieldDefinition.join_table_name,
+                        metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
             }
         }
         sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(") ;");

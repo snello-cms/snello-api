@@ -53,7 +53,7 @@ public class ApiService {
                 alias_condition = metadata.alias_condition;
             }
         }
-        return jdbcRepository.count(table, alias_condition, httpParameters.asMap(), conditions);
+        return jdbcRepository.count(table, alias_condition, getMap(httpParameters), conditions);
     }
 
     public boolean exist(String table, String table_key, Object uuid) throws Exception {
@@ -102,7 +102,7 @@ public class ApiService {
 
     public List<Map<String, Object>> list(String table, HttpParameters httpParameters, String sort, int limit,
                                           int start) throws Exception {
-        return list(table, httpParameters.asMap(), sort, limit, start);
+        return list(table, getMap(httpParameters), sort, limit, start);
     }
 
     public Map<String, Object> create(String table, Map<String, Object> map, String table_key) throws Exception {
@@ -169,9 +169,16 @@ public class ApiService {
         return table;
     }
 
+    private Map<String, List<String>> getMap(HttpParameters httpParameters) {
+        if (httpParameters != null) {
+            return httpParameters.asMap();
+        }
+        return null;
+    }
+
 
     public Map<String, Object> fetch(HttpParameters httpParameters, String table, String uuid, String table_key) throws Exception {
-        String select_fields = ParamUtils.select_fields(httpParameters.asMap());
+        String select_fields = ParamUtils.select_fields(getMap(httpParameters));
         if (metadataService.metadataMap().containsKey(table)) {
             Metadata metadata = metadataService.metadataMap().get(table);
             if (metadata.alias_table != null && !metadata.alias_table.trim().isEmpty()) {
