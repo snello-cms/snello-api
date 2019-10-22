@@ -33,6 +33,10 @@ public class ApiService {
         return metadata;
     }
 
+    public String slugField(String metadata_name) throws Exception {
+        return metadataService.metadataMap().get(metadata_name).table_key_addition;
+    }
+
 
     public String table_key(String metadata_name) throws Exception {
         Metadata metadata = metadataService.metadataMap().get(metadata_name);

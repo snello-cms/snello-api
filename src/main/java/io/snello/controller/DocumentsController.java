@@ -69,6 +69,15 @@ public class DocumentsController {
 
     }
 
+    @Get(UUID_PATH_PARAM + DOWNLOAD_PATH+ "/{name}")
+    public StreamedFile downloadWithName(@NotNull String uuid, @NotNull String name) throws Exception {
+        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        String path = (String) map.get(DOCUMENT_PATH);
+        String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
+        return documentsService.streamingOutput(path, mimetype);
+
+    }
+
 
     @Post(consumes = MediaType.MULTIPART_FORM_DATA)
     public HttpResponse<?> post(CompletedFileUpload file,

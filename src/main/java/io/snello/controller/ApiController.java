@@ -112,8 +112,16 @@ public class ApiController {
         boolean renewSlug = TableKeyUtils.isSlug(apiService.metadata(table));
         String key = apiService.table_key(table);
         if (renewSlug) {
-            logger.info("renew slug");
-            TableKeyUtils.generateUUid(map, apiService.metadata(table), apiService);
+            String fieldSluggable = apiService.slugField(table);
+            String toSlugValue = (String) map.get(fieldSluggable);
+            String slugged = TableKeyUtils.createSlug(toSlugValue);
+            logger.info("toSlugValue: " + toSlugValue + ", old slug: " + uuid);
+            if (!uuid.equals(slugged)) {
+                logger.info("renew slug");
+                TableKeyUtils.generateUUid(map, apiService.metadata(table), apiService);
+            } else {
+                logger.info(" slug is the same!!");
+            }
         }
         map = apiService.merge(table, map, uuid, key);
         return ok(map);
