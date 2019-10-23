@@ -112,3 +112,22 @@ mvn compile exec:java
 docker-compose -f docker-compose-mysql.yml up
 mvn test
 ```
+
+
+** SNELLO MULTIJOIN **
+- quando salvo il metadato, devo generare la tabella di join e le conditions collegate
+- quando faccio una insert/update devo inserire i valori nella tabella di join
+
+esempio  con due tabelle:
+classi: uuid, name, description
+studenti uuid, name, classi (multijoin)
+
+la condition per leggere: http://localhost:8080/api/studenti/dasdasd/classi
+{
+metadata_uuid: "be79be1b-b23a-4a15-b970-bf3d7a4fc734"
+metadata_name: "classi", 
+condition: "studenti_id_nn && join_table_nn"
+metadata_name: "classi"
+query_params: "studenti_id"
+sub_query: "uuid in (select classi_id from studenti_classi where studenti_id = ?)"
+}

@@ -1,7 +1,10 @@
 package io.snello.service;
 
+import io.micronaut.context.event.ApplicationEventPublisher;
 import io.snello.model.*;
+import io.snello.model.events.ConditionCreateUpdateEvent;
 import io.snello.repository.JdbcRepository;
+import io.snello.util.ConditionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,9 @@ public class MetadataService {
     Map<String, List<Condition>> conditionsMap;
     Map<String, Draggable> draggablesMap;
     Map<String, Droppable> droppablesMap;
+
+    @Inject
+    ApplicationEventPublisher eventPublisher;
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -50,10 +56,15 @@ public class MetadataService {
                 throw new Exception("selectQuery without fields: " + metadata.toString());
             }
             List<String> relatedTables = new ArrayList<>();
-            String sqlQuery = jdbcRepository.createTableSql(metadata, fieldDefinitions, relatedTables);
+            List<Condition> conditions = new ArrayList<>();
+            String sqlQuery = jdbcRepository.createTableSql(metadata, fieldDefinitions, relatedTables, conditions);
             jdbcRepository.executeQuery(sqlQuery);
             for (String qq : relatedTables) {
                 jdbcRepository.executeQuery(qq);
+            }
+            for (Condition cc : conditions) {
+                jdbcRepository.create(CONDITIONS, UUID, cc.toMap());
+                eventPublisher.publishEvent(new ConditionCreateUpdateEvent(cc.toMap()));
             }
         } else {
             logger.info("creation query foud in metedata object: " + metadata.creation_query);

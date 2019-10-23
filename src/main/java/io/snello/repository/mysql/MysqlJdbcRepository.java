@@ -200,8 +200,11 @@ public class MysqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        ParamUtils.where(httpParameters, where, in);
+
         ConditionUtils.where(httpParameters, conditions, where, in);
+        if (conditions == null || conditions.size() == 0) {
+            ParamUtils.where(httpParameters, where, in);
+        }
         if (start == 0 && limit == 0) {
             logger.info("no limits");
         } else {
@@ -461,7 +464,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries) {
+    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) {
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         if (metadata.table_key_type.equals("autoincrement")) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");
@@ -475,8 +478,18 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 sb.append(",").append(fieldDefinition2Sql(fieldDefinition));
             }
             if ("multijoin".equals(fieldDefinition.type)) {
-                joiQueries.add(String.format(getJoinTableQuery(), metadata.table_key + "_" + fieldDefinition.join_table_name,
+                String join_table_name = metadata.table_name + "_" + fieldDefinition.join_table_name;
+                String table_id = metadata.table_name + "_id";
+                String join_table_id = fieldDefinition.join_table_name + "_id";
+                joiQueries.add(String.format(getJoinTableQuery(), metadata.table_name + "_" + fieldDefinition.join_table_name,
                         metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
+                Condition condition = new Condition();
+                condition.metadata_name = fieldDefinition.join_table_name;
+                condition.metadata_uuid = ""; //?? dove lo dovrei prendere??
+                condition.condition = metadata.table_name + "_id_nn && join_table_nn";
+                condition.query_params = metadata.table_name + "_id";
+                condition.sub_query = fieldDefinition.join_table_key + " in (select " + join_table_id + " from " + join_table_name + " where " + table_id + " = ?)";
+                conditions.add(condition);
             }
         }
         sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(")  ENGINE=INNODB;");

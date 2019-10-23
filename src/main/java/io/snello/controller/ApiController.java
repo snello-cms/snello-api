@@ -3,6 +3,8 @@ package io.snello.controller;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
+import io.snello.model.FieldDefinition;
+import io.snello.model.Metadata;
 import io.snello.service.ApiService;
 import io.snello.util.TableKeyUtils;
 import io.snello.util.JsonUtils;
@@ -100,8 +102,27 @@ public class ApiController {
     @Post(TABLE_PATH_PARAM)
     public HttpResponse<?> post(@Body String body, @NotNull String table) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
-        String key = apiService.table_key(table);
-        TableKeyUtils.generateUUid(map, apiService.metadata(table), apiService);
+        Metadata metadata = apiService.metadata(table);
+        String key = metadata.table_key;
+        TableKeyUtils.generateUUid(map, metadata, apiService);
+        for (FieldDefinition fd : metadata.fields) {
+            if ("multijoin".equals(fd.type)) {
+                if (map.containsKey(fd.name) && map.get(fd.name) != null) {
+                    String join_table_uuids_value = (String) map.get(fd.name);
+                    String[] join_table_uuids = join_table_uuids_value.split(",|;");
+                    for (String ss : join_table_uuids) {
+                        String join_table_name = metadata.table_name + "_" + fd.join_table_name;
+                        String table_id = metadata.table_name + "_id";
+                        String join_table_id = fd.join_table_name + "_id";
+                        Map<String, Object> join_map = new HashMap<>();
+                        join_map.put(table_id, map.get(metadata.table_key));
+                        join_map.put(join_table_id, ss.trim());
+                        apiService.create(join_table_name, map, key);
+                    }
+                }
+
+            }
+        }
         map = apiService.create(table, map, key);
         return ok(map);
     }

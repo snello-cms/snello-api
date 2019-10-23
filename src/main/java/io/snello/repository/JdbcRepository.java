@@ -6,6 +6,7 @@ import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -61,5 +62,5 @@ public interface JdbcRepository {
 
     String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception;
 
-    String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries) throws Exception;
+    String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) throws Exception;
 }

@@ -1,17 +1,32 @@
 package io.snello.util;
 
+import io.micronaut.context.event.ApplicationEventPublisher;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.annotation.Body;
 import io.snello.model.Condition;
+import io.snello.model.events.ConditionCreateUpdateEvent;
+import io.snello.service.ApiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
+import static io.micronaut.http.HttpResponse.ok;
+import static io.snello.management.AppConstants.UUID;
 import static io.snello.util.ParamUtils.*;
 
 public class ConditionUtils {
 
     static Logger logger = LoggerFactory.getLogger(ConditionUtils.class);
+
+
+    public static Map<String, Object> createCondition(Map<String, Object> map, ApiService apiService, String table, ApplicationEventPublisher eventPublisher) throws Exception {
+        map.put(UUID, java.util.UUID.randomUUID().toString());
+        map = apiService.create(table, map, UUID);
+        eventPublisher.publishEvent(new ConditionCreateUpdateEvent(map));
+        return map;
+    }
 
 
     public static boolean where(Map<String, List<String>> httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) {

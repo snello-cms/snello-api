@@ -1,5 +1,6 @@
 package io.snello.model;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class Condition {
@@ -50,6 +51,32 @@ public class Condition {
         return condition;
     }
 
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        if (this.uuid != null) {
+            map.put("uuid", this.uuid);
+        }
+        if (this.metadata_uuid != null) {
+            map.put("metadata_uuid", this.metadata_uuid);
+        }
+        if (this.metadata_name != null) {
+            map.put("metadata_name", this.metadata_name);
+        }
+        if (this.separator != null) {
+            map.put("separator", this.separator);
+        }
+        if (this.query_params != null) {
+            map.put("query_params", this.query_params);
+        }
+        if (this.condition != null) {
+            map.put("condition", this.condition);
+        }
+        if (this.sub_query != null) {
+            map.put("sub_query", this.sub_query);
+        }
+        return map;
+    }
 
 
     @Override
