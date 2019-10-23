@@ -113,10 +113,10 @@ docker-compose -f docker-compose-mysql.yml up
 mvn test
 ```
 
+**SNELLO MULTIJOIN UNIDIREZIONALI!!!!!! DA TESTARE BENE!!! BENE!!!!**
 
-** SNELLO MULTIJOIN **
-- quando salvo il metadato, devo generare la tabella di join e le conditions collegate
-- quando faccio una insert/update devo inserire i valori nella tabella di join
+- quando salvo il metadato, devo generare la tabella di join e le conditions collegate (impostato)
+- quando faccio una insert/update devo inserire i valori nella tabella di join (impostato)
 
 esempio  con due tabelle:
 classi: uuid, name, description
@@ -131,3 +131,12 @@ metadata_name: "classi"
 query_params: "studenti_id"
 sub_query: "uuid in (select classi_id from studenti_classi where studenti_id = ?)"
 }
+
+
+**RELEASE 1.0 UFFICIALE (cosa manca!!!)**
+- bug sulle conditions (non c'è nella maschera il campo "separator", verificare che funzionino con nuove migliorie)
+- chiudere il giro del cambio password
+- verificare il funzionamento del multijoin
+- verificare il draggable & droppable
+- verificare che sia chiaro il path ad un file (dalla maschera di upload/view dei files)
+- permettere una sottocartella come punto di partenza nella gestione dei files remoti (su BITBUQUET)
