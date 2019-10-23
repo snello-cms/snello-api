@@ -44,6 +44,7 @@ public class PostgresqlFieldDefinitionUtils {
                         return sb.toString();
                 }
             }
+            case "ace9":
             case "textarea":
             case "tinymce":
                 return escape(fieldDefinition.name) + " text default null";

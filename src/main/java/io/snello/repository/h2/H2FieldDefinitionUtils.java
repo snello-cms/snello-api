@@ -53,6 +53,7 @@ public class H2FieldDefinitionUtils {
                         return sb.toString();
                 }
             }
+            case "ace9":
             case "textarea":
             case "tinymce":
                 return escape(fieldDefinition.name) + " VARCHAR default null";

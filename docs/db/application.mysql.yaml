@@ -64,10 +64,10 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:mysql://${jdbc.host:localhost}:${jdbc.port:3306}/${jdbc.db:snello}?allowPublicKeyRetrieval=TRUE&useSSL=FALSE;
-    username: ${jdbc.username:snello}
-    password: ${jdbc.password:snello}
-    driverClassName: com.mysql.jdbc.Driver
+    url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:snello}?allowPublicKeyRetrieval=TRUE&useSSL=FALSE;
+    username: ${JDBC_USERNAME:snello}
+    password: ${JDBC_PASSWORD:snello}
+    driverClassName: com.mysql.cj.jdbc.Driver
     testOnBorrow: true
     validationQuery: select 1
     removeAbandoned: true

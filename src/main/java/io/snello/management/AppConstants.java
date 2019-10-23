@@ -84,7 +84,7 @@ public class AppConstants {
     public static final String EMAIL_SMTP_USERNAME = "micronaut.email.smtp-username";
     public static final String EMAIL_SMTP_PASSWORD = "micronaut.email.smtp-password";
     public static final String S3_ENDPOINT = "micronaut.s3.endpoint";
-    public static final String JDBC_DB = "jdbc.db";
+    public static final String JDBC_DB = "datasources.default.database";
     public static final String S3_ACCESS_KEY = "micronaut.s3.accesskey";
     public static final String S3_SECRET_KEY = "micronaut.s3.secretkey";
     public static final String S3_REGION = "micronaut.s3.region";
