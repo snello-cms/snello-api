@@ -67,6 +67,7 @@ datasources:
     url:  jdbc:${JDBC_TYPE:postgresql}://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:snello}
     username: ${JDBC_USERNAME:snello}
     password: ${JDBC_PASSWORD:snello}
+    database: ${JDBC_DB:snello}
     driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
     testOnBorrow: true
     validationQuery: select 1

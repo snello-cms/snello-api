@@ -55,7 +55,7 @@ micronaut:
   storage:
     type: fs
   db:
-    type: mysql
+    type: postgresql
 ---
 jackson:
   serialization:
@@ -64,11 +64,11 @@ jackson:
 ---
 datasources:
   default:
-    url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:snello}?allowPublicKeyRetrieval=TRUE&useSSL=FALSE
+    url:  jdbc:${JDBC_TYPE:postgresql}://${JDBC_HOST:localhost}:${JDBC_PORT:5432}/${JDBC_DB:snello}
     username: ${JDBC_USERNAME:snello}
     password: ${JDBC_PASSWORD:snello}
     database: ${JDBC_DB:snello}
-    driverClassName: com.mysql.cj.jdbc.Driver
+    driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
     testOnBorrow: true
     validationQuery: select 1
     removeAbandoned: true

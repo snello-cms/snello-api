@@ -67,6 +67,7 @@ datasources:
     url:  jdbc:${JDBC_TYPE:h2}:${JDBC_PATH:'./db/repository'};MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
     username: ${jdbc.username:sa}
     password: ${jdbc.password:''}
+    database: ${JDBC_DB:''}
     driverClassName: ${JDBC_DRIVER:org.h2.Driver}
     testOnBorrow: true
     validationQuery: select 1

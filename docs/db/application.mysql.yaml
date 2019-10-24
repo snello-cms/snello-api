@@ -67,6 +67,7 @@ datasources:
     url:  jdbc:mysql://${JDBC_HOST:localhost}:${JDBC_PORT:3306}/${JDBC_DB:snello}?allowPublicKeyRetrieval=TRUE&useSSL=FALSE;
     username: ${JDBC_USERNAME:snello}
     password: ${JDBC_PASSWORD:snello}
+    database: ${JDBC_DB:snello}
     driverClassName: com.mysql.cj.jdbc.Driver
     testOnBorrow: true
     validationQuery: select 1
