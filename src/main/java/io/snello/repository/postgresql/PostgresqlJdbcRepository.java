@@ -115,8 +115,15 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         select.append(COUNT_QUERY);
         if (alias_condition != null)
             where.append(alias_condition);
-        ParamUtils.where(httpParameters, where, in);
-        ConditionUtils.where(httpParameters, conditions, where, in);
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
+            ParamUtils.where(httpParameters, where, in);
+        }
         try (
                 Connection connection = dataSource.getConnection()) {
 
@@ -199,8 +206,15 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        ParamUtils.where(httpParameters, where, in);
-        ConditionUtils.where(httpParameters, conditions, where, in);
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
+            ParamUtils.where(httpParameters, where, in);
+        }
         if (start == 0 && limit == 0) {
             logger.info("no limits");
         } else {
@@ -245,8 +259,13 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        ConditionUtils.where(httpParameters, conditions, where, in);
-        if (conditions == null || conditions.size() == 0) {
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
             ParamUtils.where(httpParameters, where, in);
         }
         if (start == 0 && limit == 0) {

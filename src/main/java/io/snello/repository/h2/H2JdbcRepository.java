@@ -264,8 +264,13 @@ public class H2JdbcRepository implements JdbcRepository {
             }
         }
 
-        ConditionUtils.where(httpParameters, conditions, where, in);
-        if (conditions == null || conditions.size() == 0) {
+        boolean withCondition = false;
+        try {
+            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+        if (!withCondition) {
             ParamUtils.where(httpParameters, where, in);
         }
         if (start == 0 && limit == 0) {

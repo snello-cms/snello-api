@@ -77,8 +77,7 @@ public class ConditionUtils {
                             continue;
                         }
                     }
-                }
-                if (cond.endsWith(NIE)) {
+                } else if (cond.endsWith(NIE)) {
                     String keySimple2 = cond.substring(0, cond.length() - NIE.length());
                     if (!httpParameters.containsKey(keySimple2)) {
                         if ("AND".equals(conditionType)) break;
@@ -92,7 +91,7 @@ public class ConditionUtils {
                     }
                 }
                 // PROVARE
-                if (cond.contains(GT)) {
+                else if (cond.contains(GT)) {
                     String keySimple3 = cond.substring(0, cond.length() - GT.length());
                     String value3 = cond.substring(cond.length() - GT.length());
                     if (!httpParameters.containsKey(keySimple3)) {
@@ -107,7 +106,7 @@ public class ConditionUtils {
                     }
                 }
                 // PROVARE
-                if (cond.contains(GTE)) {
+                else if (cond.contains(GTE)) {
                     String keySimple3 = cond.substring(0, cond.length() - GTE.length());
                     String value3 = cond.substring(cond.length() - GTE.length());
                     if (!httpParameters.containsKey(keySimple3)) {
@@ -122,7 +121,7 @@ public class ConditionUtils {
                     }
                 }
                 // PROVARE
-                if (cond.contains(LT)) {
+                else if (cond.contains(LT)) {
                     String keySimple4 = cond.substring(0, cond.length() - LT.length());
                     String value4 = cond.substring(cond.length() - LT.length());
                     if (!httpParameters.containsKey(keySimple4)) {
@@ -137,7 +136,7 @@ public class ConditionUtils {
                     }
                 }
                 // PROVARE
-                if (cond.contains(LTE)) {
+                else if (cond.contains(LTE)) {
                     String keySimple4 = cond.substring(0, cond.length() - LTE.length());
                     String value4 = cond.substring(cond.length() - LTE.length());
                     if (!httpParameters.containsKey(keySimple4)) {
@@ -155,10 +154,12 @@ public class ConditionUtils {
                 if ("OR".equals(conditionType)) {
                     // ==> la condizione VA AGGIUNTA
                     addCondition(where, condition, httpParameters, in);
+                    break;
                 }
                 if ("AND".equals(conditionType) && (i == size)) {
                     // ==> la condizione VA AGGIUNTA
                     addCondition(where, condition, httpParameters, in);
+                    break;
                 }
             }
         }
@@ -167,10 +168,11 @@ public class ConditionUtils {
     }
 
     private static void addCondition(StringBuffer where, Condition condition, Map<String, List<String>> httpParameters, List<Object> in) {
-        if (in.size() > 0) {
-            in.clear();
-        }
-        String[] params = condition.query_params.split(";");
+//        if (in.size() > 0) {
+//            in.clear();
+//        }
+        //PERCHE VUOTARE IN??
+        String[] params = condition.query_params.split(",|;");
         for (String param : params) {
             Object obj = httpParameters.get(param).get(0);
             in.add(obj);

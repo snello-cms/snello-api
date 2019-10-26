@@ -50,7 +50,7 @@ public class Condition {
             condition.sub_query = (String) map.get("sub_query");
         }
         if (map.get("metadata_multijoin_uuid") instanceof String) {
-            condition.sub_query = (String) map.get("metadata_multijoin_uuid");
+            condition.metadata_multijoin_uuid = (String) map.get("metadata_multijoin_uuid");
         }
 
         return condition;

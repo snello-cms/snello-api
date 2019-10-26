@@ -173,7 +173,6 @@ public class MetadataService {
                         List<Condition> conditionList = conditionsMap.get(condition.metadata_name);
                         conditionList.add(condition);
                         conditionsMap.put(condition.metadata_name, conditionList);
-
                     } else {
                         List<Condition> conditionList = new ArrayList<>();
                         conditionList.add(condition);

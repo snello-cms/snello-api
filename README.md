@@ -157,3 +157,4 @@ sub_query: "uuid in (select classi_id from studenti_classi where studenti_id = ?
 **PARTE JAVA**
 - codice da rifattorizzare (mettere a fattor comune con classi astratte o metodi statici)
 - scrivere i TEST
+- rendere native (se si puo) => adesso siamo troppo ciccioni
