@@ -51,7 +51,7 @@ public class S3Service implements DocumentsService {
     @Property(name = S3_BUCKET_NAME)
     String s3_bucket_name;
 
-    @Property(name = S3_BUCKET_FOLDER, value = "")
+    @Property(name = S3_BUCKET_FOLDER)
     String s3_bucket_folder;
 
 
@@ -87,13 +87,15 @@ public class S3Service implements DocumentsService {
     }
 
     private void verificaFolder() throws Exception {
+        logger.info("Bucket verificaFolder: " + s3_bucket_folder);
         if (s3_bucket_folder != null && !s3_bucket_folder.trim().isEmpty()) {
-            if (!s3_bucket_folder.startsWith("/")) {
-                s3_bucket_folder = "/" + s3_bucket_folder;
-            }
+//            if (!s3_bucket_folder.startsWith("/")) {
+//                s3_bucket_folder = "/" + s3_bucket_folder;
+//            }
             if (!s3_bucket_folder.endsWith("/")) {
                 s3_bucket_folder = s3_bucket_folder + "/";
             }
+            logger.info("Bucket folder: " + s3_bucket_folder);
         } else {
             s3_bucket_folder = null;
         }
@@ -103,15 +105,15 @@ public class S3Service implements DocumentsService {
     @Override
     public String basePath(String folder) {
         if (s3_bucket_folder != null && !s3_bucket_folder.trim().isEmpty()) {
-            return s3_bucket_name + s3_bucket_folder + folder;
+            return s3_bucket_folder + folder;
         }
-        return s3_bucket_name + folder;
+        return folder;
     }
 
     @Override
     public Map<String, Object> upload(CompletedFileUpload file, String uuid, String table_name, String table_key) throws Exception {
         String extension = file.getContentType().get().getExtension();
-        String name = table_name + "/" + uuid + "." + extension;
+        String name = basePath(table_name) + "/" + uuid + "." + extension;
         Map<String, Object> map = new HashMap<>();
         map.put(AppConstants.UUID, uuid);
         map.put(DOCUMENT_NAME, uuid + "." + extension);
@@ -130,7 +132,7 @@ public class S3Service implements DocumentsService {
     public Map<String, Object> write(File file, String uuid, String table_name) throws Exception {
         Map<String, Object> map = new HashMap<>();
         String extension = ResourceFileUtils.getExtension(file.getName());
-        String name = table_name + "/" + uuid + "." + extension;
+        String name = basePath(table_name) + "/" + uuid + "." + extension;
         minioClient.putObject(s3_bucket_name, name, file.getAbsolutePath());
         map.put(TABLE_NAME, table_name);
         map.put(DOCUMENT_PATH, name);
@@ -140,12 +142,11 @@ public class S3Service implements DocumentsService {
     @Override
     public Map<String, Object> write(byte[] bytes, String uuid, String table_name, String extension) throws Exception {
         Map<String, Object> map = new HashMap<>();
-        String name = table_name + "/" + uuid + "." + extension;
+        String name = basePath(table_name) + "/" + uuid + "." + extension;
         InputStream stream = new ByteArrayInputStream(bytes);
         int size = bytes.length;
         String contentType = MimeUtils.getContentType(name);
         minioClient.putObject(s3_bucket_name, name, stream, size, contentType);
-        map.put(TABLE_NAME, table_name);
         map.put(TABLE_NAME, table_name);
         map.put(DOCUMENT_PATH, name);
         return map;

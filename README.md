@@ -152,6 +152,13 @@ sub_query: "uuid in (select classi_id from studenti_classi where studenti_id = ?
 - verificare la sezione LINKS
     - funziona?
     - crea tabelle?
+    
+- BUG: sui documenti non si elimina. quando entri in edit, c'è una funzione chiamata all'infinito
+- ELIMINA NON PARTE!
+- VA MOSTRATO  il path per scarivare
+
+GESTIONE LINKS:
+non va una mazza--
 
 
 **PARTE JAVA**
