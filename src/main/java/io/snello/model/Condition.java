@@ -14,6 +14,8 @@ public class Condition {
     public String query_params;
     public String condition;
     public String sub_query;
+    // LE CONDITIONS WITH THIS FIELD VALORIZED ARE IMMODIFIABLE
+    public String metadata_multijoin_uuid;
 
 
     public Condition() {
@@ -47,6 +49,9 @@ public class Condition {
         if (map.get("sub_query") instanceof String) {
             condition.sub_query = (String) map.get("sub_query");
         }
+        if (map.get("metadata_multijoin_uuid") instanceof String) {
+            condition.sub_query = (String) map.get("metadata_multijoin_uuid");
+        }
 
         return condition;
     }
@@ -75,6 +80,9 @@ public class Condition {
         if (this.sub_query != null) {
             map.put("sub_query", this.sub_query);
         }
+        if (this.metadata_multijoin_uuid != null) {
+            map.put("metadata_multijoin_uuid", this.metadata_multijoin_uuid);
+        }
         return map;
     }
 
@@ -89,6 +97,7 @@ public class Condition {
                 ", query_params='" + query_params + '\'' +
                 ", condition='" + condition + '\'' +
                 ", sub_query='" + sub_query + '\'' +
+                ", metadata_multijoin_uuid='" + metadata_multijoin_uuid + '\'' +
                 '}';
     }
 }

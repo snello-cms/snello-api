@@ -89,6 +89,7 @@ public class AppConstants {
     public static final String S3_SECRET_KEY = "micronaut.s3.secretkey";
     public static final String S3_REGION = "micronaut.s3.region";
     public static final String S3_BUCKET_NAME = "micronaut.s3.bucketname";
+    public static final String S3_BUCKET_FOLDER = "micronaut.s3.folder";
 
 
     public static final String DB_NAME = "micronaut.router.static-resources.default.paths[0]";
@@ -137,5 +138,6 @@ public class AppConstants {
     public static final String MSG_USERNAME_IS_EMPTY = "username is empty";
     public static final String MSG_NOT_IMPLEMENTED = "not implemented! (please delete and after create)";
 
+    public static final String DELETE_FROM_FD = "DELETE FROM fielddefinitions WHERE metadata_uuid = ? ";
 
 }

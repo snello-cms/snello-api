@@ -51,6 +51,9 @@ public class S3Service implements DocumentsService {
     @Property(name = S3_BUCKET_NAME)
     String s3_bucket_name;
 
+    @Property(name = S3_BUCKET_FOLDER, value = "")
+    String s3_bucket_folder;
+
 
     @EventListener
     public void onStartup(ServerStartupEvent event) {
@@ -68,6 +71,7 @@ public class S3Service implements DocumentsService {
                     s3_secret_key,
                     true); //MINIO_SECRET_KEY);
             verificaBucket(s3_bucket_name);
+            verificaFolder();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -82,9 +86,25 @@ public class S3Service implements DocumentsService {
         }
     }
 
+    private void verificaFolder() throws Exception {
+        if (s3_bucket_folder != null && !s3_bucket_folder.trim().isEmpty()) {
+            if (!s3_bucket_folder.startsWith("/")) {
+                s3_bucket_folder = "/" + s3_bucket_folder;
+            }
+            if (!s3_bucket_folder.endsWith("/")) {
+                s3_bucket_folder = s3_bucket_folder + "/";
+            }
+        } else {
+            s3_bucket_folder = null;
+        }
+    }
+
 
     @Override
     public String basePath(String folder) {
+        if (s3_bucket_folder != null && !s3_bucket_folder.trim().isEmpty()) {
+            return s3_bucket_name + s3_bucket_folder + folder;
+        }
         return s3_bucket_name + folder;
     }
 

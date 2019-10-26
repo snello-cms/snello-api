@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.snello.management.AppConstants.CONDITIONS;
-import static io.snello.management.AppConstants.UUID;
+import static io.snello.management.AppConstants.*;
 import static io.snello.repository.mysql.MysqlConstants.*;
 
 @Singleton
@@ -151,10 +150,10 @@ public class ApiService {
             if ("multijoin".equals(fd.type)) {
                 String join_table_name = metadata.table_name + "_" + fd.join_table_name;
                 jdbcRepository.query(DROP_TABLE + join_table_name, null);
-                //DEVO ELIMINARE TUTTE LE CONDITIONS COLLEGATE
-
             }
         }
+        //DEVO ELIMINARE TUTTE LE CONDITIONS COLLEGATE
+        jdbcRepository.delete(CONDITIONS, "metadata_multijoin_uuid", metadata.uuid);
         if (metadata.already_exist) {
             throw new Exception("metadata was already_exist: we can't destroy!");
         }

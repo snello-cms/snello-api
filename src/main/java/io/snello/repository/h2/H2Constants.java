@@ -27,6 +27,7 @@ public class H2Constants {
             "  condition varchar(255) NOT NULL,\n" +
             "  query_params varchar(255) DEFAULT NULL,\n" +
             "  sub_query varchar(255) NOT NULL,\n" +
+            "  metadata_multijoin_uuid varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ;";
 

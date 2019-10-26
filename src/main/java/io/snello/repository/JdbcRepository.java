@@ -6,6 +6,9 @@ import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +19,30 @@ public interface JdbcRepository {
     void onLoad(final ServiceStartedEvent event);
 
     String[] creationQueries();
+
+    Connection getConnection() throws SQLException;
+
+    default void openTransaction(Connection connection) throws Exception {
+        connection.setAutoCommit(false);
+    }
+
+    default void closeTransaction(Connection connection) throws Exception {
+        connection.commit();
+    }
+
+    default void rollbackTransaction(Connection connection) throws Exception {
+        connection.rollback();
+    }
+
+
+    default boolean executeQuery(Connection connection, String sql) throws Exception {
+        Statement statement = connection.createStatement();
+        int result = statement.executeUpdate(sql);
+        if (result > 0) {
+            return true;
+        }
+        return false;
+    }
 
     long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception;
 
@@ -63,4 +90,5 @@ public interface JdbcRepository {
     String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception;
 
     String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) throws Exception;
+
 }

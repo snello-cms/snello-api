@@ -89,7 +89,6 @@ public class MetadataController {
     @Get(UUID_PATH_PARAM_TRUNCATE)
     public HttpResponse<?> truncateTable(@NotNull String uuid) throws Exception {
         apiService.truncateTable(uuid);
-
         return ok(apiService.fetch(null, table, uuid, UUID));
     }
 

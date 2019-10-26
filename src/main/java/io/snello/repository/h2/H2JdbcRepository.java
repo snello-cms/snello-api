@@ -21,10 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 import static io.snello.management.AppConstants.DB_TYPE;
@@ -103,6 +100,11 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationPublicdataEditRole,
                 creationChangePasswordTokenQueries
         };
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
     }
 
     public long count(String table, String alias_condition, Map<String, List<String>> httpParameters, List<Condition> conditions) throws Exception {
@@ -397,6 +399,8 @@ public class H2JdbcRepository implements JdbcRepository {
         return false;
     }
 
+
+
     public boolean verifyTable(String tableName) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
@@ -511,6 +515,7 @@ public class H2JdbcRepository implements JdbcRepository {
                 joiQueries.add(String.format(getJoinTableQuery(), metadata.table_name + "_" + fieldDefinition.join_table_name,
                         metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
                 Condition condition = new Condition();
+                condition.metadata_multijoin_uuid = metadata.uuid;
                 condition.uuid = java.util.UUID.randomUUID().toString();
                 condition.metadata_name = fieldDefinition.join_table_name;
                 condition.metadata_uuid = ""; //?? dove lo dovrei prendere??

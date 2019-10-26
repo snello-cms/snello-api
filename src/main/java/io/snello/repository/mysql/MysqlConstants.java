@@ -4,7 +4,6 @@ public class MysqlConstants {
 
     public static final String COUNT_QUERY = " SELECT COUNT(*) AS SIZE_OF FROM ";
     public static final String DELETE_FROM = "DELETE FROM ";
-    public static final String DELETE_FROM_FD = "DELETE FROM fielddefinitions WHERE metadata_uuid = ? ";
     public static final String SHOW_TABLES_INIT = "SHOW TABLES FROM ";
     public static final String SHOW_TABLES_END = " LIKE ?";
     public static final String SELECT_FROM = " SELECT * FROM ";
@@ -28,6 +27,7 @@ public class MysqlConstants {
             "  `condition` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `query_params` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `sub_query` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `metadata_multijoin_uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
