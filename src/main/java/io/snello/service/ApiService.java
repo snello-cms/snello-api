@@ -2,6 +2,7 @@ package io.snello.service;
 
 import io.micronaut.http.HttpParameters;
 import io.snello.model.Condition;
+import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.model.SelectQuery;
 import io.snello.repository.JdbcRepository;
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.snello.management.AppConstants.CONDITIONS;
+import static io.snello.management.AppConstants.UUID;
 import static io.snello.repository.mysql.MysqlConstants.*;
 
 @Singleton
@@ -30,6 +33,12 @@ public class ApiService {
 
     public Metadata metadata(String metadata_name) throws Exception {
         Metadata metadata = metadataService.metadataMap().get(metadata_name);
+        return metadata;
+    }
+
+    public Metadata metadataWithFields(String metadata_name) throws Exception {
+        Metadata metadata = metadataService.metadataMap().get(metadata_name);
+        metadata.fields = metadataService.fielddefinitions(metadata.table_name);
         return metadata;
     }
 
@@ -115,6 +124,10 @@ public class ApiService {
         return jdbcRepository.create(table, table_key, map);
     }
 
+    public Map<String, Object> createFromMap(String table, Map<String, Object> map) throws Exception {
+        return jdbcRepository.create(table, UUID, map);
+    }
+
     public Map<String, Object> merge(String table, Map<String, Object> map, String key, String table_key) throws Exception {
         table = initTable(table);
         table_key = metadataService.initTableKey(table, table_key);
@@ -133,6 +146,15 @@ public class ApiService {
 
     public boolean deleteTable(String uuid) throws Exception {
         Metadata metadata = metadataService.byUUid(uuid);
+        metadata.fields = metadataService.fielddefinitions(metadata.table_name);
+        for (FieldDefinition fd : metadata.fields) {
+            if ("multijoin".equals(fd.type)) {
+                String join_table_name = metadata.table_name + "_" + fd.join_table_name;
+                jdbcRepository.query(DROP_TABLE + join_table_name, null);
+                //DEVO ELIMINARE TUTTE LE CONDITIONS COLLEGATE
+
+            }
+        }
         if (metadata.already_exist) {
             throw new Exception("metadata was already_exist: we can't destroy!");
         }

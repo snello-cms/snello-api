@@ -102,9 +102,10 @@ public class ApiController {
     @Post(TABLE_PATH_PARAM)
     public HttpResponse<?> post(@Body String body, @NotNull String table) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
-        Metadata metadata = apiService.metadata(table);
+        Metadata metadata = apiService.metadataWithFields(table);
         String key = metadata.table_key;
         TableKeyUtils.generateUUid(map, metadata, apiService);
+        // CI VUOLE UNA TRANSAZIONE PER TENERE TUTTO INSIEME
         for (FieldDefinition fd : metadata.fields) {
             if ("multijoin".equals(fd.type)) {
                 if (map.containsKey(fd.name) && map.get(fd.name) != null) {
@@ -117,10 +118,9 @@ public class ApiController {
                         Map<String, Object> join_map = new HashMap<>();
                         join_map.put(table_id, map.get(metadata.table_key));
                         join_map.put(join_table_id, ss.trim());
-                        apiService.create(join_table_name, map, key);
+                        apiService.createFromMap(join_table_name, join_map);
                     }
                 }
-
             }
         }
         map = apiService.create(table, map, key);
@@ -144,7 +144,28 @@ public class ApiController {
                 logger.info(" slug is the same!!");
             }
         }
+        // CI VUOLE UNA TRANSAZIONE PER TENERE TUTTO INSIEME
         map = apiService.merge(table, map, uuid, key);
+        //DEVO ELIMINARE TUTTI I VALORI
+        Metadata metadata = apiService.metadataWithFields(table);
+        for (FieldDefinition fd : metadata.fields) {
+            if ("multijoin".equals(fd.type)) {
+                String join_table_name = metadata.table_name + "_" + fd.join_table_name;
+                String table_id = metadata.table_name + "_id";
+                apiService.delete(join_table_name, table_id, uuid);
+                if (map.containsKey(fd.name) && map.get(fd.name) != null) {
+                    String join_table_uuids_value = (String) map.get(fd.name);
+                    String[] join_table_uuids = join_table_uuids_value.split(",|;");
+                    for (String ss : join_table_uuids) {
+                        String join_table_id = fd.join_table_name + "_id";
+                        Map<String, Object> join_map = new HashMap<>();
+                        join_map.put(table_id, map.get(metadata.table_key));
+                        join_map.put(join_table_id, ss.trim());
+                        apiService.createFromMap(join_table_name, join_map);
+                    }
+                }
+            }
+        }
         return ok(map);
     }
 

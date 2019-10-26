@@ -484,6 +484,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 joiQueries.add(String.format(getJoinTableQuery(), metadata.table_name + "_" + fieldDefinition.join_table_name,
                         metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
                 Condition condition = new Condition();
+                condition.uuid = java.util.UUID.randomUUID().toString();
                 condition.metadata_name = fieldDefinition.join_table_name;
                 condition.metadata_uuid = ""; //?? dove lo dovrei prendere??
                 condition.condition = metadata.table_name + "_id_nn && join_table_nn";

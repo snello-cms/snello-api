@@ -480,6 +480,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 String join_table_id = fieldDefinition.join_table_name + "_id";
                 joiQueries.add(String.format(getJoinTableQuery(), join_table_name, table_id, join_table_id));
                 Condition condition = new Condition();
+                condition.uuid = java.util.UUID.randomUUID().toString();
                 condition.metadata_name = fieldDefinition.join_table_name;
                 condition.metadata_uuid = ""; //?? dove lo dovrei prendere??
                 condition.condition = metadata.table_name + "_id_nn && join_table_nn";

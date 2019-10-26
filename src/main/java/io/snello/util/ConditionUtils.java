@@ -29,7 +29,7 @@ public class ConditionUtils {
     }
 
 
-    public static boolean where(Map<String, List<String>> httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) {
+    public static boolean where(Map<String, List<String>> httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) throws Exception {
         if (httpParameters == null || httpParameters.isEmpty()) {
             logger.info("no parameters");
             return false;
@@ -91,14 +91,61 @@ public class ConditionUtils {
                         }
                     }
                 }
+                // PROVARE
                 if (cond.contains(GT)) {
-                    String keySimple = cond.substring(0, cond.length() - GT.length());
-                    if (!httpParameters.containsKey(keySimple)) {
+                    String keySimple3 = cond.substring(0, cond.length() - GT.length());
+                    String value3 = cond.substring(cond.length() - GT.length());
+                    if (!httpParameters.containsKey(keySimple3)) {
                         if ("AND".equals(conditionType)) break;
                         continue;
                     } else {
-                        value = httpParameters.get(keySimple).get(0);
-                        if (value == null || Integer.valueOf(value) < 1) {
+                        value = httpParameters.get(keySimple3).get(0);
+                        if (value == null || Integer.valueOf(value) <= Integer.valueOf(value3)) {
+                            if ("AND".equals(conditionType)) break;
+                            continue;
+                        }
+                    }
+                }
+                // PROVARE
+                if (cond.contains(GTE)) {
+                    String keySimple3 = cond.substring(0, cond.length() - GTE.length());
+                    String value3 = cond.substring(cond.length() - GTE.length());
+                    if (!httpParameters.containsKey(keySimple3)) {
+                        if ("AND".equals(conditionType)) break;
+                        continue;
+                    } else {
+                        value = httpParameters.get(keySimple3).get(0);
+                        if (value == null || Integer.valueOf(value) < Integer.valueOf(value3)) {
+                            if ("AND".equals(conditionType)) break;
+                            continue;
+                        }
+                    }
+                }
+                // PROVARE
+                if (cond.contains(LT)) {
+                    String keySimple4 = cond.substring(0, cond.length() - LT.length());
+                    String value4 = cond.substring(cond.length() - LT.length());
+                    if (!httpParameters.containsKey(keySimple4)) {
+                        if ("AND".equals(conditionType)) break;
+                        continue;
+                    } else {
+                        value = httpParameters.get(keySimple4).get(0);
+                        if (value == null || Integer.valueOf(value) >= Integer.valueOf(value4)) {
+                            if ("AND".equals(conditionType)) break;
+                            continue;
+                        }
+                    }
+                }
+                // PROVARE
+                if (cond.contains(LTE)) {
+                    String keySimple4 = cond.substring(0, cond.length() - LTE.length());
+                    String value4 = cond.substring(cond.length() - LTE.length());
+                    if (!httpParameters.containsKey(keySimple4)) {
+                        if ("AND".equals(conditionType)) break;
+                        continue;
+                    } else {
+                        value = httpParameters.get(keySimple4).get(0);
+                        if (value == null || Integer.valueOf(value) > Integer.valueOf(value4)) {
                             if ("AND".equals(conditionType)) break;
                             continue;
                         }
