@@ -120,6 +120,8 @@ public class ApiController {
                         join_map.put(join_table_id, ss.trim());
                         apiService.createFromMap(join_table_name, join_map);
                     }
+                    //ELIMINO I VALORI NEL CAMPO DI APPOGGIO
+                    map.remove(fd.name);
                 }
             }
         }
@@ -164,6 +166,8 @@ public class ApiController {
                         apiService.createFromMap(join_table_name, join_map);
                     }
                 }
+                //ELIMINO I VALORI NEL CAMPO DI APPOGGIO
+                map.remove(fd.name);
             }
         }
         return ok(map);
