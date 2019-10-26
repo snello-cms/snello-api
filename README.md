@@ -134,16 +134,18 @@ sub_query: "uuid in (select classi_id from studenti_classi where studenti_id = ?
 
 
 **RELEASE 1.0 UFFICIALE (cosa manca!!!)**
-- bug sulle conditions (non c'è nella maschera il campo "separator", verificare che funzionino con nuove migliorie)
-- bug sulle conditions (quando si entra il menu a tendina non riporta il valore PRE inserito) [OK]
+- bug sulle conditions 
+    - non c'è nella maschera di insert il campo "separator" [OK]
+    - verificare che funzionino con nuove migliorie 
+    - quando si entra il menu a tendina non riporta il valore PRE inserito
 - chiudere il giro del cambio password
-- la password di ADMIN dovrebbe essere generata al primo boot (non usando admin/admin => PERICOLOSISSIMO)
+    - la password di ADMIN dovrebbe essere generata al primo boot (non usando admin/admin => PERICOLOSISSIMO)
 - verificare il funzionamento del multijoin
-[MANCA SOLO AGGANCIO ALLE CONDITIONS: aggiungere un campo che tiene 
-traccia della relazione tra Metadata con multijoin e condition]
+    -  [MANCA SOLO AGGANCIO ALLE CONDITIONS: aggiungere un campo che tiene traccia della relazione tra Metadata con multijoin e condition]
+    - gestire la transazionalità delle operazioni per multijoin
 - verificare il draggable & droppable
 - verificare che sia chiaro il path ad un file (dalla maschera di upload/view dei files)
-[VA ESPLICITATO COME NELLA DOCUMENTAZIONE]
+    - [VA ESPLICITATO COME NELLA DOCUMENTAZIONE]
 - permettere una sottocartella come punto di partenza nella gestione dei files remoti (su BITBUQUET)
 - gestire gli errori nella pagina (farli vedere quando arrivcno)
-[VEDI QUANTO FATTO IN SERVIZI ITALIA - CLASSE SCAZZATA COPRE IL MESSAGGIO]
+    - [VEDI QUANTO FATTO IN SERVIZI ITALIA - CLASSE SCAZZATA COPRE IL MESSAGGIO]
