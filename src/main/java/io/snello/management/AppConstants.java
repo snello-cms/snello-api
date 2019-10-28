@@ -122,6 +122,7 @@ public class AppConstants {
     public static final String FILES = "files";
     public static final String EMPTY = "";
     public static final String COMMA = ",";
+    public static final String COMMA_MIXED = ",!|;";
     public static final String QUERY_NAME = "query_name";
     public static final String FILE_DOT_DOT = "file:";
     public static final String SORT_DOT_DOT = "sort: ";

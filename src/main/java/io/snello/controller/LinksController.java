@@ -120,7 +120,7 @@ public class LinksController {
         metadata.created = true;
         apiService.create(METADATAS, metadata.toMap(), UUID);
 
-        String[] fields = link.labels.split(COMMA);
+        String[] fields = link.labels.split(COMMA_MIXED);
         List<FieldDefinition> fieldDefinitions = new ArrayList<>();
         for (String name : fields) {
             FieldDefinition fieldDefinition = new FieldDefinition();
