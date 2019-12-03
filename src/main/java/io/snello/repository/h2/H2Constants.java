@@ -65,6 +65,15 @@ public class H2Constants {
             "  dynamic_values varchar(255) NOT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ;";
+    public static String creationQueryExtensions = "CREATE TABLE IF NOT EXISTS extensions (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  icon varchar(255) NOT NULL,\n" +
+            "  description varchar(255) NOT NULL,\n" +
+            "  tag_name varchar(255) NOT NULL,\n" +
+            "  library_path varchar(255) ,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ;";
 
     public static String creationQueryFieldDefinitions = "CREATE TABLE IF NOT EXISTS fielddefinitions (\n" +
             "  uuid varchar(255) NOT NULL,\n" +
@@ -192,6 +201,10 @@ public class H2Constants {
 
     public static String creationDocumentsViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('documents_view', 'documents view rule', 'metadatas', 'documents', 'view');";
     public static String creationDocumentsEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('documents_edit', 'documents edit rule', 'metadatas', 'documents', 'edit');";
+
+    public static String creationExtensionsViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_view', 'documents view rule', 'metadatas', 'extensions', 'view');";
+    public static String creationExtensionsEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_edit', 'documents edit rule', 'metadatas', 'extensions', 'edit');";
+
 
     public static String creationFieldDefinitionsViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_view', 'fielddefinitions view rule', 'metadatas', 'fielddefinitions', 'view');";
     public static String creationFieldDefinitionsEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_edit', 'fielddefinitions edit rule', 'metadatas', 'fielddefinitions', 'edit');";

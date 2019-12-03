@@ -61,6 +61,16 @@ public class PostgresqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             " ) ";
 
+    public static String creationQueryExtensions = "CREATE TABLE IF NOT EXISTS extensions (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  icon varchar(255) NOT NULL,\n" +
+            "  description varchar(255) NOT NULL,\n" +
+            "  tag_name varchar(255) NOT NULL,\n" +
+            "  library_path varchar(255) ,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            " ) ;";
+
     public static String creationQueryFieldDefinitions = "CREATE TABLE IF NOT EXISTS fielddefinitions (\n" +
             "  uuid varchar(255) NOT NULL,\n" +
             "  metadata_uuid varchar(255) NOT NULL,\n" +
@@ -191,6 +201,9 @@ public class PostgresqlConstants {
 
     public static String creationFieldDefinitionsViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_view', 'fielddefinitions view rule', 'metadatas', 'fielddefinitions', 'view') ON CONFLICT (name) DO NOTHING;";
     public static String creationFieldDefinitionsEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_edit', 'fielddefinitions edit rule', 'metadatas', 'fielddefinitions', 'edit') ON CONFLICT (name) DO NOTHING;";
+
+    public static String creationExtensionsViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_view', 'documents view rule', 'metadatas', 'extensions', 'view');";
+    public static String creationExtensionsEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_edit', 'documents edit rule', 'metadatas', 'extensions', 'edit');";
 
 
     public static String creationLinksViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('links_view', 'links view rule', 'metadatas', 'links', 'view') ON CONFLICT (name) DO NOTHING;";

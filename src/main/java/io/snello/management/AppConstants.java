@@ -10,6 +10,7 @@ public class AppConstants {
     public static final String DRAGGABLES = "draggables";
     public static final String DROPPABLES = "droppables";
     public static final String DOCUMENTS = "documents";
+    public static final String EXTENSIONS = "extensions";
     public static final String IMAGES = "images";
     public static final String FIELD_DEFINITIONS = "fielddefinitions";
     public static final String LINKS = "links";
@@ -30,6 +31,7 @@ public class AppConstants {
     public static final String CONDITIONS_PATH = API_PATH + BASE_PATH + CONDITIONS;
     public static final String DATALIST_PATH = API_PATH + BASE_PATH + DATALISTS;
     public static final String DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS;
+    public static final String EXTENSIONS_PATH = API_PATH + BASE_PATH + EXTENSIONS;
     public static final String IMAGES_PATH = API_PATH + BASE_PATH + IMAGES;
     public static final String DRAGGABLES_PATH = API_PATH + BASE_PATH + DRAGGABLES;
     public static final String DROPPABLES_PATH = API_PATH + BASE_PATH + DROPPABLES;
@@ -42,7 +44,7 @@ public class AppConstants {
     public static final String IDENTITY_PATH = API_PATH + BASE_PATH + IDENTITY;
 
     public static final String USERS_PATH = API_PATH + BASE_PATH + USERS;
-    public static final String CHANGE_PASSORD_PATH = API_PATH + BASE_PATH + CHANGE_PASSWORD;
+    public static final String CHANGE_PASSORD_PATH = BASE_PATH + CHANGE_PASSWORD;
     public static final String ROLES_PATH = API_PATH + BASE_PATH + ROLES;
     public static final String USER_ROLES_PATH = API_PATH + BASE_PATH + USER_ROLES;
 
@@ -135,7 +137,9 @@ public class AppConstants {
     public static final String MSG_TABLE_NAME_IS_EMPTY = "table name is empty";
     public static final String MSG_TABLE_NAME_IS_RESERVED = "table name  is a reserved word";
     public static final String MSG_QUERY_NAME_IS_EMPTY = "query name is empty";
+    public static final String MSG_EXTENSION_NAME_IS_EMPTY = "extension name is empty";
     public static final String MSG_QUERY_NAME_IS_RESERVED = "query name is a reserved word";
+    public static final String MSG_EXTENSION_NAME_IS_RESERVED = "extension name is a reserved word";
     public static final String MSG_USERNAME_IS_EMPTY = "username is empty";
     public static final String MSG_NOT_IMPLEMENTED = "not implemented! (please delete and after create)";
 
