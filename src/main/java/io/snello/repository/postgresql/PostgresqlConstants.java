@@ -202,8 +202,8 @@ public class PostgresqlConstants {
     public static String creationFieldDefinitionsViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_view', 'fielddefinitions view rule', 'metadatas', 'fielddefinitions', 'view') ON CONFLICT (name) DO NOTHING;";
     public static String creationFieldDefinitionsEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('fielddefinitions_edit', 'fielddefinitions edit rule', 'metadatas', 'fielddefinitions', 'edit') ON CONFLICT (name) DO NOTHING;";
 
-    public static String creationExtensionsViewRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_view', 'documents view rule', 'metadatas', 'extensions', 'view');";
-    public static String creationExtensionsEditRole = "INSERT IGNORE INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_edit', 'documents edit rule', 'metadatas', 'extensions', 'edit');";
+    public static String creationExtensionsViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_view', 'extensions view rule', 'extensions', 'extensions', 'view')  ON CONFLICT (name) DO NOTHING;";
+    public static String creationExtensionsEditRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('extensions_edit', 'extensions edit rule', 'extensions', 'extensions', 'edit')  ON CONFLICT (name) DO NOTHING;";
 
 
     public static String creationLinksViewRole = "INSERT INTO roles (name, description, object_type, object_name, action) VALUES ('links_view', 'links view rule', 'metadatas', 'links', 'view') ON CONFLICT (name) DO NOTHING;";
