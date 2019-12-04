@@ -80,11 +80,11 @@ public class ExtensionsController {
     @Put(UUID_PATH_PARAM)
     public HttpResponse<?> put(@Body String body, @NotNull String uuid) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
-        if (map.get(QUERY_NAME) == null) {
-            throw new Exception(MSG_QUERY_NAME_IS_EMPTY);
+        if (map.get(NAME) == null) {
+            throw new Exception(MSG_EXTENSION_NAME_IS_EMPTY);
         }
-        if (MetadataUtils.isReserved(map.get(QUERY_NAME))) {
-            throw new Exception(MSG_QUERY_NAME_IS_RESERVED);
+        if (MetadataUtils.isReserved(map.get(NAME))) {
+            throw new Exception(MSG_EXTENSION_NAME_IS_RESERVED);
         }
         map = apiService.mergeIfNotExists(table, map, uuid, UUID);
         eventPublisher.publishEvent(new ExtensionsCreateUpdateEvent(map));
