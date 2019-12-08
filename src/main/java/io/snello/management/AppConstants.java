@@ -84,6 +84,7 @@ public class AppConstants {
     public static final String EMAIL_SMTP_STARTSSL_ENABLE = "micronaut.email.starttls-enable";
     public static final String EMAIL_SMTP_HOST = "micronaut.email.smtp-host";
     public static final String EMAIL_SMTP_USERNAME = "micronaut.email.smtp-username";
+    public static final String EMAIL_MAIL_FROM = "micronaut.email.mail-from";
     public static final String EMAIL_SMTP_PASSWORD = "micronaut.email.smtp-password";
     public static final String S3_ENDPOINT = "micronaut.s3.endpoint";
     public static final String JDBC_DB = "datasources.default.database";
