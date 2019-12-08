@@ -19,6 +19,7 @@ public class AppConstants {
     public static final String SELECT_QUERY = "selectqueries";
     public static final String USERS = "users";
     public static final String CHANGE_PASSWORD = "changepassword";
+    public static final String PASSWORD = "password";
     public static final String ROLES = "roles";
     public static final String URL_MAP_RULES = "urlmaprules";
     public static final String USER_ROLES = "userroles";
@@ -45,6 +46,7 @@ public class AppConstants {
 
     public static final String USERS_PATH = API_PATH + BASE_PATH + USERS;
     public static final String CHANGE_PASSORD_PATH = BASE_PATH + CHANGE_PASSWORD;
+    public static final String PASSWORD_PATH = BASE_PATH + PASSWORD;
     public static final String ROLES_PATH = API_PATH + BASE_PATH + ROLES;
     public static final String USER_ROLES_PATH = API_PATH + BASE_PATH + USER_ROLES;
 
@@ -63,7 +65,8 @@ public class AppConstants {
     public static final String UUID_PATH_PARAM_DELETE = UUID_PATH_PARAM + "/delete";
     public static final String UUID_PATH_PARAM_TRUNCATE = UUID_PATH_PARAM + "/truncate";
     public static final String UUID_PATH_PARAM_VERIFY = UUID_PATH_PARAM + "/verify";
-    public static final String UUID_PATH_PARAM_CHANGE = UUID_PATH_PARAM + "/change";
+    public static final String UUID_PATH_PARAM_CHANGE = "/change" + UUID_PATH_PARAM;
+    public static final String UUID_PATH_PARAM_RESET = "/reset" + UUID_PATH_PARAM;
     public static final String UUID_PATH_PARAM_CROP = UUID_PATH_PARAM + "/crop";
     public static final String UUID_PATH_PARAM_MOGRIFY = UUID_PATH_PARAM + "/mogrify";
     public static final String UUID_PATH_PARAM_RESIZE = UUID_PATH_PARAM + "/resize";
@@ -109,7 +112,6 @@ public class AppConstants {
     public static final String CREATED = "created";
 
     public static final String USERNAME = "username";
-    public static final String PASSWORD = "password";
     public static final String CONFIRM_PASSWORD = "confirm_password";
     public static final String EMAIL = "email";
     public static final String TOKEN = "token";

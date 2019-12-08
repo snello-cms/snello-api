@@ -14,7 +14,7 @@ import io.snello.util.RandomUtils;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +22,7 @@ import static io.micronaut.http.HttpResponse.ok;
 import static io.micronaut.http.HttpResponse.serverError;
 import static io.snello.management.AppConstants.*;
 
-@Controller(CHANGE_PASSORD_PATH)
+@Controller(PASSWORD_PATH)
 public class ChangePasswordController {
 
     @Inject
@@ -34,16 +34,16 @@ public class ChangePasswordController {
     String table = AppConstants.USERS;
     String UUID = AppConstants.USERNAME;
 
-    @Post(UUID_PATH_PARAM)
-    public HttpResponse<?> change(@NotNull String uuid) throws Exception {
+    @Post(UUID_PATH_PARAM_RESET)
+    public HttpResponse<?> reset(@NotNull String uuid) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, UUID);
         if (map != null && map.containsKey(EMAIL)) {
             //GENERO UN TOKEN E LO INVIO TRAMITE EMAIL
             String token = RandomUtils.aphaNumericString(6);
             //DEVO AVERE UNA PAGINA DI CAMBIO PASSWORD
             String mail = (String) map.get(EMAIL);
-            String subject = "cambio passowrd SNELLO CMS";
-            String body = "Il token da inserire nel portal: " + token;
+            String subject = "reset password SNELLO CMS";
+            String body = "The token to change your password is: " + token;
             Email emailObj = new Email(mail, subject, body);
             emailService.send(emailObj);
 
@@ -51,7 +51,7 @@ public class ChangePasswordController {
             changePasswordTokenMap.put(AppConstants.UUID, java.util.UUID.randomUUID().toString());
             changePasswordTokenMap.put(EMAIL, uuid);
             changePasswordTokenMap.put(TOKEN, token);
-            changePasswordTokenMap.put(CREATION_DATE, new Date());
+            changePasswordTokenMap.put(CREATION_DATE, Instant.now().toString());
             changePasswordTokenMap = apiService.create(CHANGE_PASSWORD_TOKENS, changePasswordTokenMap, UUID);
             return ok(changePasswordTokenMap);
         }
@@ -93,7 +93,7 @@ public class ChangePasswordController {
             Map<String, Object> map = new HashMap<>();
             String pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
             map.put(AppConstants.PASSWORD, pwd);
-            map.put(AppConstants.LAST_UPDATE_DATE, new Date());
+            map.put(AppConstants.LAST_UPDATE_DATE, Instant.now().toString());
             map = apiService.merge(table, map, uuid, UUID);
             return ok(map);
         }
