@@ -11,6 +11,8 @@ import io.snello.service.mail.EmailService;
 import io.snello.util.JsonUtils;
 import io.snello.util.PasswordUtils;
 import io.snello.util.RandomUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
@@ -24,6 +26,9 @@ import static io.snello.management.AppConstants.*;
 
 @Controller(PASSWORD_PATH)
 public class ChangePasswordController {
+
+    Logger logger = LoggerFactory.getLogger(ChangePasswordController.class);
+
 
     @Inject
     ApiService apiService;
@@ -58,18 +63,6 @@ public class ChangePasswordController {
         return serverError();
     }
 
-    @Post(UUID_PATH_PARAM_VERIFY)
-    public HttpResponse<?> verify(@Body String body, @NotNull String uuid) throws Exception {
-        Map<String, Object> mapVerify = JsonUtils.fromJson(body);
-        Map<String, Object> tokenMap = apiService.fetch(null, CHANGE_PASSWORD_TOKENS,
-                (String) mapVerify.get(TOKEN), TOKEN);
-        if (tokenMap != null && tokenMap.containsKey(EMAIL)
-                && tokenMap.get(EMAIL).equals(uuid)
-        ) {
-            return ok();
-        }
-        return serverError();
-    }
 
     @Post(UUID_PATH_PARAM_CHANGE)
     public HttpResponse<?> change(@Body String body, @NotNull String uuid) throws Exception {
@@ -82,20 +75,26 @@ public class ChangePasswordController {
                 && tokenMap.get(EMAIL).equals(uuid)
         ) {
             tokenValido = true;
+        } else {
+            logger.info("no token Valido: " + mapVerify.get(TOKEN) + " - for uuid: " + uuid);
         }
-        if (tokenMap != null && tokenMap.containsKey(PASSWORD)
-                && tokenMap.containsKey(CONFIRM_PASSWORD)
-                && tokenMap.get(PASSWORD).equals(tokenMap.get(CONFIRM_PASSWORD))
+        if (tokenMap != null && mapVerify.containsKey(PASSWORD)
+                && mapVerify.containsKey(CONFIRM_PASSWORD)
+                && mapVerify.get(PASSWORD).equals(mapVerify.get(CONFIRM_PASSWORD))
         ) {
             pwdValida = true;
+        } else {
+            logger.info("no pwd valida: " + mapVerify.get(TOKEN) + " - for uuid: " + uuid);
         }
         if (tokenValido && pwdValida) {
             Map<String, Object> map = new HashMap<>();
-            String pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
+            String pwd = PasswordUtils.createPassword((String) mapVerify.get(AppConstants.PASSWORD));
             map.put(AppConstants.PASSWORD, pwd);
             map.put(AppConstants.LAST_UPDATE_DATE, Instant.now().toString());
             map = apiService.merge(table, map, uuid, UUID);
             return ok(map);
+        } else {
+            logger.info("!!PAY ATTENTION!! tokenValido: " + tokenValido + " or pwdValida: " + pwdValida);
         }
         return serverError();
     }

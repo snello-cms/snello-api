@@ -13,12 +13,14 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import static io.micronaut.http.HttpResponse.ok;
 import static io.micronaut.http.HttpResponse.serverError;
+import static io.snello.management.AppConstants.CONFIRM_PASSWORD;
 
 @Controller(AppConstants.USERS_PATH)
 public class UsersController {
@@ -69,7 +71,8 @@ public class UsersController {
         map.put(UUID, map.get(AppConstants.USERNAME));
         String pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
         map.put(AppConstants.PASSWORD, pwd);
-        map.put(AppConstants.CREATION_DATE, new Date());
+        map.put(AppConstants.CREATION_DATE, Instant.now().toString());
+        map.put(AppConstants.LAST_UPDATE_DATE, Instant.now().toString());
         map = apiService.create(table, map, UUID);
         map.put(AppConstants.PASSWORD, "");
         return ok(map);
@@ -79,11 +82,20 @@ public class UsersController {
     public HttpResponse<?> put(@Body String body, @NotNull String uuid) throws Exception {
         Map<String, Object> map = JsonUtils.fromJson(body);
         String pwd = (String) map.get(AppConstants.PASSWORD);
+        String confirmPwd = (String) map.get(CONFIRM_PASSWORD);
         if (pwd != null && !pwd.trim().isEmpty()) {
-            pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
-            map.put(AppConstants.PASSWORD, pwd);
-            map.put(AppConstants.LAST_UPDATE_DATE, new Date());
+            if (confirmPwd != null && !pwd.trim().isEmpty() &&
+                    confirmPwd.equals(pwd)) {
+                pwd = PasswordUtils.createPassword((String) map.get(AppConstants.PASSWORD));
+                map.put(AppConstants.PASSWORD, pwd);
+            } else {
+                logger.info("ERROR: password != confirmPwd");
+                serverError();
+            }
+        } else {
+            logger.info("no change password");
         }
+        map.put(AppConstants.LAST_UPDATE_DATE, Instant.now().toString());
         map = apiService.merge(table, map, uuid, UUID);
         map.put(AppConstants.PASSWORD, "");
         return ok(map);
@@ -91,6 +103,10 @@ public class UsersController {
 
     @Delete(AppConstants.UUID_PATH_PARAM)
     public HttpResponse<?> delete(HttpRequest<?> request, @NotNull String uuid) throws Exception {
+        logger.info("QUI NON DOVREI SOLO PASSIVARE??");
+        logger.info("QUI NON DOVREI SOLO PASSIVARE??");
+        logger.info("QUI NON DOVREI SOLO PASSIVARE??");
+        logger.info("QUI NON DOVREI SOLO PASSIVARE??");
         boolean result = apiService.delete(table, uuid, UUID);
         if (result) {
             return ok();
