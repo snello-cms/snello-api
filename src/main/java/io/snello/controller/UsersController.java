@@ -90,7 +90,7 @@ public class UsersController {
                 map.put(AppConstants.PASSWORD, pwd);
             } else {
                 logger.info("ERROR: password != confirmPwd");
-                serverError();
+                return serverError();
             }
         } else {
             logger.info("no change password");
