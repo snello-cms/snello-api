@@ -12,7 +12,7 @@
         <java-mail.version>1.6.2</java-mail.version>
         <minio.version>6.0.10</minio.version>
         <h2.version>1.4.199</h2.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <logback.version>1.2.3</logback.version>
         <micronaut.version>1.2.2</micronaut.version>
         <micronaut.openapi.version>1.2.0</micronaut.openapi.version>
