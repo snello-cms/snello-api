@@ -69,6 +69,8 @@ datasources:
     password: ${JDBC_PASSWORD:snello}
     database: ${JDBC_DB:snello}
     driverClassName: ${JDBC_DRIVER:org.postgresql.Driver}
+    maxActive: ${JDBC_MAX_ACTIVE:100}
+    initialSize: ${JDBC_INITIAL_SIZE:10}
     testOnBorrow: true
     validationQuery: select 1
     removeAbandoned: true
