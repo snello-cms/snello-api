@@ -2,9 +2,9 @@ name: Maven & Docker & Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 
 jobs:
@@ -41,7 +41,6 @@ jobs:
                           uses: docker/build-push-action@v3
                           with:
                             context: ./
-                            platforms: linux/amd64
                             file: ./Dockerfile-local
                             push: true
                             tags:  |
