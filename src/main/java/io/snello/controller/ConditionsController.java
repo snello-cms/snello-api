@@ -8,6 +8,7 @@ import io.snello.model.events.ConditionCreateUpdateEvent;
 import io.snello.model.events.ConditionDeleteEvent;
 import io.snello.service.ApiService;
 import io.snello.util.JsonUtils;
+import io.snello.util.SqlDetectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ public class ConditionsController {
                                 @Nullable @QueryValue(SORT_PARAM) String sort,
                                 @Nullable @QueryValue(LIMIT_PARAM) String limit,
                                 @Nullable @QueryValue(START_PARAM) String start) throws Exception {
+        sort = SqlDetectUtils.detectSqlSort(sort);
         if (sort != null)
             logger.info(SORT_DOT_DOT + sort);
         if (limit != null)

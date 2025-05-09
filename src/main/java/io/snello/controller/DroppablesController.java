@@ -11,6 +11,7 @@ import io.snello.model.events.DroppableCreateUpdateEvent;
 import io.snello.model.events.DroppableDeleteEvent;
 import io.snello.service.ApiService;
 import io.snello.util.JsonUtils;
+import io.snello.util.SqlDetectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,7 @@ public class DroppablesController {
                                 @Nullable @QueryValue(AppConstants.SORT_PARAM) String sort,
                                 @Nullable @QueryValue(AppConstants.LIMIT_PARAM) String limit,
                                 @Nullable @QueryValue(AppConstants.START_PARAM) String start) throws Exception {
+        sort = SqlDetectUtils.detectSqlSort(sort);
         if (sort != null)
             logger.info(AppConstants.SORT_DOT_DOT + sort);
         if (limit != null)
