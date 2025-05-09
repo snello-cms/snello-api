@@ -16,7 +16,7 @@ public class DetectSqlTest {
 
     @Test
     public void notSql2() {
-        String selectSQL = "(SELECT2 (CASE WHEN (5698=5698) THEN 'ordine ASC' ELSE (SELECT 6357 UNION SELECT 4776) END))";
+        String selectSQL = "(SELECT (CASE WHEN (5698=5698) THEN 'ordine' ASC ELSE (SELECT 6357 UNION SELECT 4776) END))";
         assertFalse(isSqlStatement(selectSQL));
 
     }

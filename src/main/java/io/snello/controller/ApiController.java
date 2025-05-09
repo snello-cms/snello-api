@@ -6,6 +6,7 @@ import io.micronaut.http.annotation.*;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.service.ApiService;
+import io.snello.util.SqlDetectUtils;
 import io.snello.util.TableKeyUtils;
 import io.snello.util.JsonUtils;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class ApiController {
                                 @Nullable @QueryValue(SORT_PARAM) String sort,
                                 @Nullable @QueryValue(LIMIT_PARAM) String limit,
                                 @Nullable @QueryValue(START_PARAM) String start) throws Exception {
+        sort = SqlDetectUtils.detectSqlSort(sort);
         if (sort != null)
             logger.info(SORT_DOT_DOT + sort);
         if (limit != null)
@@ -67,6 +69,7 @@ public class ApiController {
                                @Nullable @QueryValue(SORT_PARAM) String sort,
                                @Nullable @QueryValue(LIMIT_PARAM) String limit,
                                @Nullable @QueryValue(START_PARAM) String start) throws Exception {
+        sort = SqlDetectUtils.detectSqlSort(sort);
         debug(request, path);
         if (path == null) {
             throw new Exception(MSG_PATH_IS_EMPTY);
