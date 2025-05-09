@@ -113,6 +113,12 @@
             <version>${hamcrest.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>4.8</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>mysql</groupId>
