@@ -1,9 +1,10 @@
 package io.snello;
 
 import org.junit.Test;
+
+import static io.snello.util.SqlDetectUtils.detectSqlSort;
 import static org.junit.Assert.assertFalse;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.Statement;
+
 
 public class DetectSqlTest {
 
@@ -23,8 +24,9 @@ public class DetectSqlTest {
 
     protected boolean isSqlStatement(String sql) {
         try {
-            Statement select = (Statement) CCJSqlParserUtil.parse(sql);
-            return true;
+            String result = detectSqlSort(sql);
+            if (result != null && !result.isEmpty())
+                return true;
         } catch (Exception e) {
 
         }
