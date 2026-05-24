@@ -42,6 +42,7 @@ public class H2Constants {
                         "  formats varchar(2055) ,\n" +
                         "  mimetype varchar(255) NOT NULL,\n" +
                         "  size int(12),\n" +
+                        "  creation_date timestamp DEFAULT CURRENT_TIMESTAMP,\n" +
                         "  table_name varchar(255) NOT NULL,\n" +
                         "  table_key varchar(255) NOT NULL,\n" +
                         "  PRIMARY KEY (uuid)\n" +

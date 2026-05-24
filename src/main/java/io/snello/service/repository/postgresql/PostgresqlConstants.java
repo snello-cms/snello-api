@@ -43,6 +43,7 @@ public class PostgresqlConstants {
                                                   "  formats varchar(2055) ,\n" +
                                                   "  mimetype varchar(255) NOT NULL,\n" +
                                                   "  size NUMERIC(12),\n" +
+                                                  "  creation_date timestamp DEFAULT CURRENT_TIMESTAMP,\n" +
                                                   "  table_name varchar(255) NOT NULL,\n" +
                                                   "  table_key varchar(255) NOT NULL,\n" +
                                                   "  PRIMARY KEY (uuid)\n" +

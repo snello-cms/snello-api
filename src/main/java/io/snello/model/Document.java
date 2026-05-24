@@ -2,6 +2,8 @@ package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RegisterForReflection
@@ -13,6 +15,7 @@ public class Document {
     public String path;
     public String formats;
     public String mimetype;
+    public LocalDateTime creation_date;
     public int size;
 
 
@@ -46,6 +49,18 @@ public class Document {
         }
         if (map.get("mimetype") instanceof String) {
             document.mimetype = (String) map.get("mimetype");
+        }
+        if (map.get("creation_date") instanceof java.sql.Date) {
+            document.creation_date = ((java.sql.Date) map.get("creation_date")).toLocalDate().atStartOfDay();
+        }
+        if (map.get("creation_date") instanceof LocalDateTime) {
+            document.creation_date = (LocalDateTime) map.get("creation_date");
+        }
+        if (map.get("creation_date") instanceof LocalDate) {
+            document.creation_date = ((LocalDate) map.get("creation_date")).atStartOfDay();
+        }
+        if (map.get("creation_date") instanceof java.sql.Timestamp) {
+            document.creation_date = ((java.sql.Timestamp) map.get("creation_date")).toLocalDateTime();
         }
         if (map.get("mimetype") instanceof String) {
             document.mimetype = (String) map.get("mimetype");
