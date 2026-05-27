@@ -150,7 +150,6 @@ public class DocumentServiceRs {
     @GET
     @Path("/{uuid}/video/{name}")
     @Produces("video/mp4")
-    @Consumes(MediaType.APPLICATION_JSON)
     public Response video(@PathParam("uuid") @NotNull String uuid,
             @PathParam("name") @NotNull String name) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
