@@ -15,6 +15,7 @@ import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import io.vertx.ext.web.RoutingContext;
 
 import java.io.File;
 import java.util.Map;
@@ -152,18 +153,21 @@ public class DocumentServiceRs {
     @Path("/{uuid}/video/{name}")
     @Produces("video/mp4")
     public Response video(@PathParam("uuid") @NotNull String uuid,
-            @PathParam("name") @NotNull String name) throws Exception {
+            @PathParam("name") @NotNull String name,
+            @Context RoutingContext routingContext) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
-        File file = null;
-        try {
-            file = documentsService.getFile(path);
-            return Response.ok(file)
-                    .header("Content-Disposition", "inline; filename=\"" + name + "\"")
-                    .build();
-        } finally {
-            if (file != null)
-                file.delete();
+        File file = documentsService.getFile(path);
+        routingContext.addBodyEndHandler(v -> deleteTempFile(file));
+        routingContext.addEndHandler(v -> deleteTempFile(file));
+        return Response.ok(file)
+                .header("Content-Disposition", "inline; filename=\"" + name + "\"")
+                .build();
+    }
+
+    private void deleteTempFile(File file) {
+        if (file != null && file.exists() && !file.delete()) {
+            Log.warn("Unable to delete temp video file: " + file.getAbsolutePath());
         }
     }
 

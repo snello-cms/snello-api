@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -125,12 +126,13 @@ public class S3StorageService implements StorageService {
     public File getFile(String path) throws Exception {
         String ext = ResourceFileUtils.getExtension(path);
         File temp = File.createTempFile(java.util.UUID.randomUUID().toString(), "." + ext);
+        temp.deleteOnExit();
         try (InputStream stream = minioClient.getObject(
                 GetObjectArgs.builder()
                         .bucket(bucketName)
                         .object(path)
                         .build())) {
-            Files.copy(stream, temp.toPath());
+            Files.copy(stream, temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         return temp;
     }
