@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 
@@ -154,9 +155,8 @@ public class DocumentServiceRs {
             @PathParam("name") @NotNull String name) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
-        String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
-        StreamingOutput output = documentsService.streamingOutput(path, mimetype);
-        return Response.ok(output)
+        File file = documentsService.getFile(path);
+        return Response.ok(file)
                 .header("Content-Disposition", "inline; filename=\"" + name + "\"")
                 .build();
     }
