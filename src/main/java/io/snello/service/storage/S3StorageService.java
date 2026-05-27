@@ -124,7 +124,7 @@ public class S3StorageService implements StorageService {
     @Override
     public File getFile(String path) throws Exception {
         String ext = ResourceFileUtils.getExtension(path);
-        File temp = File.createTempFile(java.util.UUID.randomUUID().toString(), ext);
+        File temp = File.createTempFile(java.util.UUID.randomUUID().toString(), "." + ext);
         try (InputStream stream = minioClient.getObject(
                 GetObjectArgs.builder()
                         .bucket(bucketName)

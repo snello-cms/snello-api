@@ -155,10 +155,16 @@ public class DocumentServiceRs {
             @PathParam("name") @NotNull String name) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
-        File file = documentsService.getFile(path);
-        return Response.ok(file)
-                .header("Content-Disposition", "inline; filename=\"" + name + "\"")
-                .build();
+        File file = null;
+        try {
+            file = documentsService.getFile(path);
+            return Response.ok(file)
+                    .header("Content-Disposition", "inline; filename=\"" + name + "\"")
+                    .build();
+        } finally {
+            if (file != null)
+                file.delete();
+        }
     }
 
     @POST
