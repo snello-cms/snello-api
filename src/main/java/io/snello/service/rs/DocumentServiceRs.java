@@ -13,7 +13,6 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
@@ -46,23 +45,21 @@ public class DocumentServiceRs {
     public DocumentServiceRs() {
     }
 
-
     @GET
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    
+
     public Response fetch(@PathParam("id") String id) throws Exception {
         Map<String, Object> result = apiService.fetch(null, table, id, UUID);
         return ok(result).build();
     }
 
-
     @GET
     @Path(UUID_PATH_PARAM + DOWNLOAD_PATH)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    
-    public Response download(@PathParam("uuid") @NotNull String uuid, @QueryParam(value = "format") String format) throws Exception {
+    public Response download(@PathParam("uuid") @NotNull String uuid, @QueryParam(value = "format") String format)
+            throws Exception {
         Log.info("download - " + uuid + "," + format);
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
@@ -98,17 +95,19 @@ public class DocumentServiceRs {
     @Path(UUID_PATH_PARAM + WEBP_PATH)
     @Consumes("*/*")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    
+
     public Response webp(@PathParam("uuid") @NotNull String uuid,
-                         @QueryParam(value = "format") String format) throws Exception {
+            @QueryParam(value = "format") String format) throws Exception {
         Log.info("webp - " + uuid + "," + format);
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
         String filename = (String) map.get(DOCUMENT_NAME);
         String formats = (String) map.get(FORMATS);
-        boolean isConvertible = (mimetype != null && (mimetype.toLowerCase().contains("png") || mimetype.toLowerCase().contains("jpg") || mimetype.toLowerCase().contains("jpeg"))) ||
-                                (filename != null && (filename.toLowerCase().contains(".png") || filename.toLowerCase().contains(".jpg") || filename.toLowerCase().contains(".jpeg")));
+        boolean isConvertible = (mimetype != null && (mimetype.toLowerCase().contains("png")
+                || mimetype.toLowerCase().contains("jpg") || mimetype.toLowerCase().contains("jpeg"))) ||
+                (filename != null && (filename.toLowerCase().contains(".png") || filename.toLowerCase().contains(".jpg")
+                        || filename.toLowerCase().contains(".jpeg")));
         String requestedFormat = (format != null && !format.isBlank()) ? "webp_" + format.trim() : "webp";
         boolean itemExists = hasFormatToken(formats, requestedFormat);
         if (itemExists) {
@@ -122,7 +121,8 @@ public class DocumentServiceRs {
             Log.info("webp - isConvertible:" + isConvertible);
             imageEvent.fireAsync(new ImageEvent(uuid, requestedFormat));
         } else {
-            Log.info("NO webp - isConvertible:" + isConvertible + ",itemExists:" + itemExists + ", mimetype: " + mimetype + ", filename: " + filename);
+            Log.info("NO webp - isConvertible:" + isConvertible + ",itemExists:" + itemExists + ", mimetype: "
+                    + mimetype + ", filename: " + filename);
         }
 
         StreamingOutput output = documentsService.streamingOutput(path, mimetype);
@@ -135,9 +135,9 @@ public class DocumentServiceRs {
     @Path("/{uuid}/download/{name}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
-    
+
     public Response downloadWithName(@PathParam("uuid") @NotNull String uuid,
-                                     @PathParam("name") @NotNull String name) throws Exception {
+            @PathParam("name") @NotNull String name) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
@@ -147,11 +147,25 @@ public class DocumentServiceRs {
                 .build();
     }
 
+    @GET
+    @Path("/{uuid}/video/{name}")
+    @Produces("video/mp4")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response video(@PathParam("uuid") @NotNull String uuid,
+            @PathParam("name") @NotNull String name) throws Exception {
+        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        String path = (String) map.get(DOCUMENT_PATH);
+        String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
+        StreamingOutput output = documentsService.streamingOutput(path, mimetype);
+        return Response.ok(output)
+                .header("Content-Disposition", "inline; filename=\"" + name + "\"")
+                .build();
+    }
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    
+
     public Response persist(@BeanParam DocumentFormData documentFormData) throws Exception {
         resolveRemoteFile(documentFormData);
         validateDocumentFormData(documentFormData);
@@ -162,15 +176,15 @@ public class DocumentServiceRs {
         return ok(map).build();
     }
 
-
     @PUT
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Path("/{uuid}")
     @Produces(MediaType.APPLICATION_JSON)
-    
+
     public Response update(@BeanParam DocumentFormData documentFormData,
-                           @PathParam("uuid") @NotNull String uuid) throws Exception {
-//            Map<String, Object> map = documentsService.upload(file, uuid, table_name, table_key);
+            @PathParam("uuid") @NotNull String uuid) throws Exception {
+        // Map<String, Object> map = documentsService.upload(file, uuid, table_name,
+        // table_key);
         resolveRemoteFile(documentFormData);
         validateDocumentFormData(documentFormData);
         documentFormData.uuid = uuid;
@@ -184,19 +198,18 @@ public class DocumentServiceRs {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateData(@PathParam("id") String id,
-                               Map<String, Object> map) throws Exception {
+            Map<String, Object> map) throws Exception {
         map = apiService.merge(table, map, id, AppConstants.UUID);
         return ok(map).build();
     }
-
 
     @Path("/{uuid}")
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    
+
     public Response delete(@PathParam("uuid") @NotNull String uuid,
-                           @Nullable @QueryParam("delete") String delete) throws Exception {
+            @Nullable @QueryParam("delete") String delete) throws Exception {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         if (delete != null && delete.toLowerCase().equals(TRUE)) {
             documentsService.delete((String) map.get(DOCUMENT_PATH));
@@ -213,11 +226,10 @@ public class DocumentServiceRs {
         }
     }
 
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    
+
     public Response list(
             @QueryParam(SORT_PARAM) String sort,
             @QueryParam(LIMIT_PARAM) String limit,
