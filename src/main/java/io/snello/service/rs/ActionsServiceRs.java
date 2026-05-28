@@ -33,7 +33,7 @@ public class ActionsServiceRs extends AbstractServiceRs {
 
     @Inject
     ActionsServiceRs(ApiService apiService) {
-        super(apiService, ACTIONS, "");
+        super(apiService, ACTIONS, "name asc");
     }
 
     public ActionsServiceRs() {

@@ -193,12 +193,13 @@ public class MysqlJdbcRepository implements JdbcRepository {
             where.append(MysqlSqlUtils.escape(alias_condition));
         }
 
-        if (sort != null) {
-            if (sort.contains(":")) {
-                String[] sort_ = sort.split(":");
+        String normalizedSort = sort == null ? null : sort.trim();
+        if (normalizedSort != null && !normalizedSort.isEmpty()) {
+            if (normalizedSort.contains(":")) {
+                String[] sort_ = normalizedSort.split(":");
                 order_limit.append(_ORDER_BY_).append(sort_[0]).append(" ").append(sort_[1]);
             } else {
-                order_limit.append(_ORDER_BY_).append(sort);
+                order_limit.append(_ORDER_BY_).append(normalizedSort);
             }
         }
 
@@ -250,12 +251,13 @@ public class MysqlJdbcRepository implements JdbcRepository {
         StringBuffer select = new StringBuffer(query);
         List<Object> in = new LinkedList<>();
 
-        if (sort != null) {
-            if (sort.contains(":")) {
-                String[] sort_ = sort.split(":");
+        String normalizedSort = sort == null ? null : sort.trim();
+        if (normalizedSort != null && !normalizedSort.isEmpty()) {
+            if (normalizedSort.contains(":")) {
+                String[] sort_ = normalizedSort.split(":");
                 order_limit.append(_ORDER_BY_).append(sort_[0]).append(" ").append(sort_[1]);
             } else {
-                order_limit.append(_ORDER_BY_).append(sort);
+                order_limit.append(_ORDER_BY_).append(normalizedSort);
             }
         }
 

@@ -83,10 +83,13 @@ public abstract class AbstractServiceRs {
             @QueryParam(LIMIT_PARAM) String limit,
             @QueryParam(START_PARAM) String start,
             @Context UriInfo uriInfo) throws Exception {
-        if (sort != null)
+        if (sort != null && !sort.isBlank()) {
             Log.info(SORT_DOT_DOT + sort);
-        else
+        } else if (defaultSort != null && !defaultSort.isBlank()) {
             sort = defaultSort;
+        } else {
+            sort = null;
+        }
         if (limit != null)
             Log.info(LIMIT_DOT_DOT + limit);
         if (start != null)
