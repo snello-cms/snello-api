@@ -6,6 +6,7 @@ public class AppConstants {
     public static final String API_PATH = "/api";
     public static final String PAGES_PATH = API_PATH + "/p";
 
+    public static final String ACTIONS = "actions";
     public static final String BACKUP = "backup";
     public static final String CONDITIONS = "conditions";
     public static final String DATALISTS = "datalist";
@@ -20,6 +21,7 @@ public class AppConstants {
     public static final String AI_TOOLS = "ai_tools";
 
 
+    public static final String ACTIONS_PATH = API_PATH + BASE_PATH + ACTIONS;
     public static final String AI_TOOLS_PATH = API_PATH + BASE_PATH + AI_TOOLS;
     public static final String BACKUP_PATH = API_PATH + BASE_PATH + BACKUP;
     public static final String CACHE_DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS + "/cache";
