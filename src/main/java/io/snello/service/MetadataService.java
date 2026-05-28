@@ -148,11 +148,11 @@ public class MetadataService {
     public Map<String, Action> actionsMap() throws Exception {
         if (this.actionsMap == null) {
             this.actionsMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc ");
+            List<Map<String, Object>> liste = jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc, phase asc ");
             if (liste != null) {
                 for (Map<String, Object> map : liste) {
                     Action action = new Action(map);
-                    actionsMap.put(ActionUtils.actionKey(action.metadata_name, action.condition), action);
+                    actionsMap.put(ActionUtils.actionKey(action.metadata_name, action.condition, action.phase), action);
                 }
             }
         }

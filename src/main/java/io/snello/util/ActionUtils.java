@@ -7,9 +7,22 @@ public class ActionUtils {
     private static final String PERSIST = "PERSIST";
     private static final String MERGE = "MERGE";
     private static final String DELETE = "DELETE";
+    public static final String PHASE_PRE = "PRE";
+    public static final String PHASE_POST = "POST";
 
     public static String actionKey(String metadata_name, String condition) {
-        return metadata_name + "_" + condition;
+        return actionKey(metadata_name, condition, PHASE_POST);
+    }
+
+    public static String actionKey(String metadata_name, String condition, String phase) {
+        return metadata_name + "_" + condition + "_" + normalizePhase(phase);
+    }
+
+    public static String normalizePhase(String phase) {
+        if (PHASE_PRE.equalsIgnoreCase(phase)) {
+            return PHASE_PRE;
+        }
+        return PHASE_POST;
     }
 
     public static String conditionByMethod(String methodName) {

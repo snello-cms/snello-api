@@ -25,14 +25,13 @@ public class SnelloTenantResolver implements TenantResolver {
     public String resolve(RoutingContext context) {
         String authorizationHeader = context.request().getHeader("Authorization");
         String issuer = JwtUtils.getIssuer(objectMapper, authorizationHeader);
-        Log.info("issuer: " + issuer);
         if (issuer.equals(accounting_auth)) {
             String tenant = "snello";
-            Log.info("tenant resolved as: " + tenant);
+            Log.info("issuer: " + issuer + ", tenant resolved as: " + tenant);
             return tenant;
         }
         String tenant = "default";
-        Log.info("tenant resolved as: " + tenant);
+        Log.info("issuer: " + issuer + ", tenant resolved as: " + tenant);
         return tenant;
     }
 

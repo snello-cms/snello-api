@@ -175,7 +175,7 @@ public class EventService {
         Log.info("new ActionCreateUpdateEvent " + actionCreateUpdateEvent.toString());
         try {
             Action action = actionCreateUpdateEvent.action;
-            metadataService.actionsMap().put(ActionUtils.actionKey(action.metadata_name, action.condition), action);
+            metadataService.actionsMap().put(ActionUtils.actionKey(action.metadata_name, action.condition, action.phase), action);
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
@@ -186,7 +186,7 @@ public class EventService {
         try {
             for (Action action : metadataService.actionsMap().values()) {
                 if (action.uuid.equals(actionDeleteEvent.uuid)) {
-                    metadataService.actionsMap().remove(ActionUtils.actionKey(action.metadata_name, action.condition));
+                    metadataService.actionsMap().remove(ActionUtils.actionKey(action.metadata_name, action.condition, action.phase));
                     break;
                 }
             }

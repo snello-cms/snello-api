@@ -13,6 +13,7 @@ public class Action {
     public String description;
     public String metadata_name; // TABLE
     public String condition; // PERSIST, MERGE, DELETE
+    public String phase; // PRE, POST
     public String body;
 
 
@@ -42,6 +43,9 @@ public class Action {
         if (map.get("condition") instanceof String) {
             template.condition = (String) map.get("condition");
         }
+        if (map.get("phase") instanceof String) {
+            template.phase = (String) map.get("phase");
+        }
         if (map.get("body") instanceof String) {
             template.body = (String) map.get("body");
         }
@@ -66,6 +70,9 @@ public class Action {
         if (this.condition != null) {
             map.put("condition", this.condition);
         }
+        if (this.phase != null) {
+            map.put("phase", this.phase);
+        }
         if (this.body != null) {
             map.put("body", this.body);
         }
@@ -81,6 +88,7 @@ public class Action {
                ", description='" + description + '\'' +
                ", metadata_name='" + metadata_name + '\'' +
                ", condition='" + condition + '\'' +
+               ", phase='" + phase + '\'' +
                ", body='" + body + '\'' +
                '}';
     }
