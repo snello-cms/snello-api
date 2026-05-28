@@ -3,6 +3,7 @@ package io.snello.service;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.*;
+import io.snello.util.ActionUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -16,6 +17,7 @@ public class MetadataService {
     Map<String, Metadata> metadataMap;
     Map<String, SelectQuery> selectqueryMap;
     Map<String, AiTool> aiToolsMap;
+    Map<String, Action> actionsMap;
     Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
     Map<String, List<Condition>> conditionsMap;
 
@@ -141,6 +143,20 @@ public class MetadataService {
             }
         }
         return this.aiToolsMap;
+    }
+
+    public Map<String, Action> actionsMap() throws Exception {
+        if (this.actionsMap == null) {
+            this.actionsMap = new TreeMap<>();
+            List<Map<String, Object>> liste = jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc ");
+            if (liste != null) {
+                for (Map<String, Object> map : liste) {
+                    Action action = new Action(map);
+                    actionsMap.put(ActionUtils.actionKey(action.metadata_name, action.condition), action);
+                }
+            }
+        }
+        return this.actionsMap;
     }
 
     public Map<String, List<Condition>> conditionsMap() throws Exception {

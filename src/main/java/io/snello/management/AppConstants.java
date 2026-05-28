@@ -17,7 +17,6 @@ public class AppConstants {
     public static final String CHAT_INTERACTIONS = "chat_interactions";
     public static final String PUBLIC_DATA = "publicdata";
     public static final String SELECT_QUERY = "selectqueries";
-    public static final String TRIGGER_DEFINITION_QUERY = "triggerdefinitions";
     public static final String AI_TOOLS = "ai_tools";
 
 
@@ -34,7 +33,6 @@ public class AppConstants {
     public static final String LINKS_PATH = API_PATH + BASE_PATH + LINKS;
     public static final String METADATA_PATH = API_PATH + BASE_PATH + METADATAS;
     public static final String SELECT_QUERY_PATH = API_PATH + BASE_PATH + SELECT_QUERY;
-    public static final String TRIGGER_DEFINITION_PATH = API_PATH + BASE_PATH + TRIGGER_DEFINITION_QUERY;
 
     public static final String _0 = "0";
     public static final String _10 = "10";

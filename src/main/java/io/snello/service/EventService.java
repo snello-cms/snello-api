@@ -2,10 +2,12 @@ package io.snello.service;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
+import io.snello.model.Action;
 import io.snello.model.AiTool;
 import io.snello.model.Condition;
 import io.snello.model.SelectQuery;
 import io.snello.model.events.*;
+import io.snello.util.ActionUtils;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.ObservesAsync;
 import jakarta.inject.Inject;
@@ -35,10 +37,12 @@ public class EventService {
         metadataService.conditionsMap = null;
         metadataService.selectqueryMap = null;
         metadataService.aiToolsMap = null;
+        metadataService.actionsMap = null;
         // reset
         metadataService.conditionsMap();
         metadataService.selectqueryMap();
         metadataService.aiToolsMap();
+        metadataService.actionsMap();
     }
 
     public void resetMetadata() throws Exception {
@@ -159,6 +163,30 @@ public class EventService {
             for (AiTool aiTool : metadataService.aiToolsMap().values()) {
                 if (aiTool.uuid.equals(aiToolDeleteEvent.uuid)) {
                     metadataService.aiToolsMap().remove(aiTool.name);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Log.error(e.getMessage(), e);
+        }
+    }
+
+    void createOrUpdateAction(@ObservesAsync ActionCreateUpdateEvent actionCreateUpdateEvent) {
+        Log.info("new ActionCreateUpdateEvent " + actionCreateUpdateEvent.toString());
+        try {
+            Action action = actionCreateUpdateEvent.action;
+            metadataService.actionsMap().put(ActionUtils.actionKey(action.metadata_name, action.condition), action);
+        } catch (Exception e) {
+            Log.error(e.getMessage(), e);
+        }
+    }
+
+    void deleteAction(@ObservesAsync ActionDeleteEvent actionDeleteEvent) {
+        Log.info("new ActionDeleteEvent " + actionDeleteEvent.toString());
+        try {
+            for (Action action : metadataService.actionsMap().values()) {
+                if (action.uuid.equals(actionDeleteEvent.uuid)) {
+                    metadataService.actionsMap().remove(ActionUtils.actionKey(action.metadata_name, action.condition));
                     break;
                 }
             }

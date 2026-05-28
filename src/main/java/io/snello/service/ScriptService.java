@@ -23,7 +23,7 @@ public class ScriptService {
 
     ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 
-    public void execute(String js, Action action) throws Exception {
+    public void execute(String js, Action action, String table, String table_key, Map<String, Object> map) throws Exception {
         if (js == null || js.trim().isEmpty()) {
             throw new Exception("javascript source is null or empty");
         }
@@ -37,6 +37,9 @@ public class ScriptService {
         bindings.put("metadataService", metadataService);
         bindings.put("mailService", mailService);
         bindings.put("values", values);
+        bindings.put("table", table);
+        bindings.put("table_key", table_key);
+        bindings.put("map", map);
         engine.eval(js, bindings);
     }
 
