@@ -6,6 +6,7 @@ import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.util.ConditionUtils;
+import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 import io.snello.util.SqlHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -454,7 +455,7 @@ public class H2JdbcRepository implements JdbcRepository {
                 }
                 sb.append(",").append(columnSql);
             }
-            if ("multijoin".equals(fieldDefinition.type) || "multilookup".equals(fieldDefinition.type)) {
+                if (FieldDefinitionUtils.isMultiJoinType(fieldDefinition.type)) {
                 String join_table_name = metadata.table_name + "_" + fieldDefinition.join_table_name;
                 String table_id = metadata.table_name + "_id";
                 String join_table_id = fieldDefinition.join_table_name + "_id";

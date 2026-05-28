@@ -63,6 +63,7 @@ public class MysqlFieldDefinitionUtils {
             case "image":
             case "tags":
             case "multijoin":
+            case "multiselect":
             case "multilookup":
             case "join":
             case "lookup":

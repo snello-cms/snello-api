@@ -25,7 +25,7 @@ Identity and linking:
 
 Rendering/UI:
 
-- `type`: input, button, select, date, radiobutton, checkbox
+- `type`: input, button, select, date, radiobutton, checkbox, join, lookup, multijoin, multilookup, multiselect
 - `input_type`: text, number, email, date, ecc.
 - `options`: comma-separated values (for example select/radio)
 - `group_name`: logical group in the page
@@ -47,6 +47,10 @@ Join and references:
 - `join_table_name`
 - `join_table_key`
 - `join_table_select_fields`
+
+Notes:
+
+- `multiselect` is handled as a multijoin alias (many related values through the join table).
 
 Search and list:
 

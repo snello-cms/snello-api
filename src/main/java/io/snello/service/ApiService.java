@@ -10,6 +10,7 @@ import io.snello.model.SelectQuery;
 import io.snello.model.events.DbCreatedEvent;
 import io.snello.api.service.JdbcRepository;
 import io.snello.service.actions.ActionEvent;
+import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 
 import jakarta.enterprise.event.Event;
@@ -233,7 +234,7 @@ public class ApiService {
         metadata.fields = metadataService.fielddefinitions(metadata.table_name);
         List<FieldDefinition> fields = metadata.fields == null ? List.of() : metadata.fields;
         for (FieldDefinition fd : fields) {
-            if ("multijoin".equals(fd.type) || "multilookup".equals(fd.type)) {
+            if (FieldDefinitionUtils.isMultiJoinType(fd.type)) {
                 String join_table_name = metadata.table_name + "_" + fd.join_table_name;
                 jdbcRepository.query(DROP_TABLE + join_table_name, null);
             }

@@ -57,14 +57,17 @@ public class ActionInterceptor {
         }
 
         String table = (String) params[0];
-        Action actionPre = metadataService.actionsMap().get(ActionUtils.actionKey(table, condition, ActionUtils.PHASE_PRE));
-        Action actionPost = metadataService.actionsMap().get(ActionUtils.actionKey(table, condition, ActionUtils.PHASE_POST));
+        Action actionPre = metadataService.actionsMap()
+                .get(ActionUtils.actionKey(table, condition, ActionUtils.PHASE_PRE));
+        Action actionPost = metadataService.actionsMap()
+                .get(ActionUtils.actionKey(table, condition, ActionUtils.PHASE_POST));
 
         boolean hasPre = actionPre != null && actionPre.body != null && !actionPre.body.trim().isEmpty();
         boolean hasPost = actionPost != null && actionPost.body != null && !actionPost.body.trim().isEmpty();
 
         if (hasPre && hasPost) {
-            Log.warn(String.format("ACTION [%s.%s] found both PRE and POST actions. Using PRE only.", table, condition));
+            Log.warn(
+                    String.format("ACTION [%s.%s] found both PRE and POST actions. Using PRE only.", table, condition));
             return ActionUtils.PHASE_PRE;
         }
         if (hasPre) {
@@ -76,7 +79,8 @@ public class ActionInterceptor {
         return null;
     }
 
-    private void runSyncPreAction(String className, String methodName, String condition, Object[] params) throws Exception {
+    private void runSyncPreAction(String className, String methodName, String condition, Object[] params)
+            throws Exception {
         if (condition == null) {
             return;
         }
@@ -88,7 +92,8 @@ public class ActionInterceptor {
         }
     }
 
-    private void triggerAsyncPostAction(String className, String methodName, String condition, Object[] params, Object ret) {
+    private void triggerAsyncPostAction(String className, String methodName, String condition, Object[] params,
+            Object ret) {
         if (condition == null) {
             return;
         }
@@ -129,7 +134,8 @@ public class ActionInterceptor {
 
         Map<String, Object> map = ActionUtils.extractPayloadMap(params, ret);
         scriptService.execute(action.body, action, table, tableKey, map);
-        Log.info(String.format("ACTION [%s:%s -> %s.%s] completed", action.name, ActionUtils.normalizePhase(action.phase), table, tableKey));
+        Log.info(String.format("ACTION [%s:%s -> %s.%s] completed", action.name,
+                ActionUtils.normalizePhase(action.phase), table, tableKey));
 
     }
 }

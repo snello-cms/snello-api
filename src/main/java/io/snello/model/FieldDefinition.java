@@ -15,7 +15,7 @@ public class FieldDefinition {
     public String name;
     public String label;
     public String description;
-    // input|button|select|date|radiobutton|checkbox
+    // input|button|select|date|radiobutton|checkbox|join|lookup|multijoin|multilookup|multiselect
     public String type;
     // html password, text, number, radio, checkbox, color, date, datetime-local,
     // email, month, number, range, search, tel, time, url, week

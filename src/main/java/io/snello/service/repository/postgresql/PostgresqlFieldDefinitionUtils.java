@@ -74,6 +74,7 @@ public class PostgresqlFieldDefinitionUtils {
             case "image":
             case "tags":
             case "multijoin":
+            case "multiselect":
             case "multilookup":
             case "realtionship":
             case "realtionships":
