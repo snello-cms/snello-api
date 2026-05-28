@@ -9,6 +9,7 @@ import io.snello.model.Metadata;
 import io.snello.model.SelectQuery;
 import io.snello.model.events.DbCreatedEvent;
 import io.snello.api.service.JdbcRepository;
+import io.snello.service.actions.ActionEvent;
 import io.snello.util.ParamUtils;
 
 import jakarta.enterprise.event.Event;
@@ -188,6 +189,7 @@ public class ApiService {
                 start);
     }
 
+    @ActionEvent
     public Map<String, Object> create(String table, Map<String, Object> map, String table_key) throws Exception {
         table = initTable(table);
         table_key = metadataService.initTableKey(table, table_key);
@@ -202,6 +204,7 @@ public class ApiService {
         return jdbcRepository.list(query);
     }
 
+    @ActionEvent
     public Map<String, Object> merge(String table, Map<String, Object> map, String key, String table_key)
             throws Exception {
         table = initTable(table);
@@ -290,6 +293,7 @@ public class ApiService {
         return jdbcRepository.fetch(select_fields, table, table_key, uuid);
     }
 
+    @ActionEvent
     public boolean delete(String table, String uuid, String table_key) throws Exception {
         if (metadataService.metadataMap().containsKey(table)) {
             Metadata metadata = metadataService.metadataMap().get(table);

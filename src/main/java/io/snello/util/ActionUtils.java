@@ -16,6 +16,9 @@ public class ActionUtils {
         if ("create".equals(methodName)) {
             return PERSIST;
         }
+        if ("merge".equals(methodName)) {
+            return MERGE;
+        }
         if ("update".equals(methodName)) {
             return MERGE;
         }

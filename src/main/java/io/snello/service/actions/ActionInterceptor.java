@@ -38,16 +38,25 @@ public class ActionInterceptor {
 
     private void runConfiguredAction(String methodName, Object[] params, Object ret) throws Exception {
         String condition = ActionUtils.conditionByMethod(methodName);
-        if (condition == null || params == null || params.length < 2) {
+        if (condition == null || params == null || params.length < 1) {
             return;
         }
 
-        if (!(params[0] instanceof String) || !(params[1] instanceof String)) {
+        if (!(params[0] instanceof String)) {
             return;
         }
 
         String table = (String) params[0];
-        String tableKey = (String) params[1];
+        String tableKey = null;
+        for (int i = params.length - 1; i >= 0; i--) {
+            if (params[i] instanceof String) {
+                tableKey = (String) params[i];
+                break;
+            }
+        }
+        if (tableKey == null || tableKey.isBlank()) {
+            return;
+        }
 
         Action action = metadataService.actionsMap().get(ActionUtils.actionKey(table, condition));
         if (action == null || action.body == null || action.body.trim().isEmpty()) {

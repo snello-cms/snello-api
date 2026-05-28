@@ -5,7 +5,6 @@ import io.snello.api.service.JdbcRepository;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
-import io.snello.service.actions.ActionEvent;
 import io.snello.util.ConditionUtils;
 import io.snello.util.ParamUtils;
 import io.snello.util.SqlHelper;
@@ -269,7 +268,6 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
 
     }
 
-    @ActionEvent
     public Map<String, Object> create(String table, String table_key, Map<String, Object> map) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
             String query = PostgresqlSqlUtils.create(table, map);
@@ -290,7 +288,6 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
 
     }
 
-    @ActionEvent
     public Map<String, Object> update(String table, String table_key, Map<String, Object> map, String key) throws
             Exception {
         Map<String, Object> keys = new HashMap<>();
@@ -319,7 +316,6 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         }
     }
 
-    @ActionEvent
     public boolean delete(String table, String table_key, String uuid) throws Exception {
         try (Connection connection = dataSource.getConnection()) {
             Log.info("DELETE QUERY: " + DELETE_FROM + table + _WHERE_ + table_key + " = ? ");
