@@ -12,6 +12,7 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.Map;
 
 @ActionEvent
@@ -29,10 +30,19 @@ public class ActionInterceptor {
     Object executeAction(InvocationContext context) throws Exception {
         String methodName = context.getMethod().getName();
         String className = context.getTarget().getClass().getSimpleName();
-        String params = Arrays.toString(context.getParameters());
+        Object[] paramsSnapshot = context.getParameters() == null
+                ? new Object[0]
+                : Arrays.copyOf(context.getParameters(), context.getParameters().length);
+        String params = Arrays.toString(paramsSnapshot);
         Log.info(String.format("ACTION [%s.%s] called with params %s", className, methodName, params));
         Object ret = context.proceed();
-        runConfiguredAction(methodName, context.getParameters(), ret);
+        CompletableFuture.runAsync(() -> {
+            try {
+                runConfiguredAction(methodName, paramsSnapshot, ret);
+            } catch (Exception e) {
+                Log.error(String.format("ACTION [%s.%s] async execution failed", className, methodName), e);
+            }
+        });
         return ret;
     }
 
