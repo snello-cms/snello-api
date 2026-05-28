@@ -52,14 +52,13 @@ public class TemplateServiceRs {
 
 
     private void debug(String method) {
-        Log.info("------------");
-        Log.info("METHOD: " + method);
-        Log.info("RELATIVE PATH: " + uriInfo.getPath());
-        uriInfo.getPathParameters().forEach((key, value) -> Log.info(key + ":" + value));
-        Log.info("------------");
-        Log.info("------------");
-        uriInfo.getQueryParameters().forEach((key, value) -> Log.info("," + key + ":" + value));
-        Log.info("------------");
+        String pathParams = uriInfo.getPathParameters() == null ? "{}" : uriInfo.getPathParameters().toString();
+        String queryParams = uriInfo.getQueryParameters() == null ? "{}" : uriInfo.getQueryParameters().toString();
+        Log.infof("REQUEST method=%s path=%s pathParams=%s queryParams=%s",
+                method,
+                uriInfo.getPath(),
+                pathParams,
+                queryParams);
     }
 
 }

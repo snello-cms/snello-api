@@ -276,29 +276,34 @@ public class ApiServiceRs {
 
     private void debugMe() {
         if (securityContext == null || securityContext.getUserPrincipal() == null) {
-            Log.info("securityContext is null");
+            Log.info("SECURITY user=<anonymous> roles={admin=false,Admin=false,user=false,User=false,manager=false,Manager=false}");
             return;
         }
-        Log.info("user principal name: " + securityContext.getUserPrincipal().getName());
-        Log.info("user roles admin: " + securityContext.isUserInRole("admin"));
-        Log.info("user roles Admin: " + securityContext.isUserInRole("Admin"));
-        Log.info("user roles user: " + securityContext.isUserInRole("user"));
-        Log.info("user roles User: " + securityContext.isUserInRole("User"));
-        Log.info("user roles manager: " + securityContext.isUserInRole("manager"));
-        Log.info("user roles Manager: " + securityContext.isUserInRole("Manager"));
+        Log.infof(
+                "SECURITY user=%s roles={admin=%s,Admin=%s,user=%s,User=%s,manager=%s,Manager=%s}",
+                securityContext.getUserPrincipal().getName(),
+                securityContext.isUserInRole("admin"),
+                securityContext.isUserInRole("Admin"),
+                securityContext.isUserInRole("user"),
+                securityContext.isUserInRole("User"),
+                securityContext.isUserInRole("manager"),
+                securityContext.isUserInRole("Manager")
+        );
     }
 
 
     private void debug(String method) {
-        Log.info("------------");
-        Log.info("METHOD: " + method);
-        Log.info("RELATIVE PATH: " + uriInfo.getPath());
-        Log.info("username: " + ((securityContext != null && securityContext.getUserPrincipal() != null) ? securityContext.getUserPrincipal().getName() : ""));
-        uriInfo.getPathParameters().forEach((key, value) -> Log.info(key + ":" + value));
-        Log.info("------------");
-        Log.info("------------");
-        uriInfo.getQueryParameters().forEach((key, value) -> Log.info("," + key + ":" + value));
-        Log.info("------------");
+        String username = (securityContext != null && securityContext.getUserPrincipal() != null)
+            ? securityContext.getUserPrincipal().getName()
+            : "<anonymous>";
+        String pathParams = uriInfo.getPathParameters() == null ? "{}" : uriInfo.getPathParameters().toString();
+        String queryParams = uriInfo.getQueryParameters() == null ? "{}" : uriInfo.getQueryParameters().toString();
+        Log.infof("REQUEST method=%s path=%s user=%s pathParams=%s queryParams=%s",
+            method,
+            uriInfo.getPath(),
+            username,
+            pathParams,
+            queryParams);
     }
 
 }
