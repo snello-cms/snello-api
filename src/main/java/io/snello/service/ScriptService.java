@@ -1,6 +1,7 @@
 package io.snello.service;
 
 import io.quarkus.logging.Log;
+import io.snello.api.service.JdbcRepository;
 import io.snello.api.service.MailService;
 import io.snello.model.Action;
 import jakarta.inject.Inject;
@@ -21,6 +22,9 @@ public class ScriptService {
     @Inject
     MailService mailService;
 
+    @Inject
+    JdbcRepository jdbcRepository;
+
     ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 
     public void execute(String js, Action action, String table, String table_key, Map<String, Object> map) throws Exception {
@@ -35,6 +39,7 @@ public class ScriptService {
         Bindings bindings = engine.createBindings();
         bindings.put("action", action);
         bindings.put("metadataService", metadataService);
+        bindings.put("jdbcRepository", jdbcRepository);
         bindings.put("mailService", mailService);
         bindings.put("values", values);
         bindings.put("table", table);
