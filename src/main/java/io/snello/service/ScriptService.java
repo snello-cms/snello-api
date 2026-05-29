@@ -3,6 +3,7 @@ package io.snello.service;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.api.service.MailService;
+import io.snello.api.service.StorageService;
 import io.snello.model.Action;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -20,6 +21,9 @@ public class ScriptService {
     MetadataService metadataService;
 
     @Inject
+    StorageService documentsService;
+
+    @Inject
     MailService mailService;
 
     @Inject
@@ -34,14 +38,13 @@ public class ScriptService {
         if (engine == null) {
             throw new Exception("nashorn engine is not available");
         }
-        Map<String, Object> values = new HashMap<>();
-        Log.info("executeJs javascript_function : ");
+        Log.info("executeJs javascript_function : " + action.body + " for table " + table + " with map " + map);
         Bindings bindings = engine.createBindings();
         bindings.put("action", action);
-        bindings.put("metadataService", metadataService);
-        bindings.put("jdbcRepository", jdbcRepository);
-        bindings.put("mailService", mailService);
-        bindings.put("values", values);
+        bindings.put("metadata", metadataService);
+        bindings.put("db", jdbcRepository);
+        bindings.put("documents", documentsService);
+        bindings.put("mail", mailService);
         bindings.put("table", table);
         bindings.put("table_key", table_key);
         bindings.put("map", map);
