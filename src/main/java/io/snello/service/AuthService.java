@@ -1,8 +1,7 @@
 package io.snello.service;
 
 import io.quarkus.logging.Log;
-import io.snello.model.pojo.AuthCreateUserRequest;
-import io.snello.model.pojo.AuthUpdateUserRequest;
+import io.snello.model.pojo.AuthUserRequest;
 import io.snello.util.AuthUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -83,7 +82,7 @@ public class AuthService {
         }
     }
 
-    public Map<String, Object> createUser(AuthCreateUserRequest request) {
+    public Map<String, Object> createUser(AuthUserRequest request) {
         validateCreateRequest(request);
 
         try (Keycloak keycloak = buildClient()) {
@@ -108,7 +107,9 @@ public class AuthService {
                     throw new InternalServerErrorException("User created but id is missing in Keycloak response");
                 }
 
-                updateUserGroups(realm, userId, request.groupIds, request.groupNames);
+                if (request.groupNames != null) {
+                    syncUserGroupsByNames(realm, userId, request.groupNames);
+                }
                 UserRepresentation created = realm.users().get(userId).toRepresentation();
                 return AuthUtils.userToMap(created);
             }
@@ -206,7 +207,7 @@ public class AuthService {
         }
     }
 
-    public Map<String, Object> updateUser(String id, AuthUpdateUserRequest request) {
+    public Map<String, Object> updateUser(String id, AuthUserRequest request) {
         if (id == null || id.isBlank()) {
             throw new BadRequestException("User id is required");
         }
@@ -263,46 +264,9 @@ public class AuthService {
                 .build();
     }
 
-    private void updateUserGroups(RealmResource realm,
-                                  String userId,
-                                  List<String> groupIds,
-                                  List<String> groupNames) {
-        Set<String> requestedGroupIds = resolveGroupIds(realm, groupIds, groupNames);
-        if (requestedGroupIds.isEmpty()) {
-            return;
-        }
-
-        UserResource userResource = realm.users().get(userId);
-        Set<String> currentGroupIds = new HashSet<>();
-        for (GroupRepresentation group : userResource.groups()) {
-            currentGroupIds.add(group.getId());
-        }
-
-        for (String currentGroupId : currentGroupIds) {
-            if (!requestedGroupIds.contains(currentGroupId)) {
-                userResource.leaveGroup(currentGroupId);
-            }
-        }
-
-        for (String requestedGroupId : requestedGroupIds) {
-            if (!currentGroupIds.contains(requestedGroupId)) {
-                userResource.joinGroup(requestedGroupId);
-            }
-        }
-    }
-
     private Set<String> resolveGroupIds(RealmResource realm,
-                                        List<String> groupIds,
                                         List<String> groupNames) {
         Set<String> resolved = new HashSet<>();
-        if (groupIds != null) {
-            for (String groupId : groupIds) {
-                String value = AuthUtils.trimToNull(groupId);
-                if (value != null) {
-                    resolved.add(value);
-                }
-            }
-        }
 
         if (groupNames != null && !groupNames.isEmpty()) {
             Map<String, String> idByName = loadAllGroupIdsByName(realm.groups().groups());
@@ -326,7 +290,7 @@ public class AuthService {
     private void syncUserGroupsByNames(RealmResource realm,
                                        String userId,
                                        List<String> groupNames) {
-        Set<String> requestedGroupIds = resolveGroupIds(realm, null, groupNames);
+        Set<String> requestedGroupIds = resolveGroupIds(realm, groupNames);
 
         UserResource userResource = realm.users().get(userId);
         Set<String> currentGroupIds = new HashSet<>();
@@ -364,7 +328,7 @@ public class AuthService {
         return idByName;
     }
 
-    private void validateCreateRequest(AuthCreateUserRequest request) {
+    private void validateCreateRequest(AuthUserRequest request) {
         if (request == null) {
             throw new BadRequestException("Request body is required");
         }

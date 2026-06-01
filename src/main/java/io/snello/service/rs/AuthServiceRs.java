@@ -1,8 +1,7 @@
 package io.snello.service.rs;
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
-import io.snello.model.pojo.AuthCreateUserRequest;
-import io.snello.model.pojo.AuthUpdateUserRequest;
+import io.snello.model.pojo.AuthUserRequest;
 import io.snello.service.AuthService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -46,7 +45,7 @@ public class AuthServiceRs {
 
     @POST
     @Path("/users")
-    public Response createUser(AuthCreateUserRequest request) {
+    public Response createUser(AuthUserRequest request) {
         return Response.status(CREATED)
                 .entity(authService.createUser(request))
                 .build();
@@ -63,7 +62,7 @@ public class AuthServiceRs {
     @PUT
     @Path("/users/{id}")
     public Response updateUser(@PathParam("id") @NotNull String id,
-                               AuthUpdateUserRequest request) {
+                               AuthUserRequest request) {
         return ok(authService.updateUser(id, request)).build();
     }
 }
