@@ -5,6 +5,7 @@ import io.snello.model.pojo.AuthUserRequest;
 import io.snello.util.AuthUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
@@ -337,6 +338,36 @@ public class AuthService {
         }
         if (AuthUtils.trimToNull(request.email) == null) {
             throw new BadRequestException("Field 'email' is required");
+        }
+    }
+
+    public Object listGroupUsers(String id) {
+        if (id == null || id.isBlank()) {
+            throw new BadRequestException("Group id is required");
+        }
+
+        try (Keycloak keycloak = buildClient()) {
+            RealmResource realm = keycloak.realm(targetRealm);
+            var groupResource = realm.groups().group(id);
+
+            // Fail fast when group id is invalid.
+            var groupRepresentation = groupResource.toRepresentation();
+            if (groupRepresentation == null) {
+                throw new NotFoundException("Group not found: " + id);
+            }
+
+            List<UserRepresentation> users = groupResource.members();
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (UserRepresentation user : users) {
+                result.add(AuthUtils.userToMap(user));
+            }
+            return result;
+        } catch (BadRequestException | NotFoundException | InternalServerErrorException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            Log.error("Cannot list users for Keycloak group id=" + id, ex);
+            throw new InternalServerErrorException(
+                    "Cannot list users for group '" + id + "' in Keycloak realm '" + targetRealm + "'");
         }
     }
 }

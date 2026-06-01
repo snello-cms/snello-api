@@ -43,6 +43,13 @@ public class AuthServiceRs {
         return ok(authService.listGroups()).build();
     }
 
+
+     @GET
+    @Path("/groups/{id}/users")
+    public Response groupUsers(@PathParam("id") @NotNull String id) {
+        return ok(authService.listGroupUsers(id)).build();
+    }
+
     @POST
     @Path("/users")
     public Response createUser(AuthUserRequest request) {
