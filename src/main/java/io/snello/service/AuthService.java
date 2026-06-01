@@ -370,4 +370,58 @@ public class AuthService {
                     "Cannot list users for group '" + id + "' in Keycloak realm '" + targetRealm + "'");
         }
     }
+
+    public Object listUserGroups(String id) {
+        if (id == null || id.isBlank()) {
+            throw new BadRequestException("User id is required");
+        }
+
+        try (Keycloak keycloak = buildClient()) {
+            RealmResource realm = keycloak.realm(targetRealm);
+            UserResource userResource = realm.users().get(id);
+
+            // Fail fast when user id is invalid.
+            UserRepresentation userRepresentation = userResource.toRepresentation();
+            if (userRepresentation == null) {
+                throw new NotFoundException("User not found: " + id);
+            }
+
+            List<GroupRepresentation> groups = userResource.groups();
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (GroupRepresentation group : groups) {
+                result.add(AuthUtils.groupToMap(group));
+            }
+            return result;
+        } catch (BadRequestException | NotFoundException | InternalServerErrorException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            Log.error("Cannot list groups for Keycloak user id=" + id, ex);
+            throw new InternalServerErrorException(
+                    "Cannot list groups for user '" + id + "' in Keycloak realm '" + targetRealm + "'");
+        }
+    }
+
+    public Object getUser(String id) {
+        if (id == null || id.isBlank()) {
+            throw new BadRequestException("User id is required");
+        }
+
+        try (Keycloak keycloak = buildClient()) {
+            RealmResource realm = keycloak.realm(targetRealm);
+            UserResource userResource = realm.users().get(id);
+            UserRepresentation userRepresentation = userResource.toRepresentation();
+
+            if (userRepresentation == null) {
+                throw new NotFoundException("User not found: " + id);
+            }
+
+            return AuthUtils.userToMap(userRepresentation);
+        } catch (BadRequestException | NotFoundException | InternalServerErrorException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            Log.error("Cannot fetch Keycloak user id=" + id, ex);
+            throw new InternalServerErrorException(
+                    "Cannot fetch user '" + id + "' from Keycloak realm '" + targetRealm + "'");
+        }
+    }
 }

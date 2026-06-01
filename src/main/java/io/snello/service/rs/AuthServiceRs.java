@@ -38,13 +38,24 @@ public class AuthServiceRs {
     }
 
     @GET
+    @Path("/users/{id}")
+    public Response getUser(@PathParam("id") @NotNull String id) {
+        return ok(authService.getUser(id)).build();
+    }
+
+    @GET
+    @Path("/users/{id}/groups")
+    public Response userGroups(@PathParam("id") @NotNull String id) {
+        return ok(authService.listUserGroups(id)).build();
+    }
+
+    @GET
     @Path("/groups")
     public Response groups() {
         return ok(authService.listGroups()).build();
     }
 
-
-     @GET
+    @GET
     @Path("/groups/{id}/users")
     public Response groupUsers(@PathParam("id") @NotNull String id) {
         return ok(authService.listGroupUsers(id)).build();
@@ -69,7 +80,7 @@ public class AuthServiceRs {
     @PUT
     @Path("/users/{id}")
     public Response updateUser(@PathParam("id") @NotNull String id,
-                               AuthUserRequest request) {
+            AuthUserRequest request) {
         return ok(authService.updateUser(id, request)).build();
     }
 }
