@@ -13,7 +13,11 @@ public class AuthBootstrapService {
     AuthService authService;
 
     public void onLoad(@Observes StartupEvent event) {
-        authService.bootstrapBaseSecurity();
-        Log.info("Keycloak bootstrap completed: groups Admin/Manager/User verified and admin user ensured");
+        try {
+            authService.bootstrapBaseSecurity();
+            Log.info("Keycloak bootstrap completed: groups Admin/Manager/User verified and admin user ensured");
+        } catch (Exception ex) {
+            Log.error("Keycloak bootstrap failed, startup will continue without bootstrap", ex);
+        }
     }
 }
