@@ -87,6 +87,30 @@ public class PostgresqlConstants {
     // Compatibility fix for legacy schemas where order_num was created with too-small precision.
     public static String upgradeFieldDefinitionsOrderNum = "ALTER TABLE IF EXISTS fielddefinitions ALTER COLUMN order_num TYPE NUMERIC(12)";
 
+        // Compatibility fix for legacy schemas with varchar limits too small for metadata import payloads.
+        public static String upgradeMetadataAndFieldDefinitionsTextColumns =
+            "ALTER TABLE IF EXISTS metadatas " +
+            "ALTER COLUMN select_fields TYPE TEXT, " +
+            "ALTER COLUMN search_fields TYPE TEXT, " +
+            "ALTER COLUMN description TYPE TEXT, " +
+            "ALTER COLUMN alias_condition TYPE TEXT, " +
+            "ALTER COLUMN creation_query TYPE TEXT, " +
+            "ALTER COLUMN order_by TYPE TEXT, " +
+            "ALTER COLUMN tab_groups TYPE TEXT; " +
+            "ALTER TABLE IF EXISTS fielddefinitions " +
+            "ALTER COLUMN label TYPE TEXT, " +
+            "ALTER COLUMN description TYPE TEXT, " +
+            "ALTER COLUMN options TYPE TEXT, " +
+            "ALTER COLUMN validations TYPE TEXT, " +
+            "ALTER COLUMN function_def TYPE TEXT, " +
+            "ALTER COLUMN sql_type TYPE TEXT, " +
+            "ALTER COLUMN sql_definition TYPE TEXT, " +
+            "ALTER COLUMN default_value TYPE TEXT, " +
+            "ALTER COLUMN pattern TYPE TEXT, " +
+            "ALTER COLUMN join_table_select_fields TYPE TEXT, " +
+            "ALTER COLUMN search_condition TYPE TEXT, " +
+            "ALTER COLUMN search_field_name TYPE TEXT";
+
     public static String creationQueryMetadatas = "CREATE TABLE IF NOT EXISTS metadatas (\n" +
                                                   "  uuid varchar(255) NOT NULL,\n" +
                                                   "  table_name varchar(255) NOT NULL,\n" +

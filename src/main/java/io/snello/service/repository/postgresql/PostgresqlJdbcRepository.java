@@ -49,6 +49,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 creationQueryMetadatas,
                 creationQueryFieldDefinitions,
                 upgradeFieldDefinitionsOrderNum,
+                upgradeMetadataAndFieldDefinitionsTextColumns,
                 creationQueryConditions,
                 creationQueryDocuments,
                 creationQuerySelectQueries,
