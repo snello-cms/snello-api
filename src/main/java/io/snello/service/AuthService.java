@@ -15,7 +15,10 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import jakarta.ws.rs.core.Response;
 
@@ -28,6 +31,12 @@ import java.util.Set;
 
 @ApplicationScoped
 public class AuthService {
+
+    private static final String GROUP_ADMIN = "Admin";
+    private static final String GROUP_MANAGER = "Manager";
+    private static final String GROUP_USER = "User";
+    private static final String ROLE_ADMIN = "Admin";
+    private static final String SNELLO_API_CLIENT_ID = "snello-api";
 
     @Inject
     MetadataService metadataService;
@@ -52,6 +61,24 @@ public class AuthService {
 
     @ConfigProperty(name = "snello.keycloak.admin.password")
     String adminPassword;
+
+    @ConfigProperty(name = "snello-admin.username")
+    String bootstrapAdminUsername;
+
+    @ConfigProperty(name = "snello-admin.password")
+    String bootstrapAdminPassword;
+
+    public void bootstrapBaseSecurity() {
+        try (Keycloak keycloak = buildClient()) {
+            RealmResource realm = keycloak.realm(targetRealm);
+
+            Map<String, String> groupIdsByName = ensureBaseGroups(realm);
+            ensureAtLeastOneAdminUser(realm, groupIdsByName);
+        } catch (RuntimeException ex) {
+            Log.error("Cannot bootstrap base Keycloak security", ex);
+            throw new InternalServerErrorException("Cannot bootstrap Keycloak realm '" + targetRealm + "'");
+        }
+    }
 
     public List<Map<String, Object>> listUsers() {
         try (Keycloak keycloak = buildClient()) {
@@ -423,5 +450,213 @@ public class AuthService {
             throw new InternalServerErrorException(
                     "Cannot fetch user '" + id + "' from Keycloak realm '" + targetRealm + "'");
         }
+    }
+
+    private Map<String, String> ensureBaseGroups(RealmResource realm) {
+        Map<String, String> existingGroupIdsByName = loadAllGroupIdsByName(realm.groups().groups());
+        ensureGroupExistsByName(realm, existingGroupIdsByName, GROUP_ADMIN);
+        ensureGroupExistsByName(realm, existingGroupIdsByName, GROUP_MANAGER);
+        ensureGroupExistsByName(realm, existingGroupIdsByName, GROUP_USER);
+        return existingGroupIdsByName;
+    }
+
+    private void ensureGroupExistsByName(RealmResource realm,
+                                         Map<String, String> groupIdsByName,
+                                         String groupName) {
+        if (groupIdsByName.containsKey(groupName)) {
+            return;
+        }
+
+        GroupRepresentation groupRepresentation = new GroupRepresentation();
+        groupRepresentation.setName(groupName);
+
+        try (Response response = realm.groups().add(groupRepresentation)) {
+            int status = response.getStatus();
+            if (status < 200 || status > 299) {
+                String body = AuthUtils.safeEntity(response);
+                throw new InternalServerErrorException(
+                        "Keycloak group creation failed for '" + groupName + "' with status " + status + ": " + body);
+            }
+
+            String groupId = CreatedResponseUtil.getCreatedId(response);
+            if (groupId == null || groupId.isBlank()) {
+                throw new InternalServerErrorException("Group created but id is missing for '" + groupName + "'");
+            }
+
+            groupIdsByName.put(groupName, groupId);
+            Log.info("Created missing Keycloak group: " + groupName);
+        }
+    }
+
+    private void ensureAtLeastOneAdminUser(RealmResource realm,
+                                           Map<String, String> groupIdsByName) {
+        String clientInternalId = resolveClientInternalId(realm, SNELLO_API_CLIENT_ID);
+        if (existsAdminUser(realm, clientInternalId)) {
+            return;
+        }
+
+        String username = AuthUtils.trimToNull(bootstrapAdminUsername);
+        String password = AuthUtils.trimToNull(bootstrapAdminPassword);
+
+        if (username == null || password == null) {
+            throw new InternalServerErrorException(
+                    "Missing bootstrap admin credentials: snello-admin.username/snello-admin.password");
+        }
+
+        String userId = findUserIdByUsername(realm, username);
+        if (userId == null) {
+            userId = createBootstrapAdminUser(realm, username);
+            Log.info("Created bootstrap Keycloak admin user: " + username);
+        }
+
+        UserResource userResource = realm.users().get(userId);
+        setPassword(userResource, password);
+
+        String adminGroupId = groupIdsByName.get(GROUP_ADMIN);
+        if (adminGroupId != null && !isUserInGroup(userResource, GROUP_ADMIN)) {
+            userResource.joinGroup(adminGroupId);
+        }
+
+        assignAdminClientRoleIfPossible(realm, userResource, clientInternalId);
+    }
+
+    private boolean existsAdminUser(RealmResource realm, String clientInternalId) {
+        List<UserRepresentation> users = listAllUsers(realm);
+        for (UserRepresentation user : users) {
+            if (user.getId() == null || user.getId().isBlank()) {
+                continue;
+            }
+
+            UserResource userResource = realm.users().get(user.getId());
+            if (isUserInGroup(userResource, GROUP_ADMIN) || hasAdminClientRole(userResource, clientInternalId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String resolveClientInternalId(RealmResource realm, String clientId) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId(clientId);
+        if (clients == null || clients.isEmpty()) {
+            Log.warn("Keycloak client not found, skipping client-role assignment: " + clientId);
+            return null;
+        }
+        return clients.getFirst().getId();
+    }
+
+    private String findUserIdByUsername(RealmResource realm, String username) {
+        List<UserRepresentation> users = listAllUsers(realm);
+        for (UserRepresentation user : users) {
+            if (user.getUsername() != null && user.getUsername().equalsIgnoreCase(username)) {
+                return user.getId();
+            }
+        }
+        return null;
+    }
+
+    private String createBootstrapAdminUser(RealmResource realm, String username) {
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setEnabled(true);
+        userRepresentation.setUsername(username);
+        userRepresentation.setEmail(resolveBootstrapEmail(username));
+        userRepresentation.setEmailVerified(true);
+        userRepresentation.setFirstName("Bootstrap");
+        userRepresentation.setLastName("Admin");
+
+        try (Response response = realm.users().create(userRepresentation)) {
+            int status = response.getStatus();
+            if (status < 200 || status > 299) {
+                String body = AuthUtils.safeEntity(response);
+                throw new InternalServerErrorException(
+                        "Keycloak bootstrap admin creation failed with status " + status + ": " + body);
+            }
+
+            String userId = CreatedResponseUtil.getCreatedId(response);
+            if (userId == null || userId.isBlank()) {
+                throw new InternalServerErrorException("Bootstrap admin created but id is missing");
+            }
+            return userId;
+        }
+    }
+
+    private String resolveBootstrapEmail(String username) {
+        if (username.contains("@")) {
+            return username;
+        }
+        return username + "@local";
+    }
+
+    private void setPassword(UserResource userResource, String password) {
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(password);
+        credential.setTemporary(false);
+        userResource.resetPassword(credential);
+    }
+
+    private boolean isUserInGroup(UserResource userResource, String groupName) {
+        for (GroupRepresentation group : userResource.groups()) {
+            String name = AuthUtils.trimToNull(group.getName());
+            if (name != null && name.equalsIgnoreCase(groupName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAdminClientRole(UserResource userResource, String clientInternalId) {
+        if (clientInternalId == null || clientInternalId.isBlank()) {
+            return false;
+        }
+
+        List<RoleRepresentation> roles = userResource.roles().clientLevel(clientInternalId).listEffective();
+        for (RoleRepresentation role : roles) {
+            String roleName = AuthUtils.trimToNull(role.getName());
+            if (roleName != null && roleName.equalsIgnoreCase(ROLE_ADMIN)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void assignAdminClientRoleIfPossible(RealmResource realm,
+                                                 UserResource userResource,
+                                                 String clientInternalId) {
+        if (clientInternalId == null || clientInternalId.isBlank()) {
+            return;
+        }
+        if (hasAdminClientRole(userResource, clientInternalId)) {
+            return;
+        }
+
+        RoleRepresentation adminRole;
+        try {
+            adminRole = realm.clients().get(clientInternalId).roles().get(ROLE_ADMIN).toRepresentation();
+        } catch (RuntimeException ex) {
+            Log.warn("Keycloak client role 'Admin' not found on client '" + SNELLO_API_CLIENT_ID + "'");
+            return;
+        }
+
+        userResource.roles().clientLevel(clientInternalId).add(List.of(adminRole));
+    }
+
+    private List<UserRepresentation> listAllUsers(RealmResource realm) {
+        List<UserRepresentation> all = new ArrayList<>();
+        int first = 0;
+        int size = 200;
+
+        while (true) {
+            List<UserRepresentation> page = realm.users().list(first, size);
+            if (page == null || page.isEmpty()) {
+                break;
+            }
+            all.addAll(page);
+            if (page.size() < size) {
+                break;
+            }
+            first += size;
+        }
+
+        return all;
     }
 }

@@ -19,6 +19,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -172,9 +173,30 @@ public class MetadataServiceRs extends AbstractServiceRs {
     @Path("/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importMetadatas(@BeanParam JsonFormData formData) throws Exception {
+        if (formData == null || formData.data == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("missing multipart form field 'file'")
+                    .build();
+        }
+
         ObjectMapper mapper = new ObjectMapper();
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(formData.data, Map.class);
+        Map<String, Object> body = mapper.readValue((InputStream) formData.data, Map.class);
+        return importMetadatasInternal(body);
+    }
+
+    @POST
+    @Path("/import")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response importMetadatasJson(Map<String, Object> body) throws Exception {
+        return importMetadatasInternal(body);
+    }
+
+    private Response importMetadatasInternal(Map<String, Object> body) throws Exception {
+        if (body == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("request body is empty").build();
+        }
+
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> metadatasList = (List<Map<String, Object>>) body.get("metadatas");
         if (metadatasList == null || metadatasList.isEmpty()) {
