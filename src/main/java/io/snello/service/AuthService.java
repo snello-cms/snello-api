@@ -157,6 +157,7 @@ public class AuthService {
 
             Set<String> metadataNames = metadataService.names();
             Map<String, String> existingGroupIdsByName = loadAllGroupIdsByName(realm.groups().groups());
+            Set<String> existingGroupNames = new HashSet<>(existingGroupIdsByName.keySet());
             Set<String> expectedMetadataGroups = expectedMetadataGroups(metadataNames);
 
             List<String> createdGroups = new ArrayList<>();
@@ -172,8 +173,8 @@ public class AuthService {
                 String editGroup = normalized + GROUP_SUFFIX_EDIT;
                 String viewGroup = normalized + GROUP_SUFFIX_VIEW;
 
-                ensureGroupExists(realm, existingGroupIdsByName.keySet(), editGroup, createdGroups, existingGroups);
-                ensureGroupExists(realm, existingGroupIdsByName.keySet(), viewGroup, createdGroups, existingGroups);
+                ensureGroupExists(realm, existingGroupNames, editGroup, createdGroups, existingGroups);
+                ensureGroupExists(realm, existingGroupNames, viewGroup, createdGroups, existingGroups);
             }
 
             int detachedMemberships = removeStaleMetadataGroups(realm, existingGroupIdsByName, expectedMetadataGroups, deletedGroups);
