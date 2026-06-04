@@ -61,6 +61,37 @@ public class MetadataServiceRs extends AbstractServiceRs {
             "calendar_label",
             CREATED
     ));
+            private static final Set<String> IMPORTABLE_FIELD_DEFINITION_COLUMNS = new HashSet<>(List.of(
+                UUID,
+                "metadata_uuid",
+                "metadata_name",
+                "name",
+                "label",
+                "description",
+                "type",
+                "input_type",
+                "options",
+                "group_name",
+                "tab_name",
+                "validations",
+                "view_index",
+                "table_key",
+                "input_disabled",
+                "function_def",
+                "join_table_name",
+                "join_table_key",
+                "join_table_select_fields",
+                "sql_type",
+                "sql_definition",
+                "default_value",
+                "pattern",
+                "searchable",
+                "search_condition",
+                "search_field_name",
+                "show_in_list",
+                "mandatory",
+                "order_num"
+            ));
 
     @Inject
     Event<MetadataCreateUpdateEvent> eventCreateUpdatePublisher;
@@ -263,13 +294,16 @@ public class MetadataServiceRs extends AbstractServiceRs {
             // Salva le field definitions
             if (fieldsList != null) {
                 for (Map<String, Object> fdMap : fieldsList) {
+                    Map<String, Object> fieldToPersist = filterImportableFieldDefinitionColumns(
+                            fdMap,
+                            metaUuid,
+                            (String) metadataToPersist.get(TABLE_NAME)
+                    );
                     // Genera UUID per la field definition se mancante
-                    if (fdMap.get(UUID) == null || fdMap.get(UUID).toString().isBlank()) {
-                        fdMap.put(UUID, java.util.UUID.randomUUID().toString());
+                    if (fieldToPersist.get(UUID) == null || fieldToPersist.get(UUID).toString().isBlank()) {
+                        fieldToPersist.put(UUID, java.util.UUID.randomUUID().toString());
                     }
-                    // Assicura il riferimento al metadata
-                    fdMap.put("metadata_uuid", metaUuid);
-                    getApiService().createFromMap(FIELD_DEFINITIONS, fdMap);
+                    getApiService().createFromMap(FIELD_DEFINITIONS, fieldToPersist);
                 }
             }
             saved.add(savedMeta);
@@ -286,6 +320,28 @@ public class MetadataServiceRs extends AbstractServiceRs {
             if (IMPORTABLE_METADATA_COLUMNS.contains(entry.getKey())) {
                 filtered.put(entry.getKey(), entry.getValue());
             }
+        }
+        return filtered;
+    }
+
+    private Map<String, Object> filterImportableFieldDefinitionColumns(Map<String, Object> fdMap,
+                                                                        String metadataUuid,
+                                                                        String metadataName) {
+        Map<String, Object> filtered = new HashMap<>();
+        if (fdMap != null && !fdMap.isEmpty()) {
+            for (Map.Entry<String, Object> entry : fdMap.entrySet()) {
+                if (IMPORTABLE_FIELD_DEFINITION_COLUMNS.contains(entry.getKey())) {
+                    filtered.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if (!filtered.containsKey("mandatory") && fdMap.containsKey("required")) {
+                filtered.put("mandatory", fdMap.get("required"));
+            }
+        }
+
+        filtered.put("metadata_uuid", metadataUuid);
+        if (metadataName != null && !metadataName.isBlank()) {
+            filtered.putIfAbsent("metadata_name", metadataName);
         }
         return filtered;
     }
