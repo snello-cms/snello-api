@@ -3,7 +3,6 @@ package io.snello.service.rs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
-import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.model.events.MetadataCreateUpdateEvent;
 import io.snello.model.events.MetadataDeleteEvent;
@@ -22,8 +21,10 @@ import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.snello.management.AppConstants.*;
 import static jakarta.ws.rs.core.Response.ok;
@@ -36,6 +37,30 @@ import static jakarta.ws.rs.core.Response.serverError;
 @RunOnVirtualThread
 public class MetadataServiceRs extends AbstractServiceRs {
     private static String table = METADATAS;
+    private static final Set<String> IMPORTABLE_METADATA_COLUMNS = new HashSet<>(List.of(
+            UUID,
+            TABLE_NAME,
+            "icon",
+            "select_fields",
+            "search_fields",
+            "description",
+            "alias_table",
+            "alias_condition",
+            "table_key",
+            "table_key_type",
+            "table_key_addition",
+            "creation_query",
+            "order_by",
+            "metadata_group",
+            "tab_groups",
+            "already_exist",
+            "api_protected",
+            "username_field",
+            "calendar_enabled",
+            "calendar_field",
+            "calendar_label",
+            CREATED
+    ));
 
     @Inject
     Event<MetadataCreateUpdateEvent> eventCreateUpdatePublisher;
@@ -69,7 +94,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
     @GET
     @Path("/{uuid}/create")
     public Response createTable(@PathParam("uuid") @NotNull String uuid) throws Exception {
-        Metadata metadata = getApiService().createMetadataTable(uuid);
+        getApiService().createMetadataTable(uuid);
         Map<String, Object> updateMetadataMap = new HashMap<>();
         updateMetadataMap.put(CREATED, true);
         getApiService().merge(METADATAS, updateMetadataMap, uuid, UUID);
@@ -225,13 +250,15 @@ public class MetadataServiceRs extends AbstractServiceRs {
             Map<String, Object> metaMap = (Map<String, Object>) entry.get("metadata");
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> fieldsList = (List<Map<String, Object>>) entry.get("fields");
+            Map<String, Object> metadataToPersist = filterImportableMetadataColumns(metaMap);
+
             // Genera UUID per il metadata se mancante
-            if (metaMap.get(UUID) == null || metaMap.get(UUID).toString().isBlank()) {
-                metaMap.put(UUID, java.util.UUID.randomUUID().toString());
+            if (metadataToPersist.get(UUID) == null || metadataToPersist.get(UUID).toString().isBlank()) {
+                metadataToPersist.put(UUID, java.util.UUID.randomUUID().toString());
             }
-            String metaUuid = metaMap.get(UUID).toString();
+            String metaUuid = metadataToPersist.get(UUID).toString();
             // Salva il metadata
-            Map<String, Object> savedMeta = getApiService().createIfNotExists(METADATAS, metaMap, UUID);
+            Map<String, Object> savedMeta = getApiService().createIfNotExists(METADATAS, metadataToPersist, UUID);
             eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(savedMeta));
             // Salva le field definitions
             if (fieldsList != null) {
@@ -248,6 +275,19 @@ public class MetadataServiceRs extends AbstractServiceRs {
             saved.add(savedMeta);
         }
         return ok(Map.of("imported", saved)).build();
+    }
+
+    private Map<String, Object> filterImportableMetadataColumns(Map<String, Object> metaMap) {
+        Map<String, Object> filtered = new HashMap<>();
+        if (metaMap == null || metaMap.isEmpty()) {
+            return filtered;
+        }
+        for (Map.Entry<String, Object> entry : metaMap.entrySet()) {
+            if (IMPORTABLE_METADATA_COLUMNS.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
     }
 
 }

@@ -37,6 +37,8 @@ public class AuthService {
     private static final String GROUP_USER = "User";
     private static final String ROLE_ADMIN = "Admin";
     private static final String SNELLO_API_CLIENT_ID = "snello-api";
+    private static final String GROUP_SUFFIX_EDIT = "_edit";
+    private static final String GROUP_SUFFIX_VIEW = "_view";
 
     @Inject
     MetadataService metadataService;
@@ -154,10 +156,12 @@ public class AuthService {
             RealmResource realm = keycloak.realm(targetRealm);
 
             Set<String> metadataNames = metadataService.names();
-            Set<String> existingGroupNames = loadAllGroupNames(realm.groups().groups());
+            Map<String, String> existingGroupIdsByName = loadAllGroupIdsByName(realm.groups().groups());
+            Set<String> expectedMetadataGroups = expectedMetadataGroups(metadataNames);
 
             List<String> createdGroups = new ArrayList<>();
             List<String> existingGroups = new ArrayList<>();
+            List<String> deletedGroups = new ArrayList<>();
 
             for (String metadataName : metadataNames) {
                 String normalized = AuthUtils.trimToNull(metadataName);
@@ -165,12 +169,14 @@ public class AuthService {
                     continue;
                 }
 
-                String editGroup = normalized + "_edit";
-                String viewGroup = normalized + "_view";
+                String editGroup = normalized + GROUP_SUFFIX_EDIT;
+                String viewGroup = normalized + GROUP_SUFFIX_VIEW;
 
-                ensureGroupExists(realm, existingGroupNames, editGroup, createdGroups, existingGroups);
-                ensureGroupExists(realm, existingGroupNames, viewGroup, createdGroups, existingGroups);
+                ensureGroupExists(realm, existingGroupIdsByName.keySet(), editGroup, createdGroups, existingGroups);
+                ensureGroupExists(realm, existingGroupIdsByName.keySet(), viewGroup, createdGroups, existingGroups);
             }
+
+            int detachedMemberships = removeStaleMetadataGroups(realm, existingGroupIdsByName, expectedMetadataGroups, deletedGroups);
 
             Map<String, Object> result = new HashMap<>();
             result.put("metadatasCount", metadataNames.size());
@@ -178,6 +184,9 @@ public class AuthService {
             result.put("existingCount", existingGroups.size());
             result.put("createdGroups", createdGroups);
             result.put("existingGroups", existingGroups);
+            result.put("deletedCount", deletedGroups.size());
+            result.put("deletedGroups", deletedGroups);
+            result.put("detachedMemberships", detachedMemberships);
             return result;
         } catch (BadRequestException | InternalServerErrorException ex) {
             throw ex;
@@ -233,6 +242,65 @@ public class AuthService {
             existingGroupNames.add(groupName);
             createdGroups.add(groupName);
         }
+    }
+
+    private Set<String> expectedMetadataGroups(Set<String> metadataNames) {
+        Set<String> expectedGroups = new HashSet<>();
+        if (metadataNames == null || metadataNames.isEmpty()) {
+            return expectedGroups;
+        }
+
+        for (String metadataName : metadataNames) {
+            String normalized = AuthUtils.trimToNull(metadataName);
+            if (normalized == null) {
+                continue;
+            }
+            expectedGroups.add(normalized + GROUP_SUFFIX_EDIT);
+            expectedGroups.add(normalized + GROUP_SUFFIX_VIEW);
+        }
+        return expectedGroups;
+    }
+
+    private int removeStaleMetadataGroups(RealmResource realm,
+                                          Map<String, String> existingGroupIdsByName,
+                                          Set<String> expectedMetadataGroups,
+                                          List<String> deletedGroups) {
+        int detachedMemberships = 0;
+
+        for (Map.Entry<String, String> entry : existingGroupIdsByName.entrySet()) {
+            String groupName = entry.getKey();
+            String groupId = entry.getValue();
+
+            if (!isManagedMetadataGroup(groupName) || expectedMetadataGroups.contains(groupName)) {
+                continue;
+            }
+
+            var groupResource = realm.groups().group(groupId);
+            List<UserRepresentation> members = groupResource.members();
+            if (members != null) {
+                for (UserRepresentation member : members) {
+                    if (member.getId() == null || member.getId().isBlank()) {
+                        continue;
+                    }
+                    realm.users().get(member.getId()).leaveGroup(groupId);
+                    detachedMemberships++;
+                }
+            }
+
+            groupResource.remove();
+            deletedGroups.add(groupName);
+            Log.info("Removed stale Keycloak metadata group: " + groupName);
+        }
+
+        return detachedMemberships;
+    }
+
+    private boolean isManagedMetadataGroup(String groupName) {
+        String normalized = AuthUtils.trimToNull(groupName);
+        if (normalized == null) {
+            return false;
+        }
+        return normalized.endsWith(GROUP_SUFFIX_EDIT) || normalized.endsWith(GROUP_SUFFIX_VIEW);
     }
 
     public Map<String, Object> updateUser(String id, AuthUserRequest request) {
