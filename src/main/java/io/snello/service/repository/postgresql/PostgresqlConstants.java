@@ -87,8 +87,8 @@ public class PostgresqlConstants {
     // Compatibility fix for legacy schemas where order_num was created with too-small precision.
     public static String upgradeFieldDefinitionsOrderNum = "ALTER TABLE IF EXISTS fielddefinitions ALTER COLUMN order_num TYPE NUMERIC(12)";
 
-        // Compatibility fix for legacy schemas with varchar limits too small for metadata import payloads.
-        public static String upgradeMetadataAndFieldDefinitionsTextColumns =
+    // Compatibility fix for legacy schemas with varchar limits too small for metadata import payloads.
+    public static String upgradeMetadataTextColumns =
             "ALTER TABLE IF EXISTS metadatas " +
             "ALTER COLUMN select_fields TYPE TEXT, " +
             "ALTER COLUMN search_fields TYPE TEXT, " +
@@ -96,7 +96,10 @@ public class PostgresqlConstants {
             "ALTER COLUMN alias_condition TYPE TEXT, " +
             "ALTER COLUMN creation_query TYPE TEXT, " +
             "ALTER COLUMN order_by TYPE TEXT, " +
-            "ALTER COLUMN tab_groups TYPE TEXT; " +
+            "ALTER COLUMN tab_groups TYPE TEXT";
+
+    // Run as dedicated statement to avoid multi-result errors in JDBC batch execution.
+    public static String upgradeFieldDefinitionsTextColumns =
             "ALTER TABLE IF EXISTS fielddefinitions " +
             "ALTER COLUMN label TYPE TEXT, " +
             "ALTER COLUMN description TYPE TEXT, " +
