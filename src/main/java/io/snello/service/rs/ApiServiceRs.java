@@ -42,8 +42,9 @@ public class ApiServiceRs {
     @Path(TABLE_PATH_PARAM)
     @RunOnVirtualThread
     public Response list(@NotNull @PathParam("table") String table, @QueryParam(SORT_PARAM) String sort, @QueryParam(LIMIT_PARAM) String limit, @QueryParam(START_PARAM) String start) throws Exception {
-        if (sort != null) Log.info(SORT_DOT_DOT + sort);
-        if (limit != null || start != null) Log.infof("pagination limit=%s start=%s", limit, start);
+        if (sort != null || limit != null || start != null) {
+            Log.infof("pagination sort=%s limit=%s start=%s", sort, limit, start);
+        }
         debug(GET.class.getName());
         debugMe();
         int l = limit == null ? 10 : Integer.parseInt(limit);
