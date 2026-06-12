@@ -12,9 +12,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.35.2</quarkus.platform.version>
+        <quarkus.platform.version>3.36.2</quarkus.platform.version>
         <skipITs>true</skipITs>
-        <surefire-plugin.version>3.5.4</surefire-plugin.version>
+        <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <commons-codec.version>1.22.0</commons-codec.version>
         <thumbnailator.version>0.4.21</thumbnailator.version>
         <webpimageio.version>0.10.2</webpimageio.version>
