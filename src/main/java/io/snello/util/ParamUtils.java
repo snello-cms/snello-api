@@ -32,6 +32,7 @@ public class ParamUtils {
     public static final String _GTE = ">=";
 
     public static final String CNT = "_contains";
+    public static final String ICNT = "_icontains";
     public static final String LIKE = "_like";
     public static final String ILIKE = "_ilike";
     public static final String _CNT = " LIKE ";
@@ -237,6 +238,16 @@ public class ParamUtils {
                     where.append(AND);
                 }
                 where.append(key.substring(0, key.length() - ILIKE.length()));
+                where.append(_ICNT);
+                where.append(" ? ").append(SPACE);
+                in.add(_LIKE + value + _LIKE);
+                continue;
+            }
+            if (key.endsWith(ICNT)) {
+                if (where.length() > 0) {
+                    where.append(AND);
+                }
+                where.append(key.substring(0, key.length() - ICNT.length()));
                 where.append(_ICNT);
                 where.append(" ? ").append(SPACE);
                 in.add(_LIKE + value + _LIKE);

@@ -54,6 +54,20 @@ class ParamUtilsWhereInTest {
         assertEquals(List.of("draft", "published", "archived"), in);
     }
 
+    @Test
+    void shouldTreatIcontainsAsCaseInsensitiveLike() {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("caption_icontains", List.of("bike"));
+
+        StringBuffer where = new StringBuffer();
+        List<Object> in = new ArrayList<>();
+
+        ParamUtils.where(params, where, in);
+
+        assertEquals("caption ILIKE ?", compact(where.toString()));
+        assertEquals(List.of("%bike%"), in);
+    }
+
     private static String compact(String value) {
         return value.replaceAll("\\s+", " ").trim();
     }
