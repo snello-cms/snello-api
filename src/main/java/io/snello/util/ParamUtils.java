@@ -287,10 +287,10 @@ public class ParamUtils {
                 if (where.length() > 0) {
                     where.append(AND);
                 }
-                where.append(key);
+                where.append(key.substring(0, key.length() - NCNT.length()));
                 where.append(_NCNT);
                 where.append(" ? ").append(SPACE);
-                in.add(_LIKE + value.toLowerCase() + _LIKE);
+                in.add(_LIKE + value + _LIKE);
                 continue;
             }
             if (where.length() > 0) {
