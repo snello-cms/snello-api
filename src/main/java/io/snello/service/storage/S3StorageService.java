@@ -69,7 +69,7 @@ public class S3StorageService implements StorageService {
                             .bucket(bucketName)
                             .object(name)
                             .contentType(documentFormData.mimeType)
-                            .stream(documentFormData.data, -1, PART_SIZE)
+                            .stream(documentFormData.data, -1L, PART_SIZE)
                             .build());
             Log.info("document uploaded!");
             return map;
@@ -99,14 +99,14 @@ public class S3StorageService implements StorageService {
         Map<String, Object> map = new HashMap<>();
         String name = basePath(table_name) + "/" + uuid + "." + extension;
         InputStream stream = new ByteArrayInputStream(bytes);
-        int size = bytes.length;
+        long size = bytes.length;
         String contentType = MimeUtils.getContentType(name);
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
                         .object(name)
                         .contentType(contentType)
-                        .stream(stream, -1, size)
+                        .stream(stream, -1L, size)
                         .build());
         map.put(TABLE_NAME, table_name);
         map.put(DOCUMENT_PATH, name);
