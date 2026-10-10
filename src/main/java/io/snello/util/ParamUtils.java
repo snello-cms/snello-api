@@ -257,9 +257,9 @@ public class ParamUtils {
                 if (where.length() > 0) {
                     where.append(AND);
                 }
-                where.append(key.substring(0, key.length() - RLIKE.length()));
+                where.append("lower(").append(key.substring(0, key.length() - RLIKE.length())).append(")");
                 where.append(_CNT);
-                where.append(" ? ").append(SPACE);
+                where.append(" lower(?) ").append(SPACE);
                 in.add(value + _LIKE);
                 continue;
             }
@@ -267,9 +267,9 @@ public class ParamUtils {
                 if (where.length() > 0) {
                     where.append(AND);
                 }
-                where.append(key.substring(0, key.length() - LLIKE.length()));
+                where.append("lower(").append(key.substring(0, key.length() - LLIKE.length())).append(")");
                 where.append(_CNT);
-                where.append(" ? ").append(SPACE);
+                where.append(" lower(?) ").append(SPACE);
                 in.add(_LIKE + value);
                 continue;
             }

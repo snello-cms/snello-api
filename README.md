@@ -3,7 +3,7 @@
 ![Snello Logo](docs/images/snello-logo.svg)
 
 [![Built with Maven](https://img.shields.io/badge/Built%20with-Maven-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
-[![Quarkus](https://img.shields.io/badge/Quarkus-3.34.2-4695EB?logo=quarkus&logoColor=white)](https://quarkus.io/)
+[![Quarkus](https://img.shields.io/badge/Quarkus-3.40.1-4695EB?logo=quarkus&logoColor=white)](https://quarkus.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 Snello is a metadata-driven headless CMS API.

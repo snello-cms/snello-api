@@ -80,11 +80,16 @@ GET /api/datalist/metadata/orders?status_ne=cancelled
 | `_like` | `LIKE` | `%value%` | Alias of `_contains` |
 | `_ilike` | `ILIKE` | `%value%` | Contains substring (case-insensitive, PostgreSQL) |
 | `_containss` | `LIKE lower()` | `%lower(value)%` | Contains lowercase substring (lowercases both sides) |
-| `_rlike` | `LIKE` | `value%` | Starts with value |
-| `_llike` | `LIKE` | `%value` | Ends with value |
+| `_rlike` | `lower(field) LIKE lower(?)` | `value%` | Starts with value (case-insensitive) |
+| `_llike` | `lower(field) LIKE lower(?)` | `%value` | Ends with value (case-insensitive) |
 | `_ncontains` | `NOT LIKE` | `%value%` | Does **not** contain substring |
 
 **Examples:**
+
+For `_rlike` and `_llike`, right/left refers to the position of the `%` wildcard.
+Both sides are lowercased by the database for case-insensitive matching on PostgreSQL, MySQL, and H2.
+These filters previously used case-sensitive `LIKE` without lowercasing; wildcard directions are unchanged.
+
 ```
 GET /api/datalist/metadata/articles?title_contains=spring
 ```
@@ -98,7 +103,7 @@ GET /api/datalist/metadata/users?email_ilike=gmail
 ```
 GET /api/datalist/metadata/products?code_rlike=SKU
 ```
-→ `WHERE code LIKE 'SKU%'`
+→ `WHERE lower(code) LIKE lower(?)`, with bound parameter `SKU%`
 
 ```
 GET /api/datalist/metadata/logs?message_ncontains=debug
@@ -211,8 +216,8 @@ WHERE category = 'electronics'
 | `_like` | `field LIKE '%?%'` | Alias of `_contains` |
 | `_ilike` | `field ILIKE '%?%'` | Case-insensitive (PostgreSQL) |
 | `_containss` | `lower(field) LIKE '%lower(?)%'` | Both sides lowercased |
-| `_rlike` | `field LIKE '?%'` | Starts with |
-| `_llike` | `field LIKE '%?'` | Ends with |
+| `_rlike` | `lower(field) LIKE lower(?)` | Starts with; bind `value%`; case-insensitive |
+| `_llike` | `lower(field) LIKE lower(?)` | Ends with; bind `%value`; case-insensitive |
 | `_ncontains` | `field NOT LIKE '%?%'` | |
 | `_in` | `field IN (?,?,?)` | Comma-separated values |
 | `_nn` | `field IS NOT NULL` | No value needed |
