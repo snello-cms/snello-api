@@ -54,7 +54,7 @@ services:
       - snello-minio:/data
 
   minio-init:
-    image: amazon/aws-cli:2.31.37
+    image: amazon/aws-cli:2.31.38
     depends_on:
       - minio
     environment:
