@@ -64,7 +64,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Maven Package (Native)
-        run: mvn clean package -DskipTests=true -Pnative -Dquarkus.native.container-build=true
+        # LangChain4j OpenAI ObjectMapperHolder must init at runtime on Quarkus 4 / Jackson 3.
+        run: >
+          mvn clean package -DskipTests=true -Pnative
+          -Dquarkus.native.container-build=true
+          '-Dquarkus.native.additional-build-args=--initialize-at-run-time=io.quarkiverse.langchain4j.openai.common.OpenAiRestApi\$ObjectMapperHolder,--initialize-at-run-time=io.quarkiverse.langchain4j.QuarkusJsonCodecFactory\$SnakeCaseObjectMapperHolder'
 
       - name: Verify native runner artifact
         run: |
