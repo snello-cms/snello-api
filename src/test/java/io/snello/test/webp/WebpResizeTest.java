@@ -17,7 +17,7 @@ public class WebpResizeTest {
     static String resized_target = "docs/webp/snello3_500x500.webp";
 
 
-    @Disabled("requires docs/snello3.jpeg not present in repository")
+    @Disabled("sample image fixtures removed from docs/; keep as manual media smoke test")
     @Test
     public void resize() throws Exception {
         BufferedImage png = ImageIO.read(new File(origin));

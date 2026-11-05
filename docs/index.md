@@ -1,6 +1,11 @@
 # Snello API Docs
 
-This folder contains the functional and technical documentation for the project.
+Functional and technical documentation for Snello.
+
+Architecture / 6.x proposal (repo root):
+
+- [ARCHITECTURE_REENGINEERING.md](../ARCHITECTURE_REENGINEERING.md)
+- [ARCHITECTURE_REENGINEERING.it.md](../ARCHITECTURE_REENGINEERING.it.md)
 
 ## Index
 

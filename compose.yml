@@ -1,0 +1,101 @@
+# Full local stack: dependencies + snello-api 6.x alpha image.
+# Usage:
+#   docker compose up -d
+#   docker compose --profile build up -d --build
+name: snello
+
+services:
+  postgresql:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: snello
+      POSTGRES_USER: snello
+      POSTGRES_PASSWORD: snello
+    ports:
+      - "5432:5432"
+    volumes:
+      - snello-pgdata:/var/lib/postgresql
+      - ./dev/db/backup_04_04_2026.backup.sql:/tmp/backup_04_04_2026.backup.sql:ro
+      - ./dev/db/init-postgresql-restore.sh:/docker-entrypoint-initdb.d/10-restore.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snello -d snello"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+    command:
+      - start-dev
+      - --import-realm
+      - --http-port=8080
+      - --hostname-strict=false
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./dev/keycloak:/opt/keycloak/data/import:ro
+
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - snello-minio:/data
+
+  minio-init:
+    image: amazon/aws-cli:2.31.37
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio123
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        until aws --endpoint-url http://minio:9000 s3 ls >/dev/null 2>&1; do
+          echo "Waiting for MinIO..."
+          sleep 2
+        done
+        aws --endpoint-url http://minio:9000 s3 mb s3://snello 2>/dev/null || true
+        exit 0
+    restart: "no"
+
+  snello-api:
+    image: snellocms/snello-api:alpha
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      SNELLO_DBTYPE: postgresql
+      QUARKUS_DATASOURCE_POSTGRESQL_JDBC_URL: jdbc:postgresql://postgresql:5432/snello
+      QUARKUS_DATASOURCE_POSTGRESQL_USERNAME: snello
+      QUARKUS_DATASOURCE_POSTGRESQL_PASSWORD: snello
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
+      QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: http://keycloak:8080/realms/lovers
+      QUARKUS_MINIO_HOST: minio
+      QUARKUS_MINIO_PORT: "9000"
+      QUARKUS_MINIO_ACCESS_KEY: minio
+      QUARKUS_MINIO_SECRET_KEY: minio123
+
+volumes:
+  snello-pgdata:
+  snello-minio:

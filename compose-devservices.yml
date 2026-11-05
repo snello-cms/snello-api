@@ -1,6 +1,10 @@
+# Quarkus Compose Dev Services stack (local %dev).
+# Images pinned to current stable/community releases (Nov 2026).
+name: snello-dev
+
 services:
   postgresql:
-    image: postgres:18.3
+    image: postgres:18.6
     environment:
       POSTGRES_DB: snello
       POSTGRES_USER: snello
@@ -8,21 +12,24 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./docs/db/backup_04_04_2026.backup.sql:/tmp/backup_04_04_2026.backup.sql:ro
-      - ./docs/db/init-postgresql-restore.sh:/docker-entrypoint-initdb.d/10-restore.sh:ro
+      - snello-pgdata:/var/lib/postgresql
+      - ./dev/db/backup_04_04_2026.backup.sql:/tmp/backup_04_04_2026.backup.sql:ro
+      - ./dev/db/init-postgresql-restore.sh:/docker-entrypoint-initdb.d/10-restore.sh:ro
     healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U snello -d snello
+      test: ["CMD-SHELL", "pg_isready -U snello -d snello"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.2
+    image: quay.io/keycloak/keycloak:26.8.2
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
     command:
       - start-dev
       - --import-realm
@@ -32,9 +39,16 @@ services:
       - "8180:8080"
     volumes:
       - ./dev/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
+  # Official minio/minio images are no longer publicly pullable; pgsty/silo is a community MinIO fork.
   minio:
-    image: minio/minio:latest
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
@@ -42,19 +56,30 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-
+    volumes:
+      - snello-minio:/data
   minio-init:
-    image: minio/mc:latest
+    image: amazon/aws-cli:2.31.38
     depends_on:
-      - minio
-    entrypoint:
-      - /bin/sh
-      - -c
+      minio:
+        condition: service_started
+    environment:
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio123
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
       - |
-        until mc alias set local http://minio:9000 minio minio123; do
+        set -e
+        until aws --endpoint-url http://minio:9000 s3 ls >/dev/null 2>&1; do
           echo "Waiting for MinIO..."
           sleep 2
         done
-        mc mb -p local/snello || true
-        mc anonymous set none local/snello || true
+        aws --endpoint-url http://minio:9000 s3 mb s3://snello 2>/dev/null || true
+        echo "MinIO bucket snello ready"
         exit 0
+    restart: "no"
+
+volumes:
+  snello-pgdata:
+  snello-minio:
