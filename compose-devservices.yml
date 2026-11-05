@@ -13,14 +13,21 @@ services:
       - "5432:5432"
     volumes:
       - snello-pgdata:/var/lib/postgresql
-      - ./dev/db/backup_04_04_2026.backup.sql:/tmp/backup_04_04_2026.backup.sql:ro
-      - ./dev/db/init-postgresql-restore.sh:/docker-entrypoint-initdb.d/10-restore.sh:ro
+      - ./dev/db:/seed:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        cp /seed/backup_04_04_2026.backup.sql /tmp/backup_04_04_2026.backup.sql
+        cp /seed/init-postgresql-restore.sh /docker-entrypoint-initdb.d/10-restore.sh
+        chmod +x /docker-entrypoint-initdb.d/10-restore.sh
+        exec /usr/local/bin/docker-entrypoint.sh postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U snello -d snello"]
       interval: 5s
       timeout: 5s
-      retries: 20
-      start_period: 10s
+      retries: 30
+      start_period: 20s
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.2
@@ -58,6 +65,7 @@ services:
       - "9001:9001"
     volumes:
       - snello-minio:/data
+
   minio-init:
     image: amazon/aws-cli:2.31.38
     depends_on:
