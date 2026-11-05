@@ -46,10 +46,14 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     public String[] creationQueries() {
         return new String[]{
                 creationActionExtensions,
+                upgradeActionsPhase,
                 creationQueryMetadatas,
                 creationQueryFieldDefinitions,
                 upgradeFieldDefinitionsOrderNum,
+                upgradeMetadataMissingColumns,
+                upgradeDocumentsCreationDate,
                 upgradeMetadataTextColumns,
+                upgradeFieldDefinitionsMissingColumns,
                 upgradeFieldDefinitionsTextColumns,
                 creationQueryConditions,
                 creationQueryDocuments,
@@ -330,16 +334,26 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         }
     }
 
+    /**
+     * Runs each statement independently so a single failing (e.g. legacy-schema) statement
+     * does not prevent the remaining ones from being applied.
+     */
     public void batch(String[] queries) throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            Statement statement = connection.createStatement();
+        Log.info("BATCH start, statements=" + queries.length);
+        int failed = 0;
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
             for (String query : queries) {
                 Log.info("BATCH QUERY: " + query);
-                statement.addBatch(query);
+                try {
+                    statement.execute(query);
+                } catch (SQLException e) {
+                    failed++;
+                    Log.error("BATCH QUERY failed (continuing): " + e.getMessage() + " -- query: " + query);
+                }
             }
-            statement.executeBatch();
-            statement.close();
         }
+        Log.info("BATCH done, failed=" + failed + "/" + queries.length);
     }
 
     public boolean executeQuery(String sql) throws Exception {

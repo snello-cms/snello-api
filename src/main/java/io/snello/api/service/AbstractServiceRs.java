@@ -60,7 +60,7 @@ public abstract class AbstractServiceRs {
     @Path("/{id}")
     public Response update(@PathParam("id") String id,
                            Map<String, Object> map) throws Exception {
-        preUpdate(map);
+        preUpdate(id, map);
         map = apiService.merge(table, map, id, UUID);
         postUpdate(map);
         return ok(map).build();
@@ -116,6 +116,14 @@ public abstract class AbstractServiceRs {
     }
 
     protected void preUpdate(Map<String, Object> object) throws Exception {
+    }
+
+    /**
+     * Same as {@link #preUpdate(Map)} but also receives the id of the row being updated, so subclasses can
+     * compare the stored row with the incoming changes. Defaults to the id-less hook.
+     */
+    protected void preUpdate(String id, Map<String, Object> object) throws Exception {
+        preUpdate(object);
     }
 
     protected void preDelete(String id) throws Exception {

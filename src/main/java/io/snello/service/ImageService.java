@@ -196,15 +196,25 @@ public class ImageService {
     }
 
     private void uploadImageToS3(String uuid, ByteArrayOutputStream resizedBaos, Map<String, Object> map) throws Exception {
-        final ByteArrayInputStream resizedBais = new ByteArrayInputStream(resizedBaos.toByteArray());
+        // storage uploads from a file, so hand the resized bytes over through a short-lived temp file
+        java.nio.file.Path resizedFile = java.nio.file.Files.createTempFile("resized_" + uuid + "_", ".img");
         DocumentFormData documentFormData = new DocumentFormData();
-        documentFormData.data = resizedBais;
-        documentFormData.uuid = uuid;
-        documentFormData.mimeType = (String) map.get(DOCUMENT_MIME_TYPE);
-        documentFormData.filename = (String) map.get(DOCUMENT_NAME);
-        documentFormData.table_name = (String) map.get(TABLE_NAME);
-        documentFormData.table_key = (String) map.get(TABLE_KEY);
-        documentsService.upload(documentFormData);
+        try {
+            try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(resizedFile)) {
+                resizedBaos.writeTo(out);
+            }
+            documentFormData.localFile = resizedFile;
+            documentFormData.localFileTemporary = true;
+            documentFormData.uuid = uuid;
+            documentFormData.mimeType = (String) map.get(DOCUMENT_MIME_TYPE);
+            documentFormData.filename = (String) map.get(DOCUMENT_NAME);
+            documentFormData.table_name = (String) map.get(TABLE_NAME);
+            documentFormData.table_key = (String) map.get(TABLE_KEY);
+            documentsService.upload(documentFormData);
+        } finally {
+            documentFormData.cleanup();
+            java.nio.file.Files.deleteIfExists(resizedFile);
+        }
     }
 
     private String getFormatForMimeType(String mime_type) throws Exception {

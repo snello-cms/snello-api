@@ -6,10 +6,14 @@ import io.snello.model.Metadata;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public interface JdbcRepository {
 
@@ -82,5 +86,49 @@ public interface JdbcRepository {
     String fieldDefinition2Sql(FieldDefinition fieldDefinition) throws Exception;
 
     String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) throws Exception;
+
+    /**
+     * Names of the columns that currently exist on the given table, lower-cased.
+     * Empty when the table does not exist. Uses JDBC metadata so it works on every supported database,
+     * trying the name as given and in lower/upper case (PostgreSQL folds to lower, H2 to upper).
+     */
+    default Set<String> columns(String table) throws Exception {
+        Set<String> result = new TreeSet<>();
+        if (table == null || table.isBlank()) {
+            return result;
+        }
+        try (Connection connection = getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            for (String candidate : new String[]{table, table.toLowerCase(), table.toUpperCase()}) {
+                try (ResultSet resultSet = metaData.getColumns(connection.getCatalog(), connection.getSchema(), candidate, null)) {
+                    while (resultSet.next()) {
+                        // the table pattern treats '_' as a wildcard, so keep exact matches only
+                        if (table.equalsIgnoreCase(resultSet.getString("TABLE_NAME"))) {
+                            result.add(resultSet.getString("COLUMN_NAME").toLowerCase());
+                        }
+                    }
+                }
+                if (!result.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /** ALTER statement adding one column; columnSql is a full column definition ("name type default ..."). */
+    default String addColumnSql(String table, String columnSql) {
+        return "ALTER TABLE " + escape(table) + " ADD COLUMN " + columnSql;
+    }
+
+    /** ALTER statement renaming a column. Supported as-is by PostgreSQL, MySQL 8+ and H2. */
+    default String renameColumnSql(String table, String from, String to) {
+        return "ALTER TABLE " + escape(table) + " RENAME COLUMN " + escape(from) + " TO " + escape(to);
+    }
+
+    /** ALTER statement renaming a table. Supported as-is by PostgreSQL, MySQL and H2. */
+    default String renameTableSql(String from, String to) {
+        return "ALTER TABLE " + escape(from) + " RENAME TO " + escape(to);
+    }
 
 }
