@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.snello.management.AppConstants.*;
+import io.snello.util.ContentDispositionUtils;
+
+import static io.snello.util.ContentDispositionUtils.downloadName;
 import static io.snello.util.DocumentUtils.hasFormatToken;
 import static io.snello.util.DocumentUtils.resolveRemoteFile;
 import static io.snello.util.DocumentUtils.validateDocumentFormData;
@@ -66,7 +69,8 @@ public class DocumentServiceRs {
         Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
-        String filename = (String) map.get(DOCUMENT_NAME);
+        String filename = downloadName(map);
+        Log.infof("download - uuid=%s filename=%s", uuid, filename);
         String formats = (String) map.get(FORMATS);
         if (format != null && !format.isBlank()) {
             boolean itemExists = hasFormatToken(formats, format);
@@ -75,7 +79,7 @@ public class DocumentServiceRs {
                 String dpath = path.replace(uuid, duuid);
                 StreamingOutput output = documentsService.streamingOutput(dpath, mimetype);
                 return Response.ok(output)
-                        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                        .header("Content-Disposition", ContentDispositionUtils.of("attachment", filename))
                         .build();
             } else {
                 imageEvent.fireAsync(new ImageEvent(uuid, format));
@@ -84,11 +88,11 @@ public class DocumentServiceRs {
         StreamingOutput output = documentsService.streamingOutput(path, mimetype);
         if (format != null) {
             return Response.ok(output)
-                    .header("Content-Disposition", "inline; \"")
+                    .header("Content-Disposition", ContentDispositionUtils.of("inline", filename))
                     .build();
         } else {
             return Response.ok(output)
-                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .header("Content-Disposition", ContentDispositionUtils.of("attachment", filename))
                     .build();
         }
     }
@@ -176,13 +180,19 @@ public class DocumentServiceRs {
     @Produces(MediaType.APPLICATION_JSON)
 
     public Response persist(@BeanParam DocumentFormData documentFormData) throws Exception {
-        resolveRemoteFile(documentFormData);
-        validateDocumentFormData(documentFormData);
-        String uuid = java.util.UUID.randomUUID().toString();
-        documentFormData.uuid = uuid;
-        Map<String, Object> map = documentsService.upload(documentFormData);
-        map = apiService.create(table, map, AppConstants.UUID);
-        return ok(map).build();
+        try {
+            resolveRemoteFile(documentFormData);
+            validateDocumentFormData(documentFormData);
+            String uuid = java.util.UUID.randomUUID().toString();
+            documentFormData.uuid = uuid;
+            Log.infof("document upload: uuid=%s table=%s name=%s", uuid, documentFormData.table_name,
+                    documentFormData.resolvedOriginalName());
+            Map<String, Object> map = documentsService.upload(documentFormData);
+            map = apiService.create(table, map, AppConstants.UUID);
+            return ok(map).build();
+        } finally {
+            documentFormData.cleanup();
+        }
     }
 
     @PUT
@@ -194,12 +204,18 @@ public class DocumentServiceRs {
             @PathParam("uuid") @NotNull String uuid) throws Exception {
         // Map<String, Object> map = documentsService.upload(file, uuid, table_name,
         // table_key);
-        resolveRemoteFile(documentFormData);
-        validateDocumentFormData(documentFormData);
-        documentFormData.uuid = uuid;
-        Map<String, Object> map = documentsService.upload(documentFormData);
-        map = apiService.merge(table, map, uuid, AppConstants.UUID);
-        return ok(map).build();
+        try {
+            resolveRemoteFile(documentFormData);
+            validateDocumentFormData(documentFormData);
+            documentFormData.uuid = uuid;
+            Log.infof("document re-upload: uuid=%s table=%s name=%s", uuid, documentFormData.table_name,
+                    documentFormData.resolvedOriginalName());
+            Map<String, Object> map = documentsService.upload(documentFormData);
+            map = apiService.merge(table, map, uuid, AppConstants.UUID);
+            return ok(map).build();
+        } finally {
+            documentFormData.cleanup();
+        }
     }
 
     @PUT

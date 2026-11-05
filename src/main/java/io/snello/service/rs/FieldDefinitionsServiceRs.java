@@ -6,7 +6,9 @@ import io.snello.api.service.AbstractServiceRs;
 import io.snello.management.AppConstants;
 import io.snello.model.events.FieldDefinitionCreateUpdateEvent;
 import io.snello.model.events.FieldDefinitionDeleteEvent;
+import io.quarkus.logging.Log;
 import io.snello.service.ApiService;
+import io.snello.service.TableSchemaService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -32,6 +34,8 @@ public class FieldDefinitionsServiceRs extends AbstractServiceRs {
     Event<FieldDefinitionCreateUpdateEvent> eventUpdatePublisher;
     @Inject
     Event<FieldDefinitionDeleteEvent> eventDeletePublisher;
+    @Inject
+    TableSchemaService tableSchemaService;
 
     @Inject
     FieldDefinitionsServiceRs(ApiService apiService) {
@@ -44,6 +48,19 @@ public class FieldDefinitionsServiceRs extends AbstractServiceRs {
     @Override
     protected void prePersist(Map<String, Object> object) throws Exception {
         object.put(AppConstants.UUID, java.util.UUID.randomUUID().toString());
+        // table already created? then the new field needs its column
+        tableSchemaService.onFieldCreated(object);
+    }
+
+    @Override
+    protected void preUpdate(String id, Map<String, Object> object) throws Exception {
+        Map<String, Object> stored = getApiService().fetch(null, FIELD_DEFINITIONS, id, AppConstants.UUID);
+        if (stored == null || stored.isEmpty()) {
+            Log.warnf("TABLE SYNC skipped: field definition %s not found", id);
+            return;
+        }
+        // table already created? then a renamed field needs its column renamed
+        tableSchemaService.onFieldUpdated(stored, object);
     }
 
     @Override
@@ -58,6 +75,8 @@ public class FieldDefinitionsServiceRs extends AbstractServiceRs {
 
     @Override
     protected void postDelete(String id) {
+        // by design the column is NOT dropped: deleting a field definition never removes data
+        Log.infof("TABLE SYNC field definition %s deleted: its column (if any) is kept", id);
         eventDeletePublisher.fireAsync(new FieldDefinitionDeleteEvent(id));
     }
 

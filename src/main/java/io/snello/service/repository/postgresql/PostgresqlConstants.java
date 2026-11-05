@@ -85,7 +85,27 @@ public class PostgresqlConstants {
                                                          ") ";
 
     // Compatibility fix for legacy schemas where order_num was created with too-small precision.
-    public static String upgradeFieldDefinitionsOrderNum = "ALTER TABLE IF EXISTS fielddefinitions ALTER COLUMN order_num TYPE NUMERIC(12)";
+    // Only applies when the legacy order_num column still exists (newer schemas use view_index).
+    public static String upgradeFieldDefinitionsOrderNum = "DO $$ BEGIN " +
+                                                           "IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'fielddefinitions' AND column_name = 'order_num') THEN " +
+                                                           "ALTER TABLE fielddefinitions ALTER COLUMN order_num TYPE NUMERIC(12); " +
+                                                           "END IF; END $$";
+
+    // Compatibility fix for legacy schemas where actions was created before the phase column existed.
+    public static String upgradeActionsPhase = "ALTER TABLE IF EXISTS actions ADD COLUMN IF NOT EXISTS phase varchar(10) DEFAULT 'POST'";
+
+    // Compatibility fix for legacy schemas where metadatas was created before these columns existed.
+    // CREATE TABLE IF NOT EXISTS does not add columns to an existing table, so inserts naming them would fail.
+    public static String upgradeMetadataMissingColumns =
+            "ALTER TABLE IF EXISTS metadatas " +
+            "ADD COLUMN IF NOT EXISTS metadata_group varchar(150) DEFAULT NULL, " +
+            "ADD COLUMN IF NOT EXISTS calendar_enabled BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "ADD COLUMN IF NOT EXISTS calendar_field varchar(255) DEFAULT NULL, " +
+            "ADD COLUMN IF NOT EXISTS calendar_label varchar(255) DEFAULT NULL";
+
+    // Compatibility fix for legacy schemas where documents was created before the creation_date column existed.
+    public static String upgradeDocumentsCreationDate =
+            "ALTER TABLE IF EXISTS documents ADD COLUMN IF NOT EXISTS creation_date timestamp DEFAULT CURRENT_TIMESTAMP";
 
     // Compatibility fix for legacy schemas with varchar limits too small for metadata import payloads.
     public static String upgradeMetadataTextColumns =
@@ -97,6 +117,24 @@ public class PostgresqlConstants {
             "ALTER COLUMN creation_query TYPE TEXT, " +
             "ALTER COLUMN order_by TYPE TEXT, " +
             "ALTER COLUMN tab_groups TYPE TEXT";
+
+    // Compatibility fix for legacy schemas created before these (nullable) columns existed.
+    // Must run before upgradeFieldDefinitionsTextColumns, which alters their type.
+    public static String upgradeFieldDefinitionsMissingColumns =
+            "ALTER TABLE IF EXISTS fielddefinitions " +
+            "ADD COLUMN IF NOT EXISTS description TEXT, " +
+            "ADD COLUMN IF NOT EXISTS options TEXT, " +
+            "ADD COLUMN IF NOT EXISTS validations TEXT, " +
+            "ADD COLUMN IF NOT EXISTS function_def TEXT, " +
+            "ADD COLUMN IF NOT EXISTS sql_type TEXT, " +
+            "ADD COLUMN IF NOT EXISTS sql_definition TEXT, " +
+            "ADD COLUMN IF NOT EXISTS default_value TEXT, " +
+            "ADD COLUMN IF NOT EXISTS pattern TEXT, " +
+            "ADD COLUMN IF NOT EXISTS join_table_select_fields TEXT, " +
+            "ADD COLUMN IF NOT EXISTS search_condition TEXT, " +
+            "ADD COLUMN IF NOT EXISTS search_field_name TEXT, " +
+            "ADD COLUMN IF NOT EXISTS mandatory BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "ADD COLUMN IF NOT EXISTS order_num NUMERIC(12)";
 
     // Run as dedicated statement to avoid multi-result errors in JDBC batch execution.
     public static String upgradeFieldDefinitionsTextColumns =

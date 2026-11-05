@@ -21,7 +21,8 @@ import static io.snello.management.AppConstants.*;
 
 public class FsStorageService implements StorageService {
 
-    private static final int BUFFER_SIZE = 1024;
+    // download copy buffer: 64 KB is ~64x fewer read/write calls than 1 KB and still tiny per concurrent download
+    private static final int BUFFER_SIZE = 64 * 1024;
 
     String basePath;
 
@@ -46,16 +47,18 @@ public class FsStorageService implements StorageService {
             extension = "bin";
         }
         File tempFile = File.createTempFile(documentFormData.uuid, "." + extension, path.toFile());
-        try (OutputStream outStream = new FileOutputStream(tempFile)) {
-            documentFormData.data.transferTo(outStream);
+        Path source = documentFormData.sourcePath();
+        if (source == null) {
+            throw new IllegalArgumentException("no file content to store");
         }
+        Files.copy(source, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         Map<String, Object> map = new HashMap<>();
         map.put(AppConstants.UUID, documentFormData.uuid);
         map.put(DOCUMENT_NAME, tempFile.getName());
         map.put(DOCUMENT_ORIGINAL_NAME, originalName != null ? originalName : documentFormData.uuid + "." + extension);
         map.put(DOCUMENT_PATH, tempFile.getParentFile().getName() + "/" + tempFile.getName());
         map.put(DOCUMENT_MIME_TYPE, documentFormData.mimeType);
-        map.put(SIZE, documentFormData.data.available());
+        map.put(SIZE, documentFormData.size());
         map.put(TABLE_NAME, documentFormData.table_name);
         map.put(TABLE_KEY, documentFormData.table_key);
         return map;
@@ -104,12 +107,14 @@ public class FsStorageService implements StorageService {
         try {
             InputStream input =Files.newInputStream(Paths.get(basePath, path));
             return output -> {
-                byte[] buffer = new byte[BUFFER_SIZE]; // Adjust if you want
-                int bytesRead;
-                while ((bytesRead = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, bytesRead);
+                // try-with-resources: the file handle is released even when the client disconnects mid-download
+                try (input) {
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    int bytesRead;
+                    while ((bytesRead = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                    }
                 }
-                input.close();
             };
         } catch (Exception e) {
             throw new Exception("Failed downloading object with object name [{0}]", e);

@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +22,8 @@ import static io.snello.management.AppConstants.*;
 
 public class S3StorageService implements StorageService {
 
-    private static final int BUFFER_SIZE = 1024;
-    private static final long PART_SIZE = 50 * 1024 * 1024;
+    // download copy buffer: 64 KB is ~64x fewer read/write calls than 1 KB and still tiny per concurrent download
+    private static final int BUFFER_SIZE = 64 * 1024;
 
     MinioClient minioClient;
     String bucketName;
@@ -61,17 +62,27 @@ public class S3StorageService implements StorageService {
             map.put(DOCUMENT_ORIGINAL_NAME, originalName != null ? originalName : documentFormData.uuid + "." + extension);
             map.put(DOCUMENT_PATH, name);
             map.put(DOCUMENT_MIME_TYPE, documentFormData.mimeType);
-            map.put(SIZE, documentFormData.data.available());
             map.put(TABLE_NAME, documentFormData.table_name);
             map.put(TABLE_KEY, documentFormData.table_key);
-            minioClient.putObject(
-                    PutObjectArgs.builder()
+
+            // Upload straight from the file on disk: MinIO then reads each part through a 16 KB buffer
+            // (RandomAccessFile) instead of holding a whole part, up to 50 MB, in heap like it does for streams.
+            Path source = documentFormData.sourcePath();
+            if (source == null) {
+                throw new IllegalArgumentException("no file content to upload");
+            }
+            long size = documentFormData.size();
+            map.put(SIZE, size);
+            Log.infof("uploading document uuid=%s to s3 object=%s from file=%s size=%d contentType=%s",
+                    documentFormData.uuid, name, source, size, documentFormData.mimeType);
+            minioClient.uploadObject(
+                    UploadObjectArgs.builder()
                             .bucket(bucketName)
                             .object(name)
                             .contentType(documentFormData.mimeType)
-                            .stream(documentFormData.data, -1L, PART_SIZE)
+                            .filename(source.toString())
                             .build());
-            Log.info("document uploaded!");
+            Log.infof("document uploaded! uuid=%s object=%s", documentFormData.uuid, name);
             return map;
         } catch (Exception e) {
             throw new Exception("Failed uploading file [{0}]", e);
@@ -101,12 +112,15 @@ public class S3StorageService implements StorageService {
         InputStream stream = new ByteArrayInputStream(bytes);
         long size = bytes.length;
         String contentType = MimeUtils.getContentType(name);
+        // Known size + automatic part size (-1): MinIO uses its 5 MiB minimum part. The previous call passed the
+        // whole array length as the PART size with an unknown object size, so it copied the entire array again.
+        Log.infof("writing bytes to s3 object=%s size=%d contentType=%s", name, size, contentType);
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
                         .object(name)
                         .contentType(contentType)
-                        .stream(stream, -1L, size)
+                        .stream(stream, size, -1L)
                         .build());
         map.put(TABLE_NAME, table_name);
         map.put(DOCUMENT_PATH, name);
@@ -145,12 +159,14 @@ public class S3StorageService implements StorageService {
             InputStream input = minioClient.getObject(
                     GetObjectArgs.builder().bucket(bucketName).object(path).build());
             return output -> {
-                byte[] buffer = new byte[BUFFER_SIZE]; // Adjust if you want
-                int bytesRead;
-                while ((bytesRead = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, bytesRead);
+                // try-with-resources: the S3 connection is released even when the client disconnects mid-download
+                try (input) {
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    int bytesRead;
+                    while ((bytesRead = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                    }
                 }
-                input.close();
             };
         } catch (Exception e) {
             throw new Exception("Failed downloading object with object name [{0}]", e);

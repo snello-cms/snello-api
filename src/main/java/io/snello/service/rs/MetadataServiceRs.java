@@ -8,6 +8,7 @@ import io.snello.model.events.MetadataCreateUpdateEvent;
 import io.snello.model.events.MetadataDeleteEvent;
 import io.snello.model.pojo.JsonFormData;
 import io.snello.service.ApiService;
+import io.snello.service.TableSchemaService;
 import io.snello.util.MetadataUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -97,6 +98,8 @@ public class MetadataServiceRs extends AbstractServiceRs {
     Event<MetadataCreateUpdateEvent> eventCreateUpdatePublisher;
     @Inject
     Event<MetadataDeleteEvent> eventDeletePublisher;
+    @Inject
+    TableSchemaService tableSchemaService;
 
 
     @Inject
@@ -163,6 +166,14 @@ public class MetadataServiceRs extends AbstractServiceRs {
             return ok().build();
         }
         return serverError().build();
+    }
+
+    @Override
+    protected void preUpdate(String id, Map<String, Object> object) throws Exception {
+        preUpdate(object);
+        Map<String, Object> stored = getApiService().fetch(null, METADATAS, id, UUID);
+        // table already created? then a renamed table_name needs the table renamed
+        tableSchemaService.onMetadataUpdated(stored, object);
     }
 
     @Override

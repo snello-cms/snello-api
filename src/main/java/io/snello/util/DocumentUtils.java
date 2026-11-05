@@ -4,7 +4,6 @@ import io.snello.model.pojo.DocumentFormData;
 import jakarta.ws.rs.BadRequestException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,7 +21,7 @@ public final class DocumentUtils {
         if (documentFormData == null) {
             throw new BadRequestException("multipart form data is missing");
         }
-        if (documentFormData.data == null && isBlank(documentFormData.remote_url)) {
+        if (!documentFormData.hasContent() && isBlank(documentFormData.remote_url)) {
             throw new BadRequestException("file part or remote_url is required");
         }
         if (isBlank(documentFormData.resolvedOriginalName())) {
@@ -40,14 +39,14 @@ public final class DocumentUtils {
     }
 
     /**
-     * Se {@code documentFormData.remote_url} è valorizzato e {@code documentFormData.data} è null,
+     * Se {@code documentFormData.remote_url} è valorizzato e {@code documentFormData.hasContent()} è false,
      * scarica il file remoto in un file temporaneo e popola i campi filename, original_name,
-     * originalName, mimeType e data.
+     * originalName, mimeType e localFile.
      *
      * @throws BadRequestException se lo schema dell'URL non è http o https (protezione SSRF)
      */
     public static void resolveRemoteFile(DocumentFormData documentFormData) throws Exception {
-        if (documentFormData.data != null || isBlank(documentFormData.remote_url)) {
+        if (documentFormData.hasContent() || isBlank(documentFormData.remote_url)) {
             return; // nulla da fare
         }
 
@@ -102,7 +101,9 @@ public final class DocumentUtils {
             documentFormData.originalName = detectedName;
         }
 
-        documentFormData.data = new FileInputStream(tmp);
+        // upload straight from the temp file; the caller deletes it through DocumentFormData.cleanup()
+        documentFormData.localFile = tmp.toPath();
+        documentFormData.localFileTemporary = true;
     }
 
     private static Optional<String> extractFilenameFromContentDisposition(String header) {
