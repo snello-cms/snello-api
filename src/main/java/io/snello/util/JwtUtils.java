@@ -1,8 +1,8 @@
 package io.snello.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -34,7 +34,7 @@ public class JwtUtils {
         try {
             Map<String, Object> result = objectMapper.readValue(decodedString, HashMap.class);
             return (String) result.getOrDefault("iss", "default");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             Log.error(e.getMessage(), e);
         }
         return "default";

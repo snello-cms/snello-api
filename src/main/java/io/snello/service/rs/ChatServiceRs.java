@@ -1,8 +1,7 @@
 package io.snello.service.rs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import tools.jackson.databind.json.JsonMapper;
 import io.snello.model.ChatInteraction;
 import io.snello.model.SearchResult;
 import io.snello.service.ApiService;
@@ -61,7 +60,7 @@ public class ChatServiceRs {
     SnelloCmsTools snelloCmsTools;
 
     @Inject
-    ObjectMapper objectMapper;
+    JsonMapper objectMapper;
 
     @Inject
     LoadMoreFormatterAssistant loadMoreFormatterAssistant;

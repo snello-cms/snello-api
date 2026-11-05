@@ -1,11 +1,20 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.model.entity.EntityModel;
+import io.snello.model.facet.EntityAiFacet;
+import io.snello.model.facet.EntityIdentity;
+import io.snello.model.facet.EntityQueryFacet;
+import io.snello.model.facet.EntityUiFacet;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Legacy flat metadata DTO (maps 1:1 to {@code metadatas}).
+ * Prefer {@link EntityModel} / facet views for new code; this class remains the runtime facade.
+ */
 @RegisterForReflection
 public class Metadata {
 
@@ -64,6 +73,33 @@ public class Metadata {
         fromMap(map, this);
     }
 
+    public EntityIdentity identity() {
+        return new EntityIdentity(uuid, table_name, metadata_group, already_exist, created);
+    }
+
+    public EntityQueryFacet queryFacet() {
+        return new EntityQueryFacet(
+                table_key, table_key_type, table_key_addition,
+                select_fields, order_by,
+                alias_table, alias_condition, creation_query,
+                api_protected, username_field
+        );
+    }
+
+    public EntityUiFacet uiFacet() {
+        return new EntityUiFacet(
+                icon, tab_groups, search_fields,
+                calendar_enabled, calendar_field, calendar_label
+        );
+    }
+
+    public EntityAiFacet aiFacet() {
+        return new EntityAiFacet(description);
+    }
+
+    public EntityModel toEntityModel() {
+        return EntityModel.from(this);
+    }
 
     @Override
     public String toString() {
@@ -177,6 +213,9 @@ public class Metadata {
         }
         if (this.select_fields != null) {
             map.put("select_fields", this.select_fields);
+        }
+        if (this.search_fields != null) {
+            map.put("search_fields", this.search_fields);
         }
 
         if (this.description != null) {

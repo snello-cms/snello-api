@@ -2,9 +2,9 @@ name: Maven & Docker Build JVM Image
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, '6.0.0-alpha' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, '6.0.0-alpha' ]
 
 permissions:
   contents: read
@@ -43,6 +43,26 @@ jobs:
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Resolve image tags
+        id: image_tags
+        run: |
+          VERSION="${APP_VERSION}"
+          DH="${DOCKERHUB_IMAGE}"
+          GH="${GHCR_IMAGE}"
+          {
+            echo "tags<<EOF"
+            echo "${DH}:${VERSION}"
+            echo "${GH}:${VERSION}"
+            if echo "${VERSION}" | grep -qi 'alpha'; then
+              echo "${DH}:alpha"
+              echo "${GH}:alpha"
+            else
+              echo "${DH}:latest"
+              echo "${GH}:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Maven Package
         run: mvn clean package -DskipTests=true
 
@@ -69,11 +89,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: ./src/main/docker/Dockerfile.jvm
           push: ${{ github.event_name == 'push' }}
-          tags: |
-            ${{ env.DOCKERHUB_IMAGE }}:${{ env.APP_VERSION }}
-            ${{ env.DOCKERHUB_IMAGE }}:latest
-            ${{ env.GHCR_IMAGE }}:${{ env.APP_VERSION }}
-            ${{ env.GHCR_IMAGE }}:latest
+          tags: ${{ steps.image_tags.outputs.tags }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

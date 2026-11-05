@@ -1,6 +1,5 @@
 package io.snello.service.multitenant;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import io.quarkus.oidc.TenantResolver;
 import io.snello.util.JwtUtils;
@@ -8,6 +7,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import tools.jackson.databind.json.JsonMapper;
 
 @ApplicationScoped
 public class SnelloTenantResolver implements TenantResolver {
@@ -19,7 +19,7 @@ public class SnelloTenantResolver implements TenantResolver {
     String accounting_auth;
 
     @Inject
-    ObjectMapper objectMapper;
+    JsonMapper objectMapper;
 
     @Override
     public String resolve(RoutingContext context) {

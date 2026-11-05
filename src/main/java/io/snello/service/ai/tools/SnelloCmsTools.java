@@ -1,7 +1,7 @@
 package io.snello.service.ai.tools;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.agent.tool.Tool;
+import tools.jackson.databind.json.JsonMapper;
 import io.quarkus.logging.Log;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.snello.model.ChatInteraction;
@@ -50,7 +50,7 @@ public class SnelloCmsTools {
     SecurityIdentity securityIdentity;
 
     @Inject
-    ObjectMapper objectMapper;
+    JsonMapper objectMapper;
 
     @Inject
     AiRequestContext aiRequestContext;

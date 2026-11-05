@@ -1,7 +1,7 @@
 package io.snello.test.metadata;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
+import tools.jackson.databind.json.JsonMapper;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MetadataImportExportTest {
 
     private static final String TABLE_NAME = "import_export_test_table";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
     // ── helpers ──────────────────────────────────────────────────────────────
 

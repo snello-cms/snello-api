@@ -1,10 +1,18 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.model.entity.FieldModel;
+import io.snello.model.facet.FieldAiFacet;
+import io.snello.model.facet.FieldQueryFacet;
+import io.snello.model.facet.FieldUiFacet;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Legacy flat field DTO (maps 1:1 to {@code fielddefinitions}).
+ * Prefer {@link FieldModel} / facet views for new code; this class remains the runtime facade.
+ */
 @RegisterForReflection
 public class FieldDefinition {
 
@@ -76,6 +84,49 @@ public class FieldDefinition {
         fromMap(map, this);
     }
 
+    public FieldQueryFacet queryFacet() {
+        FieldQueryFacet facet = new FieldQueryFacet();
+        facet.sql_type = sql_type;
+        facet.sql_definition = sql_definition;
+        facet.default_value = default_value;
+        facet.table_key = table_key;
+        facet.join_table_name = join_table_name;
+        facet.join_table_key = join_table_key;
+        facet.join_table_select_fields = join_table_select_fields;
+        facet.searchable = searchable;
+        facet.search_condition = search_condition;
+        facet.search_field_name = search_field_name;
+        return facet;
+    }
+
+    public FieldUiFacet uiFacet() {
+        FieldUiFacet facet = new FieldUiFacet();
+        facet.label = label;
+        facet.type = type;
+        facet.input_type = input_type;
+        facet.options = options;
+        facet.group_name = group_name;
+        facet.tab_name = tab_name;
+        facet.validations = validations;
+        facet.view_index = view_index;
+        facet.show_in_list = show_in_list;
+        facet.input_disabled = input_disabled;
+        facet.function_def = function_def;
+        facet.pattern = pattern;
+        facet.mandatory = mandatory;
+        facet.required = required;
+        facet.order_num = order_num;
+        return facet;
+    }
+
+    public FieldAiFacet aiFacet() {
+        return new FieldAiFacet(description);
+    }
+
+    public FieldModel toFieldModel() {
+        return FieldModel.from(this);
+    }
+
     public FieldDefinition fromMap(Map<String, Object> map, FieldDefinition fieldDefinition) {
         if (map.get("uuid") instanceof String) {
             fieldDefinition.uuid = (String) map.get("uuid");
@@ -112,7 +163,7 @@ public class FieldDefinition {
             fieldDefinition.tab_name = (String) map.get("tab_name");
         }
         if (map.get("validations") instanceof String) {
-            fieldDefinition.metadata_name = (String) map.get("validations");
+            fieldDefinition.validations = (String) map.get("validations");
         }
         if (map.get("table_key") instanceof Boolean) {
             fieldDefinition.table_key = (Boolean) map.get("table_key");
@@ -159,17 +210,17 @@ public class FieldDefinition {
         if (map.get("show_in_list") instanceof Boolean) {
             fieldDefinition.show_in_list = (Boolean) map.get("show_in_list");
         }
-        if (map.get("view_index") instanceof String) {
-            fieldDefinition.view_index = (Integer) map.get("view_index");
+        if (map.get("view_index") instanceof Number) {
+            fieldDefinition.view_index = ((Number) map.get("view_index")).intValue();
         }
-         if (map.get("mandatory") instanceof String) {
+        if (map.get("mandatory") instanceof Boolean) {
             fieldDefinition.mandatory = (Boolean) map.get("mandatory");
         }
         if (map.get("required") instanceof Boolean) {
             fieldDefinition.required = (Boolean) map.get("required");
         }
-        if (map.get("order_num") instanceof String) {
-            fieldDefinition.order_num = (Integer) map.get("order_num");
+        if (map.get("order_num") instanceof Number) {
+            fieldDefinition.order_num = ((Number) map.get("order_num")).intValue();
         }
 
         return fieldDefinition;

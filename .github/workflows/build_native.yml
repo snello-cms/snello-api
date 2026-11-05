@@ -2,9 +2,9 @@ name: Maven & Docker Build Native Image
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, '6.0.0-alpha' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, '6.0.0-alpha' ]
 
 permissions:
   contents: read
@@ -43,6 +43,26 @@ jobs:
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Resolve image tags
+        id: image_tags
+        run: |
+          VERSION="${APP_VERSION}"
+          DH="${DOCKERHUB_IMAGE}"
+          GH="${GHCR_IMAGE}"
+          {
+            echo "tags<<EOF"
+            echo "${DH}:${VERSION}-native"
+            echo "${GH}:${VERSION}-native"
+            if echo "${VERSION}" | grep -qi 'alpha'; then
+              echo "${DH}:alpha-native"
+              echo "${GH}:alpha-native"
+            else
+              echo "${DH}:latest-native"
+              echo "${GH}:latest-native"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Maven Package (Native)
         run: mvn clean package -DskipTests=true -Pnative -Dquarkus.native.container-build=true
 
@@ -77,11 +97,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: ./src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
-          tags: |
-            ${{ env.DOCKERHUB_IMAGE }}:${{ env.APP_VERSION }}-native
-            ${{ env.DOCKERHUB_IMAGE }}:latest-native
-            ${{ env.GHCR_IMAGE }}:${{ env.APP_VERSION }}-native
-            ${{ env.GHCR_IMAGE }}:latest-native
+          tags: ${{ steps.image_tags.outputs.tags }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

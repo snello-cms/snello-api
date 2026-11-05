@@ -1,7 +1,7 @@
 package io.snello.util;
 
 import io.quarkus.logging.Log;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -24,7 +24,7 @@ public class SqlHelper {
     private static final Pattern UUID = Pattern
             .compile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$");
     private static final boolean castUUID = false;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public static void fillStatement(PreparedStatement statement, Map<String, Object> in) throws SQLException {
         if (in == null) {

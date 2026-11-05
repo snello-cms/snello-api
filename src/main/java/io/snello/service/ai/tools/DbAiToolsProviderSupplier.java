@@ -1,9 +1,9 @@
 package io.snello.service.ai.tools;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -36,7 +36,7 @@ public class DbAiToolsProviderSupplier implements Supplier<ToolProvider> {
         return new DbAiToolsProvider(
                 Arc.container().instance(MetadataService.class).get(),
                 Arc.container().instance(JdbcRepository.class).get(),
-                Arc.container().instance(ObjectMapper.class).get());
+                Arc.container().instance(JsonMapper.class).get());
     }
 
     static final class DbAiToolsProvider implements ToolProvider {
@@ -46,9 +46,9 @@ public class DbAiToolsProviderSupplier implements Supplier<ToolProvider> {
 
         private final MetadataService metadataService;
         private final JdbcRepository jdbcRepository;
-        private final ObjectMapper objectMapper;
+        private final JsonMapper objectMapper;
 
-        DbAiToolsProvider(MetadataService metadataService, JdbcRepository jdbcRepository, ObjectMapper objectMapper) {
+        DbAiToolsProvider(MetadataService metadataService, JdbcRepository jdbcRepository, JsonMapper objectMapper) {
             this.metadataService = metadataService;
             this.jdbcRepository = jdbcRepository;
             this.objectMapper = objectMapper;
@@ -163,11 +163,11 @@ public class DbAiToolsProviderSupplier implements Supplier<ToolProvider> {
             }
 
             List<Object> values = new ArrayList<>();
-            properties.fieldNames().forEachRemaining(fieldName -> {
+            for (String fieldName : properties.propertyNames()) {
                 if (arguments.containsKey(fieldName)) {
                     values.add(arguments.get(fieldName));
                 }
-            });
+            }
 
             if (values.size() == arguments.size()) {
                 return values;

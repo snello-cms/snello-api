@@ -1,6 +1,6 @@
 package io.snello.service.rs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
 import io.snello.model.Metadata;
@@ -246,7 +246,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
                     .build();
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        JsonMapper mapper = JsonMapper.builder().build();
         @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue((InputStream) formData.data, Map.class);
         return importMetadatasInternal(body);
