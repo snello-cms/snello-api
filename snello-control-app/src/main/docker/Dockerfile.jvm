@@ -1,0 +1,31 @@
+####
+# Snello control plane — JVM mutable-jar (Keycloak-style DB re-augmentation).
+#
+# Build:
+#   ./mvnw -pl snello-control-app -am package -DskipTests
+#   docker build -f snello-control-app/src/main/docker/Dockerfile.jvm \
+#     -t snellocms/snello-control:alpha snello-control-app
+#
+# Run (optimizes once for postgres by default):
+#   docker run --rm -p 8080:8080 -e SNELLO_DB_KIND=postgresql snellocms/snello-control:alpha
+###
+FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
+
+ENV LANGUAGE='en_US:en'
+ENV SNELLO_DB_KIND=postgresql
+ENV JAVA_APP_JAR=/deployments/quarkus-run.jar
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+
+COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 target/quarkus-app/*.jar /deployments/
+COPY --chown=185 target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+COPY --chown=185 src/main/scripts/snello-optimize.sh /deployments/snello-optimize.sh
+COPY --chown=185 src/main/scripts/snello-entrypoint.sh /deployments/snello-entrypoint.sh
+
+RUN chmod +x /deployments/snello-optimize.sh /deployments/snello-entrypoint.sh
+
+EXPOSE 8080
+USER 185
+
+ENTRYPOINT [ "/deployments/snello-entrypoint.sh" ]

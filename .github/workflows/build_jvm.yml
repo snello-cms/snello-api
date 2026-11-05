@@ -1,4 +1,4 @@
-name: Maven & Docker Build JVM Image
+name: Maven & Docker Build JVM Images
 
 on:
   push:
@@ -11,13 +11,23 @@ permissions:
   packages: write
 
 env:
-  DOCKERHUB_IMAGE: snellocms/snello-api
-  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/snello-api
+  DOCKERHUB_OWNER: snellocms
+  GHCR_OWNER: ${{ github.repository_owner }}
 
 jobs:
   build:
-    name: Build JVM image and push to Docker Hub + GHCR
+    name: Build ${{ matrix.image }} JVM image
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: snello-control
+            module: snello-control-app
+          - image: snello-query
+            module: snello-query-app
+          - image: snello-mcp
+            module: snello-mcp-app
 
     steps:
       - name: Git Checkout
@@ -47,8 +57,9 @@ jobs:
         id: image_tags
         run: |
           VERSION="${APP_VERSION}"
-          DH="${DOCKERHUB_IMAGE}"
-          GH="${GHCR_IMAGE}"
+          IMAGE="${{ matrix.image }}"
+          DH="${DOCKERHUB_OWNER}/${IMAGE}"
+          GH="ghcr.io/${GHCR_OWNER}/${IMAGE}"
           {
             echo "tags<<EOF"
             echo "${DH}:${VERSION}"
@@ -60,11 +71,23 @@ jobs:
               echo "${DH}:latest"
               echo "${GH}:latest"
             fi
+            # Compat alias: control also published as snello-api during alpha
+            if [ "${IMAGE}" = "snello-control" ]; then
+              echo "${DOCKERHUB_OWNER}/snello-api:${VERSION}"
+              echo "ghcr.io/${GHCR_OWNER}/snello-api:${VERSION}"
+              if echo "${VERSION}" | grep -qi 'alpha'; then
+                echo "${DOCKERHUB_OWNER}/snello-api:alpha"
+                echo "ghcr.io/${GHCR_OWNER}/snello-api:alpha"
+              else
+                echo "${DOCKERHUB_OWNER}/snello-api:latest"
+                echo "ghcr.io/${GHCR_OWNER}/snello-api:latest"
+              fi
+            fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Maven Package
-        run: mvn clean package -DskipTests=true
+        run: mvn -pl ${{ matrix.module }} -am clean package -DskipTests=true
 
       - name: Login to DockerHub
         if: github.event_name == 'push'
@@ -85,9 +108,9 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          context: ./
+          context: ./${{ matrix.module }}
           platforms: linux/amd64,linux/arm64
-          file: ./src/main/docker/Dockerfile.jvm
+          file: ./${{ matrix.module }}/src/main/docker/Dockerfile.jvm
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.image_tags.outputs.tags }}
 

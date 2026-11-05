@@ -163,7 +163,17 @@ AI target output: mandatory “query + AI” profile; UI auto-suggested with opt
 
 ## 3. Runtime split: control vs query
 
-**Chosen default:** a single Maven project (today one [`pom.xml`](pom.xml)), **Quarkus build profiles / packaging** that produce multiple Docker images — not a Maven multi-module layout yet (high cost, same shared code).
+**Chosen default:** Maven multi-module under [`snello-parent`](pom.xml):
+
+```text
+snello-parent
+  snello-core           # shared domain / JDBC / services (jandex)
+  snello-control-app    → image snello-control
+  snello-query-app      → image snello-query
+  snello-mcp-app        → image snello-mcp
+```
+
+DB-facing apps ship as Quarkus **mutable-jar** and specialize the JDBC driver with Keycloak-style **re-augmentation** (`snello-optimize.sh` / `quarkus.launch.rebuild`, driven by `SNELLO_DB_KIND`). Native builds (control) fix `db-kind` at compile time instead.
 
 | Image | Capabilities | Facet dependencies |
 |---|---|---|
@@ -176,7 +186,7 @@ Quarkus mechanism:
 
 - `@IfBuildProfile("query")` / `@UnlessBuildProfile("query")` on RS and CDI beans
 - or package exclusion via `quarkus.arc.exclude-types` / index filtering per profile
-- dedicated Dockerfiles under `src/main/docker/` (e.g. `Dockerfile.query.jvm`, `Dockerfile.all-in-one.jvm`)
+- Dockerfiles under each app module (`*/src/main/docker/Dockerfile.jvm`, native under control)
 
 ### All-in-one image (H2 + Angular SPA)
 
@@ -252,7 +262,8 @@ Internal order, after the models:
 ## Decisions locked in this proposal
 
 - DB tables are **not** split; at most a JSON `ai_profile` column (and a field equivalent) when needed
-- One Maven repo (`snello-api`), **Quarkus profiles** → multiple Docker images
+- One Maven repo (`snello-parent`), **multi-module apps** → `snello-control` / `snello-query` / `snello-mcp` images
+- DB driver selection via Quarkus **mutable-jar re-augmentation** (Keycloak-style), not three named datasources at runtime
 - Query nodes: shared DB / replica + versioned local metadata cache
 - UI facet stays first-class for the SPA, but is **derivable** from AI/query to reduce authoring work
 - Compatibility: `Metadata`/`FieldDefinition` facade while consumers migrate

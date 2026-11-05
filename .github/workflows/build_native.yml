@@ -1,4 +1,4 @@
-name: Maven & Docker Build Native Image
+name: Maven & Docker Build Native Image (control)
 
 on:
   push:
@@ -11,12 +11,15 @@ permissions:
   packages: write
 
 env:
-  DOCKERHUB_IMAGE: snellocms/snello-api
-  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/snello-api
+  DOCKERHUB_IMAGE: snellocms/snello-control
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/snello-control
+  # Compat alias during alpha
+  DOCKERHUB_API_IMAGE: snellocms/snello-api
+  GHCR_API_IMAGE: ghcr.io/${{ github.repository_owner }}/snello-api
 
 jobs:
   build:
-    name: Build native image and push to Docker Hub + GHCR
+    name: Build native control image and push
     runs-on: ubuntu-latest
 
     steps:
@@ -49,32 +52,43 @@ jobs:
           VERSION="${APP_VERSION}"
           DH="${DOCKERHUB_IMAGE}"
           GH="${GHCR_IMAGE}"
+          DHA="${DOCKERHUB_API_IMAGE}"
+          GHA="${GHCR_API_IMAGE}"
           {
             echo "tags<<EOF"
             echo "${DH}:${VERSION}-native"
             echo "${GH}:${VERSION}-native"
+            echo "${DHA}:${VERSION}-native"
+            echo "${GHA}:${VERSION}-native"
             if echo "${VERSION}" | grep -qi 'alpha'; then
               echo "${DH}:alpha-native"
               echo "${GH}:alpha-native"
+              echo "${DHA}:alpha-native"
+              echo "${GHA}:alpha-native"
             else
               echo "${DH}:latest-native"
               echo "${GH}:latest-native"
+              echo "${DHA}:latest-native"
+              echo "${GHA}:latest-native"
             fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Maven Package (Native)
+        # Native builds a fixed db-kind at compile time (not mutable-jar). Default: postgresql.
         # LangChain4j OpenAI ObjectMapperHolder must init at runtime on Quarkus 4 / Jackson 3.
         run: >
-          mvn clean package -DskipTests=true -Pnative
+          mvn -pl snello-control-app -am clean package -DskipTests=true -Pnative
           -Dquarkus.native.container-build=true
+          -Dquarkus.package.jar.type=fast-jar
+          -Dquarkus.datasource.db-kind=postgresql
           '-Dquarkus.native.additional-build-args=--initialize-at-run-time=io.quarkiverse.langchain4j.openai.common.OpenAiRestApi\$ObjectMapperHolder,--initialize-at-run-time=io.quarkiverse.langchain4j.QuarkusJsonCodecFactory\$SnakeCaseObjectMapperHolder'
 
       - name: Verify native runner artifact
         run: |
-          ls -la target
-          if ! ls target/*-runner >/dev/null 2>&1; then
-            echo "Native runner not found in target/. Expected target/*-runner"
+          ls -la snello-control-app/target
+          if ! ls snello-control-app/target/*-runner >/dev/null 2>&1; then
+            echo "Native runner not found in snello-control-app/target/"
             exit 1
           fi
 
@@ -97,9 +111,9 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          context: ./
+          context: ./snello-control-app
           platforms: linux/amd64,linux/arm64
-          file: ./src/main/docker/Dockerfile.native-micro
+          file: ./snello-control-app/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.image_tags.outputs.tags }}
 

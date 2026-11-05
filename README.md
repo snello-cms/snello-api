@@ -18,6 +18,18 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 - Pluggable document storage (filesystem, S3-compatible)
 - Built-in support for derived media generation (formats and webp)
 
+## Modules (6.x alpha)
+
+```text
+snello-parent
+  snello-core            shared domain / JDBC / services
+  snello-control-app  →  snellocms/snello-control
+  snello-query-app    →  snellocms/snello-query
+  snello-mcp-app      →  snellocms/snello-mcp
+```
+
+DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augmentation**: set `SNELLO_DB_KIND=postgresql|mysql|h2` so the entrypoint runs `snello-optimize.sh` once, then starts.
+
 ## Branches / versions
 
 | Branch | App version | Quarkus | Docker tags |
@@ -41,7 +53,7 @@ Architecture proposal for 6.x: [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REEN
 ## Quick Start (dev)
 
 ```bash
-./mvnw quarkus:dev
+./mvnw -pl snello-control-app -am quarkus:dev
 ```
 
 Quarkus Compose Dev Services starts dependencies from `compose-devservices.yml` (PostgreSQL, Keycloak, MinIO/Silo).
@@ -54,18 +66,24 @@ docker compose -f compose-devservices.yml down
 
 ## Docker images
 
-Published names (no `-quarkus` suffix):
-
-- Docker Hub: `snellocms/snello-api`
-- GHCR: `ghcr.io/snello-cms/snello-api`
+| Image | Role |
+|---|---|
+| `snellocms/snello-control` | control plane (also aliased as `snello-api` during alpha) |
+| `snellocms/snello-query` | query plane |
+| `snellocms/snello-mcp` | MCP / AI tools plane |
 
 ```bash
-# Alpha (6.x)
-docker pull snellocms/snello-api:alpha
+# Build all modules
+./mvnw -DskipTests package
 
-# Build locally
-docker build -f src/main/docker/Dockerfile.jvm -t snellocms/snello-api:local .
-docker run --rm -p 8080:8080 snellocms/snello-api:local
+# Local control image
+docker build -f snello-control-app/src/main/docker/Dockerfile.jvm \
+  -t snellocms/snello-control:local snello-control-app
+docker run --rm -p 8080:8080 -e SNELLO_DB_KIND=postgresql snellocms/snello-control:local
+
+# Re-augment only (Keycloak-style), without starting:
+./snello-control-app/src/main/scripts/snello-optimize.sh \
+  snello-control-app/target/quarkus-app/quarkus-run.jar
 ```
 
 ## Compose files
@@ -74,10 +92,10 @@ docker run --rm -p 8080:8080 snellocms/snello-api:local
 |---|---|
 | `compose-devservices.yml` | Quarkus `%dev` dependencies |
 | `compose-test.yml` | Quarkus test dependencies (PostgreSQL) |
-| `compose.yml` | Full stack + `snellocms/snello-api:alpha` |
+| `compose.yml` | Full stack + `snellocms/snello-control:alpha` |
 
 ```bash
-# Full local stack (API image + deps)
+# Full local stack (control image + deps)
 docker compose up -d
 ```
 
@@ -93,10 +111,10 @@ DB seed / restore scripts live under `dev/db/`. Keycloak realm imports under `de
 ## Testing
 
 ```bash
-./mvnw test
-./mvnw -Dtest=io.snello.test.metadata.ProgramsMetadataCreationTest test
+./mvnw -pl snello-control-app -am test
+./mvnw -pl snello-control-app -Dtest=io.snello.test.metadata.ProgramsMetadataCreationTest test
 ```
 
 ## AI Agent
 
-See [AI Agent documentation](docs/ai-agent.md).
+See [AI Agent](docs/ai-agent.md).
