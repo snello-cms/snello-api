@@ -23,6 +23,8 @@ public class FieldDefinition {
     public String name;
     public String label;
     public String description;
+    /** JSON column: hint, semantic_type, examples (see {@link io.snello.model.pojo.FieldAiProfile}). */
+    public String ai_profile;
     // input|button|select|date|radiobutton|checkbox|join|lookup|multijoin|multilookup|multiselect
     public String type;
     // html password, text, number, radio, checkbox, color, date, datetime-local,
@@ -120,7 +122,7 @@ public class FieldDefinition {
     }
 
     public FieldAiFacet aiFacet() {
-        return new FieldAiFacet(description);
+        return FieldAiFacet.of(description, ai_profile);
     }
 
     public FieldModel toFieldModel() {
@@ -146,6 +148,9 @@ public class FieldDefinition {
         }
         if (map.get("description") instanceof String) {
             fieldDefinition.description = (String) map.get("description");
+        }
+        if (map.get("ai_profile") instanceof String) {
+            fieldDefinition.ai_profile = (String) map.get("ai_profile");
         }
         if (map.get("type") instanceof String) {
             fieldDefinition.type = (String) map.get("type");
@@ -247,6 +252,9 @@ public class FieldDefinition {
         if (this.description != null) {
             map.put("description", this.description);
         }
+        if (this.ai_profile != null) {
+            map.put("ai_profile", this.ai_profile);
+        }
         if (this.type != null) {
             map.put("type", this.type);
         }
@@ -301,8 +309,8 @@ public class FieldDefinition {
         }
         map.put("show_in_list", this.show_in_list);
         map.put("view_index", this.view_index);
-        map.put("mandatory", this.mandatory);
-        map.put("required", this.required);
+        // "required" is not a fielddefinitions column (inserting it fails): fold it into mandatory
+        map.put("mandatory", this.mandatory || this.required);
         map.put("order_num", this.order_num);
 
         return map;

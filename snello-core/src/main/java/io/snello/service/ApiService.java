@@ -1,20 +1,17 @@
 package io.snello.service;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.model.SelectQuery;
-import io.snello.model.events.DbCreatedEvent;
+import io.snello.model.pojo.EntityQueryView;
 import io.snello.api.service.JdbcRepository;
 import io.snello.service.actions.ActionEvent;
 import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 
-import jakarta.enterprise.event.Event;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -23,6 +20,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.snello.management.AppConstants.*;
 import static io.snello.service.repository.mysql.MysqlConstants.DROP_TABLE;
@@ -34,21 +32,17 @@ public class ApiService {
     @Inject
     MetadataService metadataService;
 
+    /** Read path (count / list / fetch) resolves entities through query views only. */
     @Inject
-    JdbcRepository jdbcRepository;
+    EntityCatalog catalog;
 
     @Inject
-    Event<DbCreatedEvent> eventCreatedPublisher;
+    JdbcRepository jdbcRepository;
 
     @Inject
     SecurityIdentity securityIdentity;
 
     public ApiService() {
-    }
-
-    public void onLoad(@Observes StartupEvent event) {
-        jdbcRepository.onLoad();
-        eventCreatedPublisher.fireAsync(new DbCreatedEvent());
     }
 
     public Metadata metadata(String metadata_name) throws Exception {
@@ -134,14 +128,16 @@ public class ApiService {
             }
         }
 
-        if (metadataService.metadataMap().containsKey(table)) {
+        Optional<EntityQueryView> view = catalog.queryView(table);
+        if (view.isPresent()) {
             conditions = metadataService.conditionsMap().get(table);
-            Metadata metadata = metadataService.metadataMap().get(table);
-            if (metadata.alias_table != null && !metadata.alias_table.trim().isEmpty()) {
-                table = metadata.alias_table;
-                alias_condition = metadata.alias_condition;
+            if (view.get().hasAlias()) {
+                table = view.get().aliasTable();
+                alias_condition = view.get().aliasCondition();
             }
         }
+        Log.debugf("count resolved table=%s alias_condition=%s conditions=%d", table, alias_condition,
+                conditions == null ? 0 : conditions.size());
         return jdbcRepository.count(table, alias_condition, queryParameters, conditions);
     }
 
@@ -157,34 +153,32 @@ public class ApiService {
         String alias_condition = null;
         List<Condition> conditions = null;
         if (metadataService.selectqueryMap().containsKey(table)) {
-            SelectQuery selectQuery = metadataService.selectqueryMap.get(table);
+            SelectQuery selectQuery = metadataService.selectqueryMap().get(table);
             if (selectQuery.with_params) {
                 return jdbcRepository.list(selectQuery.select_query, httpParameters, conditions, sort, limit, start);
             } else {
                 return jdbcRepository.list(selectQuery.select_query);
             }
         }
-        if (metadataService.metadataMap().containsKey(table)) {
-            Metadata metadata = metadataService.metadataMap().get(table);
+        Optional<EntityQueryView> resolved = catalog.queryView(table);
+        if (resolved.isPresent()) {
+            EntityQueryView view = resolved.get();
             conditions = metadataService.conditionsMap().get(table);
             if (select_fields == null) {
-                if (metadata.select_fields != null && !metadata.select_fields.trim().isEmpty()) {
-                    // "_SELECT_ * _FROM_ "
-                    select_fields = metadata.select_fields;
+                if (view.selectFields() != null && !view.selectFields().isBlank()) {
+                    select_fields = view.selectFields();
                 }
             } else {
                 Log.info("uso i httpParameters:" + select_fields);
             }
-            if (metadata.alias_table != null && !metadata.alias_table.trim().isEmpty()) {
-                table = metadata.alias_table;
-                alias_condition = metadata.alias_condition;
+            if (view.hasAlias()) {
+                table = view.aliasTable();
+                alias_condition = view.aliasCondition();
             }
-            if (sort == null || sort.isEmpty()) {
-                if (metadata.order_by != null && !metadata.order_by.trim().isEmpty()) {
-                    sort = metadata.order_by;
-                }
+            if ((sort == null || sort.isEmpty()) && view.orderBy() != null && !view.orderBy().isBlank()) {
+                sort = view.orderBy();
             }
-
+            Log.debugf("list resolved entity=%s table=%s select_fields=%s sort=%s", view.tableName(), table, select_fields, sort);
         }
         return jdbcRepository.list(table, select_fields, alias_condition, httpParameters, conditions, sort, limit,
                 start);
@@ -284,12 +278,10 @@ public class ApiService {
     public Map<String, Object> fetch(MultivaluedMap<String, String> queryParameters, String table, String uuid,
             String table_key) throws Exception {
         String select_fields = ParamUtils.select_fields(queryParameters);
-        if (metadataService.metadataMap().containsKey(table)) {
-            Metadata metadata = metadataService.metadataMap().get(table);
-            if (metadata.alias_table != null && !metadata.alias_table.trim().isEmpty()) {
-                table = metadata.alias_table;
-                table_key = metadata.table_key;
-            }
+        Optional<EntityQueryView> view = catalog.queryView(table);
+        if (view.isPresent() && view.get().hasAlias()) {
+            table = view.get().aliasTable();
+            table_key = view.get().tableKey();
         }
         return jdbcRepository.fetch(select_fields, table, table_key, uuid);
     }

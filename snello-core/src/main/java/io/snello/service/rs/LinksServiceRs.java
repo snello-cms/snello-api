@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -32,6 +35,7 @@ import static jakarta.ws.rs.core.Response.ok;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class LinksServiceRs extends AbstractServiceRs {
 
     @Inject

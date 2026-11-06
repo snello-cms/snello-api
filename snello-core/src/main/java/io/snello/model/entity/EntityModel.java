@@ -86,6 +86,7 @@ public class EntityModel {
         metadata.calendar_label = ui.calendar_label;
 
         metadata.description = ai.description;
+        metadata.ai_profile = ai.toProfileJson();
     }
 
     public EntityModel fromMap(Map<String, Object> map) {
@@ -158,12 +159,8 @@ public class EntityModel {
             ui.calendar_label = calendarLabel;
         }
 
-        if (map.get("description") instanceof String description) {
-            ai.description = description;
-        }
-        if (map.get("ai_profile") instanceof String aiProfile) {
-            ai.ai_profile = aiProfile;
-        }
+        ai = EntityAiFacet.of(map.get("description") instanceof String d ? d : null,
+                map.get("ai_profile") instanceof String p ? p : null);
         return this;
     }
 
@@ -226,8 +223,9 @@ public class EntityModel {
         if (ai.description != null) {
             map.put("description", ai.description);
         }
-        if (ai.ai_profile != null) {
-            map.put("ai_profile", ai.ai_profile);
+        String aiProfile = ai.toProfileJson();
+        if (aiProfile != null) {
+            map.put("ai_profile", aiProfile);
         }
         return map;
     }

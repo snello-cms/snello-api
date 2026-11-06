@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.model.pojo.ZipFormData;
 import io.snello.service.BackupService;
@@ -20,6 +23,7 @@ import static io.snello.management.AppConstants.BACKUP_PATH;
 @Consumes(MediaType.APPLICATION_JSON)
 @Singleton
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class BackupServiceRs {
 
     @Inject

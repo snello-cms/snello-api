@@ -3,10 +3,9 @@ package io.snello.service.repository.postgresql;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Condition;
-import io.snello.model.FieldDefinition;
-import io.snello.model.Metadata;
+import io.snello.model.facet.EntityQueryFacet;
+import io.snello.model.pojo.ColumnSpec;
 import io.snello.util.ConditionUtils;
-import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 import io.snello.util.SqlHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -40,6 +39,14 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String[] upgradeQueries() {
+        return new String[]{
+                "ALTER TABLE IF EXISTS metadatas ADD COLUMN IF NOT EXISTS ai_profile TEXT",
+                "ALTER TABLE IF EXISTS fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile TEXT"
+        };
     }
 
     @Override
@@ -396,74 +403,31 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String fieldDefinition2Sql(FieldDefinition fieldDefinition) {
-        return PostgresqlFieldDefinitionUtils.sql(fieldDefinition);
+    public String columnSql(ColumnSpec column) {
+        if (column == null || column.kind() == null) {
+            return null;
+        }
+        return escape(column.name()) + switch (column.kind()) {
+            case SHORT_TEXT -> " varchar(200) default null";
+            case MEDIUM_TEXT -> " varchar(2048) default null";
+            case LONG_TEXT -> " text default null";
+            case INTEGER -> " NUMERIC(10)";
+            case DECIMAL -> " DOUBLE PRECISION";
+            case BOOLEAN -> " boolean default false";
+            case DATE -> " date default null";
+            case DATETIME -> " TIMESTAMPTZ default null";
+            case TIME -> " time default null";
+        };
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) {
-        if (metadata == null) {
-            throw new IllegalArgumentException("metadata cannot be null");
-        }
-        StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
-        boolean escape = false;
-        String tableKeyType = metadata.table_key_type == null ? "userdefined" : metadata.table_key_type;
-        switch (tableKeyType) {
-            case "uuid":
-            case "slug":
-                sb.append(escape(metadata.table_key) + " VARCHAR(50) NOT NULL ");
-                break;
-            case "autoincrement":
-                sb.append(escape(metadata.table_key) + " SERIAL ");
-                break;
-            case "userdefined":
-            default:
-                escape = true;
-        }
-
-        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
-        for (FieldDefinition fieldDefinition : safeFields) {
-            if (escape) {
-                // skip the first comma
-                escape = false;
-            } else {
-                sb.append(",");
-            }
-            if (fieldDefinition == null) {
-                continue;
-            }
-            if (fieldDefinition.sql_definition != null && !fieldDefinition.sql_definition.trim().isEmpty()) {
-                sb.append(fieldDefinition.sql_definition);
-            } else {
-                String columnSql = fieldDefinition2Sql(fieldDefinition);
-                if (columnSql == null || columnSql.trim().isEmpty()) {
-                    throw new IllegalArgumentException("Unsupported field type in createTableSql: name='" + fieldDefinition.name + "', type='" + fieldDefinition.type + "'");
-                }
-                sb.append(columnSql);
-            }
-                if (FieldDefinitionUtils.isMultiJoinType(fieldDefinition.type)) {
-                String join_table_name = metadata.table_name + "_" + fieldDefinition.join_table_name;
-                String table_id = metadata.table_name + "_id";
-                String join_table_id = fieldDefinition.join_table_name + "_id";
-                if (joiQueries != null) {
-                    joiQueries.add(String.format(getJoinTableQuery(), join_table_name, table_id, join_table_id));
-                }
-                Condition condition = new Condition();
-                condition.metadata_multijoin_uuid = metadata.uuid;
-                condition.uuid = java.util.UUID.randomUUID().toString();
-                condition.metadata_name = fieldDefinition.join_table_name;
-                condition.metadata_uuid = ""; //?? dove lo dovrei prendere??
-                condition.condition = metadata.table_name + "_id_nn && join_table_nn";
-                condition.query_params = metadata.table_name + "_id";
-                condition.sub_query = fieldDefinition.join_table_key + " in (select " + join_table_id + " from " + join_table_name + " where " + table_id + " = ?)";
-                if (conditions != null) {
-                    conditions.add(condition);
-                }
-            }
-        }
-        sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(") ;");
-        Log.info("QUERY CREATION TABLE: " + sb.toString());
-        return sb.toString();
+    public String keyColumnSql(EntityQueryFacet query) {
+        return switch (query.table_key_type == null ? "userdefined" : query.table_key_type) {
+            case "uuid", "slug" -> escape(query.table_key) + " VARCHAR(50) NOT NULL";
+            case "autoincrement" -> escape(query.table_key) + " SERIAL";
+            // user-defined: the key column is one of the declared fields
+            default -> null;
+        };
     }
 
 }

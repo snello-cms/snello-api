@@ -20,6 +20,10 @@
             <groupId>io.snello</groupId>
             <artifactId>snello-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.snello</groupId>
+            <artifactId>snello-ai</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

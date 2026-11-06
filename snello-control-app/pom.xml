@@ -21,6 +21,10 @@
             <artifactId>snello-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.snello</groupId>
+            <artifactId>snello-ai</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>

@@ -3,12 +3,12 @@
 # Specializes the mutable-jar to a single quarkus.datasource.db-kind, then exits.
 #
 # Usage:
-#   SNELLO_DB_KIND=postgresql ./snello-optimize.sh /deployments/quarkus-run.jar
+#   SNELLO_DB_KIND=postgresql ./snello-optimize.sh /deployments/quarkus-app/quarkus-run.jar
 #   SNELLO_DB_KIND=mysql ./snello-optimize.sh
 #   SNELLO_DB_KIND=h2 ./snello-optimize.sh
 set -euo pipefail
 
-JAR="${1:-${JAVA_APP_JAR:-/deployments/quarkus-run.jar}}"
+JAR="${1:-${JAVA_APP_JAR:-/deployments/quarkus-app/quarkus-run.jar}}"
 DB_KIND="${SNELLO_DB_KIND:-${QUARKUS_DATASOURCE_DB_KIND:-postgresql}}"
 MARKER_DIR="$(dirname "$JAR")"
 MARKER="${SNELLO_OPTIMIZE_MARKER:-$MARKER_DIR/.snello-optimized-${DB_KIND}}"

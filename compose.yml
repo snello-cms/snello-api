@@ -1,7 +1,7 @@
 # Full local stack: dependencies + snello-control 6.x alpha image.
-# Usage:
-#   docker compose up -d
-#   docker compose --profile build up -d --build
+# Usage (images are built from the local modules, so package them first):
+#   ./mvnw package -DskipTests
+#   docker compose up -d --build
 name: snello
 
 services:
@@ -38,6 +38,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_PORT: "8080"
       KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
     command:
       - start-dev
       - --import-realm
@@ -47,6 +48,13 @@ services:
       - "8180:8080"
     volumes:
       - ./dev/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      # no curl in the image: plain HTTP over bash /dev/tcp against the management port
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
 
   minio:
     image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
@@ -82,11 +90,14 @@ services:
 
   snello-control:
     image: snellocms/snello-control:alpha
+    build:
+      context: ./snello-control-app
+      dockerfile: src/main/docker/Dockerfile.jvm
     depends_on:
       postgresql:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
       minio-init:
         condition: service_completed_successfully
     ports:
@@ -99,8 +110,42 @@ services:
       QUARKUS_DATASOURCE_PASSWORD: snello
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
       QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: http://keycloak:8080/realms/lovers
-      QUARKUS_MINIO_HOST: minio
-      QUARKUS_MINIO_PORT: "9000"
+      # Keycloak admin client: local container, master-realm bootstrap admin (default points at a remote SSO)
+      SNELLO_KEYCLOAK_ADMIN_SERVER_URL: http://keycloak:8080
+      SNELLO_KEYCLOAK_ADMIN_AUTH_REALM: master
+      SNELLO_KEYCLOAK_ADMIN_TARGET_REALM: snello
+      SNELLO_KEYCLOAK_ADMIN_USERNAME: admin
+      SNELLO_KEYCLOAK_ADMIN_PASSWORD: admin
+      QUARKUS_MINIO_URL: http://minio:9000
+      QUARKUS_MINIO_ACCESS_KEY: minio
+      QUARKUS_MINIO_SECRET_KEY: minio123
+
+  # Read-only query plane (GET /api/{table}...): no DDL, no writes, no admin RS, no AI runtime.
+  # Picks up metadata changes made on control within SNELLO_METADATA_REFRESH_INTERVAL.
+  snello-query:
+    image: snellocms/snello-query:alpha
+    build:
+      context: ./snello-query-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      snello-control:
+        condition: service_started
+    ports:
+      - "8081:8080"
+    environment:
+      SNELLO_DB_KIND: postgresql
+      SNELLO_DBTYPE: postgresql
+      SNELLO_METADATA_REFRESH_INTERVAL: 10s
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgresql:5432/snello
+      QUARKUS_DATASOURCE_USERNAME: snello
+      QUARKUS_DATASOURCE_PASSWORD: snello
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
+      QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: http://keycloak:8080/realms/lovers
+      QUARKUS_MINIO_URL: http://minio:9000
       QUARKUS_MINIO_ACCESS_KEY: minio
       QUARKUS_MINIO_SECRET_KEY: minio123
 

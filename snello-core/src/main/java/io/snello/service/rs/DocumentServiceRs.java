@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import io.quarkus.logging.Log;
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -35,6 +38,7 @@ import static jakarta.ws.rs.core.Response.serverError;
 @Produces(MediaType.APPLICATION_JSON)
 @Singleton
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class DocumentServiceRs {
     private static String table = DOCUMENTS;
 

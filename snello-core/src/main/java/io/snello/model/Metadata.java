@@ -23,6 +23,8 @@ public class Metadata {
     public String select_fields;
     public String search_fields;
     public String description;
+    /** JSON column: summary, synonyms, tool_visible, examples (see {@link io.snello.model.pojo.EntityAiProfile}). */
+    public String ai_profile;
     //serve per tabelle preesistenti
     public String alias_table;
     public String alias_condition;
@@ -94,7 +96,7 @@ public class Metadata {
     }
 
     public EntityAiFacet aiFacet() {
-        return new EntityAiFacet(description);
+        return EntityAiFacet.of(description, ai_profile);
     }
 
     public EntityModel toEntityModel() {
@@ -148,6 +150,9 @@ public class Metadata {
         }
         if (map.get("description") instanceof String) {
             metadata.description = (String) map.get("description");
+        }
+        if (map.get("ai_profile") instanceof String) {
+            metadata.ai_profile = (String) map.get("ai_profile");
         }
         if (map.get("alias_table") instanceof String) {
             metadata.alias_table = (String) map.get("alias_table");
@@ -220,6 +225,9 @@ public class Metadata {
 
         if (this.description != null) {
             map.put("description", this.description);
+        }
+        if (this.ai_profile != null) {
+            map.put("ai_profile", this.ai_profile);
         }
         if (this.alias_table != null) {
             map.put("alias_table", this.alias_table);

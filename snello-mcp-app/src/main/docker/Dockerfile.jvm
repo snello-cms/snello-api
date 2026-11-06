@@ -10,13 +10,12 @@ FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
 
 ENV LANGUAGE='en_US:en'
 ENV SNELLO_DB_KIND=postgresql
-ENV JAVA_APP_JAR=/deployments/quarkus-run.jar
+ENV JAVA_APP_JAR=/deployments/quarkus-app/quarkus-run.jar
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
-COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
-COPY --chown=185 target/quarkus-app/*.jar /deployments/
-COPY --chown=185 target/quarkus-app/app/ /deployments/app/
-COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+# Keep the quarkus-app/ folder name: mutable-jar re-augmentation (snello-optimize.sh) resolves its
+# inputs as <parent>/quarkus-app/..., so flattening into /deployments breaks the rebuild at startup.
+COPY --chown=185 target/quarkus-app/ /deployments/quarkus-app/
 COPY --chown=185 src/main/scripts/snello-optimize.sh /deployments/snello-optimize.sh
 COPY --chown=185 src/main/scripts/snello-entrypoint.sh /deployments/snello-entrypoint.sh
 

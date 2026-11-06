@@ -2,27 +2,60 @@ package io.snello.service;
 
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
+import io.snello.management.SnelloPlane;
 import io.snello.model.*;
 import io.snello.util.ActionUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 
 import static io.snello.management.AppConstants.*;
 
+/**
+ * In-memory catalog of the system tables (metadatas, fielddefinitions, conditions, selectqueries, actions, ai_tools).
+ * <p>
+ * Every map is built off to the side and then published with a single volatile write, so concurrent readers
+ * never observe a half-filled map. Two invalidation paths exist:
+ * <ul>
+ *     <li>control plane: CDI events ({@link EventService}) null the maps and they are lazily rebuilt;</li>
+ *     <li>query plane: {@link MetadataRefreshJob} calls {@link #refreshIfChanged()}, which reloads the rows,
+ *     computes a checksum ({@link #version()}) and swaps every map only when the checksum moved.</li>
+ * </ul>
+ * Facet loading per plane: the control plane loads full rows (query + UI + AI facets). The query plane loads only
+ * the query-facet columns of {@code metadatas} / {@code fielddefinitions} ({@link #QUERY_METADATA_COLUMNS},
+ * {@link #QUERY_FIELD_COLUMNS}) and skips {@code actions} / {@code ai_tools}, which only the write path and the AI
+ * runtime use. UI / AI fields of the cached objects are therefore {@code null} on query nodes.
+ */
 @Singleton
 public class MetadataService {
-    
-    Map<String, Metadata> metadataMap;
-    Map<String, SelectQuery> selectqueryMap;
-    Map<String, AiTool> aiToolsMap;
-    Map<String, Action> actionsMap;
-    Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
-    Map<String, List<Condition>> conditionsMap;
+
+    volatile Map<String, Metadata> metadataMap;
+    volatile Map<String, SelectQuery> selectqueryMap;
+    volatile Map<String, AiTool> aiToolsMap;
+    volatile Map<String, Action> actionsMap;
+    volatile Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
+    volatile Map<String, List<Condition>> conditionsMap;
+
+    private volatile String version;
+
+    /** Query-facet columns of {@code metadatas}: everything {@link io.snello.model.pojo.EntityQueryView} needs. */
+    public static final String QUERY_METADATA_COLUMNS = "uuid, table_name, table_key, table_key_type, table_key_addition, "
+            + "select_fields, order_by, alias_table, alias_condition, api_protected, username_field";
+
+    /** Query-facet columns of {@code fielddefinitions}: everything {@link io.snello.model.pojo.FieldQueryView} needs. */
+    public static final String QUERY_FIELD_COLUMNS = "uuid, metadata_uuid, metadata_name, name, sql_type, default_value, "
+            + "table_key, join_table_name, join_table_key, join_table_select_fields, searchable, search_condition, "
+            + "search_field_name, view_index";
 
     @Inject
     JdbcRepository jdbcRepository;
+
+    @ConfigProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, defaultValue = "true")
+    boolean controlPlane;
 
 
     public MetadataService() {
@@ -60,7 +93,6 @@ public class MetadataService {
             }
             for (Condition cc : conditions) {
                 jdbcRepository.create(CONDITIONS, UUID, cc.toMap());
-//                eventPublisher.fireAsync(new ConditionCreateUpdateEvent(cc.toMap()));
             }
         } else {
             Log.info("creation query foud in metedata object: " + metadata.creation_query);
@@ -78,109 +110,253 @@ public class MetadataService {
         return createTableFromMetadataAndFields(metadata, new ArrayList<>(fields.values()));
     }
 
+    // ------------------------------------------------------------------ lazy accessors
 
     public Map<String, Map<String, FieldDefinition>> fielddefinitionsMap() throws Exception {
-        if (this.fielddefinitionsMap == null) {
-            this.fielddefinitionsMap = new TreeMap<>();
-
-            List<Map<String, Object>> liste = jdbcRepository.list(FIELD_DEFINITIONS, " metadata_name asc, view_index asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    FieldDefinition fieldDefinition = new FieldDefinition(map);
-                    if (fielddefinitionsMap.containsKey(fieldDefinition.metadata_uuid)) {
-                        Map<String, FieldDefinition> fieldDefinitions = fielddefinitionsMap.get(fieldDefinition.metadata_uuid);
-                        fieldDefinitions.put(fieldDefinition.uuid, fieldDefinition);
-                        fielddefinitionsMap.put(fieldDefinition.metadata_uuid, fieldDefinitions);
-                    } else {
-                        Map<String, FieldDefinition> fieldDefinitions = new HashMap<>();
-                        fieldDefinitions.put(fieldDefinition.uuid, fieldDefinition);
-                        fielddefinitionsMap.put(fieldDefinition.metadata_uuid, fieldDefinitions);
-                    }
-                }
-            }
+        Map<String, Map<String, FieldDefinition>> current = this.fielddefinitionsMap;
+        if (current == null) {
+            current = buildFielddefinitionsMap(loadFielddefinitionRows());
+            this.fielddefinitionsMap = current;
         }
-        return this.fielddefinitionsMap;
+        return current;
     }
 
-
     public Map<String, Metadata> metadataMap() throws Exception {
-        if (this.metadataMap == null) {
-            this.metadataMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(METADATAS, " table_name asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    Metadata metadata = new Metadata(map);
-                    metadataMap.put(metadata.table_name, metadata);
-                }
-            }
+        Map<String, Metadata> current = this.metadataMap;
+        if (current == null) {
+            current = buildMetadataMap(loadMetadataRows());
+            this.metadataMap = current;
         }
-        return this.metadataMap;
+        return current;
     }
 
     public Map<String, SelectQuery> selectqueryMap() throws Exception {
-        if (this.selectqueryMap == null) {
-            this.selectqueryMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(SELECT_QUERY, " query_name asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    SelectQuery selectQuery = new SelectQuery(map);
-                    selectqueryMap.put(selectQuery.query_name, selectQuery);
-                }
-            }
+        Map<String, SelectQuery> current = this.selectqueryMap;
+        if (current == null) {
+            current = buildSelectqueryMap(loadSelectqueryRows());
+            this.selectqueryMap = current;
         }
-        return this.selectqueryMap;
+        return current;
     }
 
     public Map<String, AiTool> aiToolsMap() throws Exception {
-        if (this.aiToolsMap == null) {
-            this.aiToolsMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(AI_TOOLS, " name asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    AiTool aiTool = new AiTool(map);
-                    aiToolsMap.put(aiTool.name, aiTool);
-                }
-            }
+        Map<String, AiTool> current = this.aiToolsMap;
+        if (current == null) {
+            current = buildAiToolsMap(loadAiToolRows());
+            this.aiToolsMap = current;
         }
-        return this.aiToolsMap;
+        return current;
     }
 
     public Map<String, Action> actionsMap() throws Exception {
-        if (this.actionsMap == null) {
-            this.actionsMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc, phase asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    Action action = new Action(map);
-                    actionsMap.put(ActionUtils.actionKey(action.metadata_name, action.condition, action.phase), action);
-                }
-            }
+        Map<String, Action> current = this.actionsMap;
+        if (current == null) {
+            current = buildActionsMap(loadActionRows());
+            this.actionsMap = current;
         }
-        return this.actionsMap;
+        return current;
     }
 
     public Map<String, List<Condition>> conditionsMap() throws Exception {
-        if (this.conditionsMap == null) {
-            this.conditionsMap = new TreeMap<>();
-            List<Map<String, Object>> liste = jdbcRepository.list(CONDITIONS, " metadata_name asc ");
-            if (liste != null) {
-                for (Map<String, Object> map : liste) {
-                    Condition condition = new Condition(map);
-                    if (conditionsMap.containsKey(condition.metadata_name)) {
-                        List<Condition> conditionList = conditionsMap.get(condition.metadata_name);
-                        conditionList.add(condition);
-                        conditionsMap.put(condition.metadata_name, conditionList);
-                    } else {
-                        List<Condition> conditionList = new ArrayList<>();
-                        conditionList.add(condition);
-                        conditionsMap.put(condition.metadata_name, conditionList);
-                    }
-                }
-            }
+        Map<String, List<Condition>> current = this.conditionsMap;
+        if (current == null) {
+            current = buildConditionsMap(loadConditionRows());
+            this.conditionsMap = current;
         }
-        return this.conditionsMap;
+        return current;
     }
 
+    // ------------------------------------------------------------------ versioned snapshot (query plane)
+
+    /**
+     * Checksum of the last snapshot loaded by {@link #refreshIfChanged()}; {@code null} until the first refresh.
+     */
+    public String version() {
+        return version;
+    }
+
+    /**
+     * Reloads every system table, and swaps all maps at once if their content changed since the last call.
+     *
+     * @return {@code true} when a new snapshot was published
+     */
+    public synchronized boolean refreshIfChanged() throws Exception {
+        List<Map<String, Object>> metadataRows = loadMetadataRows();
+        List<Map<String, Object>> fieldRows = loadFielddefinitionRows();
+        List<Map<String, Object>> conditionRows = loadConditionRows();
+        List<Map<String, Object>> selectqueryRows = loadSelectqueryRows();
+        List<Map<String, Object>> actionRows = loadActionRows();
+        List<Map<String, Object>> aiToolRows = loadAiToolRows();
+
+        String newVersion = checksum(metadataRows, fieldRows, conditionRows, selectqueryRows, actionRows, aiToolRows);
+        String oldVersion = this.version;
+        if (newVersion.equals(oldVersion)) {
+            Log.debugf("metadata snapshot unchanged version=%s", newVersion);
+            return false;
+        }
+        Log.infof("metadata snapshot changed oldVersion=%s newVersion=%s metadatas=%d fielddefinitions=%d conditions=%d selectqueries=%d actions=%d aiTools=%d",
+                oldVersion, newVersion, size(metadataRows), size(fieldRows), size(conditionRows),
+                size(selectqueryRows), size(actionRows), size(aiToolRows));
+
+        Map<String, Metadata> newMetadataMap = buildMetadataMap(metadataRows);
+        Map<String, Map<String, FieldDefinition>> newFieldMap = buildFielddefinitionsMap(fieldRows);
+        Map<String, List<Condition>> newConditionsMap = buildConditionsMap(conditionRows);
+        Map<String, SelectQuery> newSelectqueryMap = buildSelectqueryMap(selectqueryRows);
+        Map<String, Action> newActionsMap = buildActionsMap(actionRows);
+        Map<String, AiTool> newAiToolsMap = buildAiToolsMap(aiToolRows);
+
+        this.metadataMap = newMetadataMap;
+        this.fielddefinitionsMap = newFieldMap;
+        this.conditionsMap = newConditionsMap;
+        this.selectqueryMap = newSelectqueryMap;
+        this.actionsMap = newActionsMap;
+        this.aiToolsMap = newAiToolsMap;
+        this.version = newVersion;
+        return true;
+    }
+
+    @SafeVarargs
+    static String checksum(List<Map<String, Object>>... tables) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        for (List<Map<String, Object>> rows : tables) {
+            digest.update((byte) '|');
+            if (rows == null) {
+                continue;
+            }
+            for (Map<String, Object> row : rows) {
+                // TreeMap: column order independent of the driver's map implementation
+                digest.update(String.valueOf(new TreeMap<>(row)).getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) '\n');
+            }
+        }
+        return HexFormat.of().formatHex(digest.digest()).substring(0, 16);
+    }
+
+    private static int size(List<?> list) {
+        return list == null ? 0 : list.size();
+    }
+
+    // ------------------------------------------------------------------ loaders
+
+    private List<Map<String, Object>> loadMetadataRows() throws Exception {
+        return controlPlane
+                ? jdbcRepository.list(METADATAS, " table_name asc ")
+                : loadProjected(METADATAS, QUERY_METADATA_COLUMNS, " table_name asc ");
+    }
+
+    private List<Map<String, Object>> loadFielddefinitionRows() throws Exception {
+        return controlPlane
+                ? jdbcRepository.list(FIELD_DEFINITIONS, " metadata_name asc, view_index asc ")
+                : loadProjected(FIELD_DEFINITIONS, QUERY_FIELD_COLUMNS, " metadata_name asc, view_index asc ");
+    }
+
+    /**
+     * Query-plane load of only the query-facet columns. A legacy schema missing one of them falls back to
+     * {@code SELECT *} so the node still serves (the missing column then simply reads as null).
+     */
+    private List<Map<String, Object>> loadProjected(String table, String columns, String sort) throws Exception {
+        try {
+            List<Map<String, Object>> rows = jdbcRepository.list(table, columns, null, null, null, sort, 0, 0);
+            Log.debugf("query plane: loaded %d %s rows with query-facet columns only", rows == null ? 0 : rows.size(), table);
+            return rows;
+        } catch (Exception e) {
+            Log.warnf("query plane: projected load of %s failed (%s); falling back to SELECT *", table, e.getMessage());
+            return jdbcRepository.list(table, sort);
+        }
+    }
+
+    private List<Map<String, Object>> loadSelectqueryRows() throws Exception {
+        return jdbcRepository.list(SELECT_QUERY, " query_name asc ");
+    }
+
+    private List<Map<String, Object>> loadAiToolRows() throws Exception {
+        if (!controlPlane) {
+            return List.of(); // AI runtime is not shipped on the query plane
+        }
+        return jdbcRepository.list(AI_TOOLS, " name asc ");
+    }
+
+    private List<Map<String, Object>> loadActionRows() throws Exception {
+        if (!controlPlane) {
+            return List.of(); // actions run on create/update/delete only, which the query plane does not serve
+        }
+        return jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc, phase asc ");
+    }
+
+    private List<Map<String, Object>> loadConditionRows() throws Exception {
+        return jdbcRepository.list(CONDITIONS, " metadata_name asc ");
+    }
+
+    // ------------------------------------------------------------------ builders (pure)
+
+    private static Map<String, Metadata> buildMetadataMap(List<Map<String, Object>> rows) {
+        Map<String, Metadata> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                Metadata metadata = new Metadata(row);
+                map.put(metadata.table_name, metadata);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, Map<String, FieldDefinition>> buildFielddefinitionsMap(List<Map<String, Object>> rows) {
+        Map<String, Map<String, FieldDefinition>> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                FieldDefinition fieldDefinition = new FieldDefinition(row);
+                map.computeIfAbsent(fieldDefinition.metadata_uuid, k -> new HashMap<>())
+                        .put(fieldDefinition.uuid, fieldDefinition);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, SelectQuery> buildSelectqueryMap(List<Map<String, Object>> rows) {
+        Map<String, SelectQuery> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                SelectQuery selectQuery = new SelectQuery(row);
+                map.put(selectQuery.query_name, selectQuery);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, AiTool> buildAiToolsMap(List<Map<String, Object>> rows) {
+        Map<String, AiTool> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                AiTool aiTool = new AiTool(row);
+                map.put(aiTool.name, aiTool);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, Action> buildActionsMap(List<Map<String, Object>> rows) {
+        Map<String, Action> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                Action action = new Action(row);
+                map.put(ActionUtils.actionKey(action.metadata_name, action.condition, action.phase), action);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, List<Condition>> buildConditionsMap(List<Map<String, Object>> rows) {
+        Map<String, List<Condition>> map = new TreeMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                Condition condition = new Condition(row);
+                map.computeIfAbsent(condition.metadata_name, k -> new ArrayList<>()).add(condition);
+            }
+        }
+        return map;
+    }
+
+    // ------------------------------------------------------------------ lookups
 
     public Set<String> names() throws Exception {
         return metadataMap().keySet();

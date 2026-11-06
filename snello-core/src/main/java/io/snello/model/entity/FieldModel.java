@@ -90,6 +90,7 @@ public class FieldModel {
         fieldDefinition.order_num = ui.order_num;
 
         fieldDefinition.description = ai.description;
+        fieldDefinition.ai_profile = ai.toProfileJson();
     }
 
     public FieldModel fromMap(Map<String, Object> map) {
@@ -186,21 +187,8 @@ public class FieldModel {
             ui.order_num = value.intValue();
         }
 
-        if (map.get("description") instanceof String value) {
-            ai.description = value;
-        }
-        if (map.get("ai_hint") instanceof String value) {
-            ai.ai_hint = value;
-        }
-        if (map.get("semantic_type") instanceof String value) {
-            ai.semantic_type = value;
-        }
-        if (map.get("examples") instanceof String value) {
-            ai.examples = value;
-        }
-        if (map.get("ai_profile") instanceof String value) {
-            ai.ai_profile = value;
-        }
+        ai = FieldAiFacet.of(map.get("description") instanceof String d ? d : null,
+                map.get("ai_profile") instanceof String p ? p : null);
         return this;
     }
 
@@ -276,24 +264,16 @@ public class FieldModel {
         if (ui.pattern != null) {
             map.put("pattern", ui.pattern);
         }
-        map.put("mandatory", ui.mandatory);
-        map.put("required", ui.required);
+        // "required" is not a fielddefinitions column (inserting it fails): fold it into mandatory
+        map.put("mandatory", ui.mandatory || ui.required);
         map.put("order_num", ui.order_num);
 
         if (ai.description != null) {
             map.put("description", ai.description);
         }
-        if (ai.ai_hint != null) {
-            map.put("ai_hint", ai.ai_hint);
-        }
-        if (ai.semantic_type != null) {
-            map.put("semantic_type", ai.semantic_type);
-        }
-        if (ai.examples != null) {
-            map.put("examples", ai.examples);
-        }
-        if (ai.ai_profile != null) {
-            map.put("ai_profile", ai.ai_profile);
+        String aiProfile = ai.toProfileJson();
+        if (aiProfile != null) {
+            map.put("ai_profile", aiProfile);
         }
         return map;
     }

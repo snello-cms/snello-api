@@ -9,10 +9,11 @@
     <version>6.0.0-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
-    <description>Snello multi-module parent: core + control / query / mcp apps</description>
+    <description>Snello multi-module parent: core + ai + control / query / mcp apps</description>
 
     <modules>
         <module>snello-core</module>
+        <module>snello-ai</module>
         <module>snello-control-app</module>
         <module>snello-query-app</module>
         <module>snello-mcp-app</module>
@@ -55,6 +56,11 @@
             <dependency>
                 <groupId>io.snello</groupId>
                 <artifactId>snello-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.snello</groupId>
+                <artifactId>snello-ai</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

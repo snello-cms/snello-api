@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
 import io.snello.service.ApiService;
@@ -18,6 +21,7 @@ import static io.snello.management.AppConstants.CHAT_INTERACTIONS_PATH;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class ChatInteractionsServiceRs extends AbstractServiceRs {
 
     @Inject

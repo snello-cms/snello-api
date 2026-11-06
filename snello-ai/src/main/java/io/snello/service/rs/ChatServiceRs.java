@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import tools.jackson.databind.json.JsonMapper;
 import io.snello.model.ChatInteraction;
@@ -35,6 +38,7 @@ import static io.snello.management.AppConstants.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class ChatServiceRs {
 
     private static final Pattern ACTION_TOKEN_PATTERN = Pattern.compile("\\[ACTION:([^\\]]+)]");

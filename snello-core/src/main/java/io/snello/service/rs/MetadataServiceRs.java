@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import tools.jackson.databind.json.JsonMapper;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
@@ -7,6 +10,7 @@ import io.snello.model.Metadata;
 import io.snello.model.events.MetadataCreateUpdateEvent;
 import io.snello.model.events.MetadataDeleteEvent;
 import io.snello.model.pojo.JsonFormData;
+import io.snello.service.AiProfileValidator;
 import io.snello.service.ApiService;
 import io.snello.service.TableSchemaService;
 import io.snello.util.MetadataUtils;
@@ -36,6 +40,7 @@ import static jakarta.ws.rs.core.Response.serverError;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class MetadataServiceRs extends AbstractServiceRs {
     private static String table = METADATAS;
     private static final Set<String> IMPORTABLE_METADATA_COLUMNS = new HashSet<>(List.of(
@@ -60,6 +65,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
             "calendar_enabled",
             "calendar_field",
             "calendar_label",
+            "ai_profile",
             CREATED
     ));
             private static final Set<String> IMPORTABLE_FIELD_DEFINITION_COLUMNS = new HashSet<>(List.of(
@@ -91,7 +97,8 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 "search_field_name",
                 "show_in_list",
                 "mandatory",
-                "order_num"
+                "order_num",
+                "ai_profile"
             ));
 
     @Inject
@@ -100,6 +107,8 @@ public class MetadataServiceRs extends AbstractServiceRs {
     Event<MetadataDeleteEvent> eventDeletePublisher;
     @Inject
     TableSchemaService tableSchemaService;
+    @Inject
+    AiProfileValidator aiProfileValidator;
 
 
     @Inject
@@ -184,6 +193,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
         if (MetadataUtils.isReserved(object.get(TABLE_NAME))) {
             throw new Exception(MSG_TABLE_NAME_IS_EMPTY);
         }
+        aiProfileValidator.prepareMetadataRow(object);
     }
 
     @Override
@@ -194,6 +204,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
         if (MetadataUtils.isReserved(object.get(TABLE_NAME))) {
             throw new Exception(MSG_TABLE_NAME_IS_EMPTY);
         }
+        aiProfileValidator.prepareMetadataRow(object);
     }
 
     @GET
@@ -332,6 +343,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 filtered.put(entry.getKey(), entry.getValue());
             }
         }
+        aiProfileValidator.prepareMetadataRow(filtered);
         return filtered;
     }
 
@@ -350,6 +362,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
             }
         }
 
+        aiProfileValidator.prepareFieldRow(filtered);
         filtered.put("metadata_uuid", metadataUuid);
         if (metadataName != null && !metadataName.isBlank()) {
             filtered.putIfAbsent("metadata_name", metadataName);
