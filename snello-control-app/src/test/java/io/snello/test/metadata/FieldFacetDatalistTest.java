@@ -1,0 +1,101 @@
+package io.snello.test.metadata;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@QuarkusTest
+class FieldFacetDatalistTest {
+
+    @Test
+    void fielddefinitionsShouldReturnFacetComposition() {
+        String name = firstMetadataName();
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/fielddefinitions", name)
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("[0].name", notNullValue())
+                .body("[0]", hasKey("query"))
+                .body("[0]", hasKey("ui"))
+                .body("[0]", hasKey("ai"));
+    }
+
+    @Test
+    void fieldsUiAndQueryShouldExposeSingleConcern() {
+        String name = firstMetadataName();
+
+        List<Map<String, Object>> ui =
+                given()
+                        .accept(ContentType.JSON)
+                        .when()
+                        .get("/api/datalist/metadata/{name}/fields/ui", name)
+                        .then()
+                        .statusCode(200)
+                        .body("size()", greaterThan(0))
+                        .body("[0].name", notNullValue())
+                        .body("[0]", hasKey("ui"))
+                        .extract()
+                        .jsonPath()
+                        .getList("$");
+
+        assertFalse(ui.isEmpty());
+        assertTrue(ui.get(0).containsKey("ui"));
+        assertFalse(ui.get(0).containsKey("query"));
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/fields/query", name)
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("[0].name", notNullValue());
+    }
+
+    @Test
+    void metadataDatalistShouldReturnEntityFacets() {
+        String name = firstMetadataName();
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}", name)
+                .then()
+                .statusCode(200)
+                .body("identity.table_name", notNullValue())
+                .body("$", hasKey("query"))
+                .body("$", hasKey("ui"))
+                .body("$", hasKey("ai"));
+    }
+
+    private static String firstMetadataName() {
+        List<String> names =
+                given()
+                        .accept(ContentType.JSON)
+                        .when()
+                        .get("/api/datalist/names")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("$", String.class);
+        assertNotNull(names);
+        assertFalse(names.isEmpty());
+        return names.get(0);
+    }
+}

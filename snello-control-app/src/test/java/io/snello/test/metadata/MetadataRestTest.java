@@ -51,7 +51,7 @@ class MetadataRestTest {
         assertNotNull(metadataName);
         assertFalse(metadataName.isBlank());
 
-        Metadata metadata =
+        String tableName =
                 given()
                         .accept(ContentType.JSON)
                         .when()
@@ -60,10 +60,9 @@ class MetadataRestTest {
                         .statusCode(200)
                         .extract()
                         .jsonPath()
-                        .getObject("$", Metadata.class);
+                        .getString("identity.table_name");
 
-        assertNotNull(metadata);
-        assertNotNull(metadata.table_name);
-        assertTrue(!metadata.table_name.isBlank());
+        assertNotNull(tableName);
+        assertTrue(!tableName.isBlank());
     }
 }

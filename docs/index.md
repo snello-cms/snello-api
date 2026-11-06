@@ -29,5 +29,7 @@ If you are modeling a new application entity:
 
 - `GET /api/metadatas`
 - `GET /api/fielddefinitions`
-- `GET /api/datalist/metadata/{name}`
-- `GET /api/datalist/metadata/{name}/fielddefinitions`
+- `GET /api/datalist/metadata/{name}` (facet: identity/query/ui/ai)
+- `GET /api/datalist/metadata/{name}/fielddefinitions` (FieldModel facets)
+- `GET /api/datalist/metadata/{name}/fields/ui`
+- `GET /api/datalist/metadata/{name}/fields/query`

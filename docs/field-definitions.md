@@ -61,7 +61,7 @@ Search and list:
 
 ## Endpoint API
 
-Field definitions base path:
+Admin CRUD (flat rows → `fielddefinitions` table):
 
 - `GET /api/fielddefinitions`
 - `GET /api/fielddefinitions/{uuid}`
@@ -69,26 +69,37 @@ Field definitions base path:
 - `PUT /api/fielddefinitions/{uuid}`
 - `DELETE /api/fielddefinitions/{uuid}`
 
-Metadata datalist endpoint:
+SPA / datalist (facet composition — preferred for UI):
 
-- `GET /api/datalist/metadata/{name}/fielddefinitions`
+- `GET /api/datalist/metadata/{name}/fielddefinitions` → `FieldModel[]` with nested `query` / `ui` / `ai`
+- `GET /api/datalist/metadata/{name}/fields/ui` → identity + UI facet only
+- `GET /api/datalist/metadata/{name}/fields/query` → query-plane projection only
 
-## Example Payload
+## Example Payload (datalist facet)
 
 ```json
 {
+  "uuid": "...",
+  "metadata_uuid": "...",
   "metadata_name": "brands",
   "name": "name",
-  "label": "Name",
-  "type": "input",
-  "input_type": "text",
-  "sql_type": "varchar(255)",
-  "table_key": false,
-  "searchable": true,
-  "search_condition": "_contains",
-  "search_field_name": "name_contains",
-  "show_in_list": true,
-  "view_index": 1
+  "query": {
+    "sql_type": "varchar(255)",
+    "table_key": false,
+    "searchable": true,
+    "search_condition": "_contains",
+    "search_field_name": "name_contains"
+  },
+  "ui": {
+    "label": "Name",
+    "type": "input",
+    "input_type": "text",
+    "show_in_list": true,
+    "view_index": 1
+  },
+  "ai": {
+    "description": null
+  }
 }
 ```
 

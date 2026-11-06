@@ -113,23 +113,36 @@ Additional table actions:
 
 Related datalist endpoints:
 
-- `GET /api/datalist/metadata/{name}`
-- `GET /api/datalist/metadata/{name}/fielddefinitions`
+- `GET /api/datalist/metadata/{name}` → `EntityModel` (`identity` / `query` / `ui` / `ai`)
+- `GET /api/datalist/metadata/{name}/fielddefinitions` → `FieldModel[]` (nested facets)
+- `GET /api/datalist/metadata/{name}/fields/ui`
+- `GET /api/datalist/metadata/{name}/fields/query`
 
-## Example Payload
+Admin CRUD on `/api/metadatas` remains flat (table columns).
+
+## Example Payload (datalist facet)
 
 ```json
 {
-  "table_name": "brands",
-  "table_key": "uuid",
-  "table_key_type": "varchar(255)",
-  "description": "Brand catalog",
-  "select_fields": "uuid,name",
-  "search_fields": "name",
-  "order_by": "name asc",
-  "already_exist": false,
-  "created": false,
-  "api_protected": false
+  "identity": {
+    "uuid": "...",
+    "table_name": "brands",
+    "already_exist": false,
+    "created": true
+  },
+  "query": {
+    "table_key_type": "varchar(255)",
+    "select_fields": "uuid,name",
+    "order_by": "name asc",
+    "api_protected": false
+  },
+  "ui": {
+    "icon": "fa fa-tag",
+    "search_fields": "name"
+  },
+  "ai": {
+    "description": "Brand catalog"
+  }
 }
 ```
 
