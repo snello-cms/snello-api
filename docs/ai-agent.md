@@ -20,7 +20,7 @@ Relevant keys:
 - snello.aitype
 - quarkus.langchain4j.chat-model.provider=${snello.aitype:openai}
 - quarkus.langchain4j.openai.*
-- quarkus.langchain4j.google-ai-gemini.*
+- quarkus.langchain4j.ai.gemini.*
 
 Environment variables:
 
@@ -32,7 +32,7 @@ Environment variables:
 Switch is controlled by one property:
 
 - snello.aitype=openai -> uses OpenAI
-- snello.aitype=google-ai-gemini -> uses Gemini
+- snello.aitype=ai-gemini -> uses Gemini
 
 After changing provider, restart the application.
 
@@ -43,7 +43,7 @@ Example:
 ./mvnw quarkus:dev -Dsnello.aitype=openai
 
 # Gemini
-./mvnw quarkus:dev -Dsnello.aitype=google-ai-gemini
+./mvnw quarkus:dev -Dsnello.aitype=ai-gemini
 ```
 
 If you run in Docker or Kubernetes, pass the same property as an environment

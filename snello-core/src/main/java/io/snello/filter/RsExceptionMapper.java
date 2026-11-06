@@ -1,7 +1,7 @@
 package io.snello.filter;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.model.pojo.FailMsg;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -19,7 +19,12 @@ public class RsExceptionMapper implements ExceptionMapper<Exception> {
         int statusCode = getStatusCode(exception);
         String message = safeMessage(exception.getMessage(), "Unexpected server error");
         String detail = buildDetail(exception);
-        Log.error("REST error status=" + statusCode + " message=" + message, exception);
+        if (statusCode >= 500) {
+            Log.error("REST error status=" + statusCode + " message=" + message, exception);
+        } else {
+            // client errors (404/405/400/...) are expected traffic: one line, no stack trace
+            Log.warnf("REST client error status=%d message=%s %s", statusCode, message, detail);
+        }
         return Response.status(statusCode)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(new FailMsg(message, detail))
@@ -52,17 +57,6 @@ public class RsExceptionMapper implements ExceptionMapper<Exception> {
 
     private String safeMessage(String value, String fallback) {
         return (value == null || value.isBlank()) ? fallback : value;
-    }
-
-    @RegisterForReflection
-    public static class FailMsg {
-        public String msg;
-        public String detail;
-
-        public FailMsg(String msg, String detail) {
-            this.msg = msg;
-            this.detail = detail;
-        }
     }
 }
 

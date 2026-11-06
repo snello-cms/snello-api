@@ -1,5 +1,8 @@
 package io.snello.service.rs;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
@@ -7,6 +10,7 @@ import io.snello.management.AppConstants;
 import io.snello.model.events.FieldDefinitionCreateUpdateEvent;
 import io.snello.model.events.FieldDefinitionDeleteEvent;
 import io.quarkus.logging.Log;
+import io.snello.service.AiProfileValidator;
 import io.snello.service.ApiService;
 import io.snello.service.TableSchemaService;
 
@@ -28,7 +32,11 @@ import static io.snello.management.AppConstants.FIELD_DEFINITIONS_PATH;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RunOnVirtualThread
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class FieldDefinitionsServiceRs extends AbstractServiceRs {
+
+    @Inject
+    AiProfileValidator aiProfileValidator;
 
     @Inject
     Event<FieldDefinitionCreateUpdateEvent> eventUpdatePublisher;
@@ -48,12 +56,14 @@ public class FieldDefinitionsServiceRs extends AbstractServiceRs {
     @Override
     protected void prePersist(Map<String, Object> object) throws Exception {
         object.put(AppConstants.UUID, java.util.UUID.randomUUID().toString());
+        aiProfileValidator.prepareFieldRow(object);
         // table already created? then the new field needs its column
         tableSchemaService.onFieldCreated(object);
     }
 
     @Override
     protected void preUpdate(String id, Map<String, Object> object) throws Exception {
+        aiProfileValidator.prepareFieldRow(object);
         Map<String, Object> stored = getApiService().fetch(null, FIELD_DEFINITIONS, id, AppConstants.UUID);
         if (stored == null || stored.isEmpty()) {
             Log.warnf("TABLE SYNC skipped: field definition %s not found", id);

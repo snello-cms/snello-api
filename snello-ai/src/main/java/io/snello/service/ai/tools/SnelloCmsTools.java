@@ -7,8 +7,13 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.snello.model.ChatInteraction;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
+import io.snello.model.facet.EntityAiFacet;
+import io.snello.model.facet.FieldAiFacet;
 import io.snello.model.SearchResult;
+import io.snello.model.pojo.DraftResult;
+import io.snello.model.pojo.EntityDraft;
 import io.snello.service.ApiService;
+import io.snello.service.DraftService;
 import io.snello.service.MetadataService;
 import io.snello.service.ai.AiRequestContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,6 +63,20 @@ public class SnelloCmsTools {
     @Inject
     AiPaginationContextStore aiPaginationContextStore;
 
+    @Inject
+    DraftService draftService;
+
+    private static final String DRAFT_SHAPE = "Draft JSON: {\"table_name\":\"products\","
+            + "\"ai\":{\"description\":\"required\",\"summary\":\"...\",\"synonyms\":[\"items\"]},"
+            + "\"query\":{\"table_key_type\":\"uuid|slug|autoincrement|userdefined\",\"table_key_addition\":\"slug source field\","
+            + "\"api_protected\":false,\"username_field\":\"owner field\"},"
+            + "\"fields\":[{\"name\":\"price\",\"ai\":{\"description\":\"...\",\"semantic_type\":\"money\"},"
+            + "\"query\":{\"searchable\":true,\"join_table_name\":\"entity, for reference(s)\"},"
+            + "\"ui\":{\"options\":\"a,b,c for enum\"}}]}. "
+            + "semantic_type: text, long_text, html, integer, decimal, money, boolean, date, datetime, time, email, "
+            + "password, url, enum, image, media, tags, reference, references. "
+            + "Do not declare the uuid key as a field; UI widgets are derived automatically.";
+
     // ── Schema / Metadata tools ───────────────────────────────────────────────
 
     /**
@@ -74,17 +93,11 @@ public class SnelloCmsTools {
             Map<String, Metadata> metadataMap = metadataService.metadataMap();
             List<String> entitiesWithDescription = metadataMap.entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
-                    .map(entry -> {
-                        String entityName = entry.getKey();
-                        Metadata metadata = entry.getValue();
-                    String description = (metadata != null && metadata.description != null
-                        && !metadata.description.isBlank()) ? metadata.description : null;
-                    if (description == null) {
-                        return entityName;
-                    }
-                    return entityName + " (" + description + ")";
-                    })
+                    .filter(entry -> entry.getValue() != null && entry.getValue().aiFacet().tool_visible)
+                    .map(entry -> describeEntity(entry.getKey(), entry.getValue().aiFacet()))
                     .toList();
+            Log.infof("listEntities: visible=%d hidden=%d", entitiesWithDescription.size(),
+                    metadataMap.size() - entitiesWithDescription.size());
             return "Available entities with description: " + String.join(", ", entitiesWithDescription);
         } catch (Exception e) {
             Log.error("listEntities error", e);
@@ -92,19 +105,63 @@ public class SnelloCmsTools {
         }
     }
 
+    private static String describeEntity(String entityName, EntityAiFacet ai) {
+        StringBuilder sb = new StringBuilder(entityName);
+        if (ai.hasDescription()) {
+            sb.append(" (").append(ai.description).append(")");
+        }
+        if (ai.synonyms != null && !ai.synonyms.isEmpty()) {
+            sb.append(" [also called: ").append(String.join(", ", ai.synonyms)).append("]");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Metadata of an entity the AI may touch; {@code null} both when it does not exist and when its
+     * {@code ai_profile.tool_visible} is false, so hidden entities are indistinguishable from missing ones.
+     */
+    private Metadata toolVisibleMetadata(String entityName) throws Exception {
+        Metadata metadata = apiService.metadata(entityName);
+        if (metadata == null) {
+            return null;
+        }
+        if (!metadata.aiFacet().tool_visible) {
+            Log.infof("AI tool access to hidden entity=%s refused (tool_visible=false)", entityName);
+            return null;
+        }
+        return metadata;
+    }
+
+    private static String notFound(String entityName) {
+        return "Entity '" + entityName + "' not found. Use listEntities() to see available entities.";
+    }
+
     @Tool("Returns the schema (fields, types and constraints) of a CMS entity. " +
             "Call this before any data entry operation to know which fields are required and their types.")
     public String getEntitySchema(String entityName) {
         try {
+            if (toolVisibleMetadata(entityName) == null) {
+                return notFound(entityName);
+            }
             Metadata metadata = apiService.metadataWithFields(entityName);
             if (metadata == null) {
-                return "Entity '" + entityName + "' not found. Use listEntities() to see available entities.";
+                return notFound(entityName);
             }
             List<FieldDefinition> fields = metadata.fields;
             if (fields == null || fields.isEmpty()) {
                 return "Entity '" + entityName + "' has no fields defined.";
             }
             StringBuilder sb = new StringBuilder("Schema for entity '").append(entityName).append("':\n");
+            EntityAiFacet entityAi = metadata.aiFacet();
+            if (entityAi.hasDescription()) {
+                sb.append("- Description: ").append(entityAi.description).append("\n");
+            }
+            if (entityAi.summary != null && !entityAi.summary.isBlank()) {
+                sb.append("- Summary: ").append(entityAi.summary).append("\n");
+            }
+            if (entityAi.synonyms != null && !entityAi.synonyms.isEmpty()) {
+                sb.append("- Also called: ").append(String.join(", ", entityAi.synonyms)).append("\n");
+            }
             sb.append("- Primary key: ").append(metadata.table_key).append(" (").append(metadata.table_key_type)
                     .append(")\n");
             for (FieldDefinition fd : fields) {
@@ -120,12 +177,64 @@ public class SnelloCmsTools {
                 if (fd.options != null && !fd.options.isBlank()) {
                     sb.append(" | options: ").append(fd.options);
                 }
+                FieldAiFacet fieldAi = fd.aiFacet();
+                if (fieldAi.semantic_type != null && !fieldAi.semantic_type.isBlank()) {
+                    sb.append(" | meaning: ").append(fieldAi.semantic_type);
+                }
+                if (fieldAi.ai_hint != null && !fieldAi.ai_hint.isBlank()) {
+                    sb.append(" | hint: ").append(fieldAi.ai_hint);
+                }
+                if (fieldAi.examples != null && !fieldAi.examples.isEmpty()) {
+                    sb.append(" | examples: ").append(objectMapper.writeValueAsString(fieldAi.examples));
+                }
                 sb.append("\n");
+            }
+            if (entityAi.examples != null && !entityAi.examples.isEmpty()) {
+                sb.append("Example payloads for createRecord / updateRecord:\n");
+                for (Map<String, Object> example : entityAi.examples) {
+                    sb.append("- ").append(objectMapper.writeValueAsString(example)).append("\n");
+                }
             }
             return sb.toString();
         } catch (Exception e) {
             Log.error("getEntitySchema error for: " + entityName, e);
             return "Error retrieving schema for '" + entityName + "': " + e.getMessage();
+        }
+    }
+
+    // ── Authoring tools (typed drafts) ────────────────────────────────────────
+
+    @Tool("Validates a proposed NEW entity without writing anything (dry run). Returns errors, warnings, the "
+            + "derived metadata / field rows and the CREATE TABLE preview. Always call this before applyEntity "
+            + "and fix every error. " + DRAFT_SHAPE)
+    public String proposeEntity(String draftJson) {
+        try {
+            EntityDraft draft = objectMapper.readValue(draftJson, EntityDraft.class);
+            DraftResult result = draftService.validate(draft);
+            Log.infof("AI proposeEntity table=%s valid=%s", draft.table_name(), result.valid());
+            return objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            Log.error("proposeEntity error", e);
+            return "Error: the draft is not valid JSON for the expected shape: " + e.getMessage() + ". " + DRAFT_SHAPE;
+        }
+    }
+
+    @Tool("Creates a NEW entity from a draft that proposeEntity reported as valid: stores its metadata and fields "
+            + "and, when createTable is true, creates the database table. Admin or Manager only. " + DRAFT_SHAPE)
+    public String applyEntity(String draftJson, boolean createTable) {
+        checkAuthenticated();
+        if (!isAdminOrManager()) {
+            throw new SecurityException("Only Admin or Manager can create entities.");
+        }
+        try {
+            EntityDraft draft = objectMapper.readValue(draftJson, EntityDraft.class);
+            DraftResult result = draftService.apply(draft, createTable);
+            Log.infof("AI applyEntity table=%s applied=%s table_created=%s by=%s", draft.table_name(),
+                    result.applied(), result.table_created(), currentUsernameOrNull());
+            return objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            Log.error("applyEntity error", e);
+            return "Error applying entity: " + e.getMessage();
         }
     }
 
@@ -143,9 +252,9 @@ public class SnelloCmsTools {
             "Maximum limit is 10.")
     public String listRecords(String entityName, HashMap<String, String> params, int limit, int start) {
         try {
-            Metadata metadata = apiService.metadata(entityName);
+            Metadata metadata = toolVisibleMetadata(entityName);
             if (metadata == null) {
-                return "Entity '" + entityName + "' not found. Use listEntities() to see available entities.";
+                return notFound(entityName);
             }
 
             if (limit <= 0) {
@@ -278,10 +387,22 @@ public class SnelloCmsTools {
     public String fetchRecord(String entityName, String uuid) {
         checkAuthenticated();
         try {
+            Metadata metadata = toolVisibleMetadata(entityName);
+            if (metadata == null) {
+                return notFound(entityName);
+            }
             String tableKey = apiService.table_key(entityName);
             Map<String, Object> record = apiService.fetch(null, entityName, uuid, tableKey);
+            String notFoundRecord = "Record with uuid '" + uuid + "' not found in entity '" + entityName + "'.";
             if (record == null) {
-                return "Record with uuid '" + uuid + "' not found in entity '" + entityName + "'.";
+                return notFoundRecord;
+            }
+            if (metadata.api_protected && metadata.username_field != null && !metadata.username_field.isBlank()
+                    && !isAdminOrManager()
+                    && !java.util.Objects.equals(record.get(metadata.username_field), currentUsername())) {
+                // same answer as a missing row: do not reveal other owners' records
+                Log.infof("fetchRecord entity=%s uuid=%s: owner mismatch, reported as not found", entityName, uuid);
+                return notFoundRecord;
             }
             return objectMapper.writeValueAsString(record);
         } catch (Exception e) {
@@ -297,6 +418,9 @@ public class SnelloCmsTools {
         checkAuthenticated();
         checkWritePermission(entityName);
         try {
+            if (toolVisibleMetadata(entityName) == null) {
+                return notFound(entityName);
+            }
             @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.readValue(jsonData, Map.class);
             String tableKey = apiService.table_key(entityName);
@@ -314,6 +438,9 @@ public class SnelloCmsTools {
         checkAuthenticated();
         checkWritePermission(entityName);
         try {
+            if (toolVisibleMetadata(entityName) == null) {
+                return notFound(entityName);
+            }
             @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.readValue(jsonData, Map.class);
             String tableKey = apiService.table_key(entityName);

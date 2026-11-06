@@ -4,6 +4,8 @@ import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
+import io.snello.model.pojo.ColumnSpec;
+import io.snello.util.ColumnSpecs;
 import io.snello.util.FieldDefinitionUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -190,45 +192,36 @@ public class TableSchemaService {
             Log.infof("TABLE SYNC: column %s.%s already exists, nothing to add", table, field.name);
             return;
         }
-        String columnSql = field.sql_definition != null && !field.sql_definition.trim().isEmpty()
-                ? field.sql_definition
-                : jdbcRepository.fieldDefinition2Sql(field);
+        ColumnSpec column = ColumnSpecs.of(field);
+        Log.infof("TABLE SYNC column %s.%s resolved: kind=%s multijoin=%s raw_sql=%s", table, field.name,
+                column.kind(), column.multiJoin(), column.hasSqlDefinition());
+        String columnSql = column.hasSqlDefinition() ? column.sqlDefinition() : jdbcRepository.columnSql(column);
         if (columnSql == null || columnSql.trim().isEmpty()) {
-            throw new IllegalArgumentException("Unsupported field type: name='" + field.name + "', type='" + field.type + "'");
+            throw new IllegalArgumentException("Unsupported field type: name='" + field.name + "', " + column.sourceType());
         }
         String sql = jdbcRepository.addColumnSql(table, columnSql);
         Log.infof("TABLE SYNC add column: %s", sql);
         jdbcRepository.executeQuery(sql);
         Log.infof("TABLE SYNC column added: %s.%s", table, field.name);
 
-        if (FieldDefinitionUtils.isMultiJoinType(field.type)) {
-            createJoinTable(table, str(metadata, UUID), field);
+        if (column.multiJoin()) {
+            createJoinTable(table, str(metadata, UUID), column);
         }
     }
 
     /** Same join table + condition the CREATE TABLE creates for a multi-join field. */
-    private void createJoinTable(String table, String metadataUuid, FieldDefinition field) throws Exception {
-        if (field.join_table_name == null || field.join_table_name.isBlank()) {
-            throw new IllegalArgumentException("Multi-join field '" + field.name + "' needs a join table name");
+    private void createJoinTable(String table, String metadataUuid, ColumnSpec column) throws Exception {
+        if (column.joinTableName() == null || column.joinTableName().isBlank()) {
+            throw new IllegalArgumentException("Multi-join field '" + column.name() + "' needs a join table name");
         }
-        requireIdentifier(field.join_table_name, "join table name");
-        String joinTableName = table + "_" + field.join_table_name;
-        String tableId = table + "_id";
-        String joinTableId = field.join_table_name + "_id";
-
-        String sql = String.format(jdbcRepository.getJoinTableQuery(), joinTableName, tableId, joinTableId);
+        requireIdentifier(column.joinTableName(), "join table name");
+        String joinTableName = ColumnSpecs.joinTableName(table, column);
+        String sql = String.format(jdbcRepository.getJoinTableQuery(), joinTableName, table + "_id",
+                column.joinTableName() + "_id");
         Log.infof("TABLE SYNC create join table: %s", sql);
         jdbcRepository.executeQuery(sql);
 
-        Condition condition = new Condition();
-        condition.metadata_multijoin_uuid = metadataUuid;
-        condition.uuid = java.util.UUID.randomUUID().toString();
-        condition.metadata_name = field.join_table_name;
-        condition.metadata_uuid = "";
-        condition.condition = table + "_id_nn && join_table_nn";
-        condition.query_params = table + "_id";
-        condition.sub_query = field.join_table_key + " in (select " + joinTableId + " from " + joinTableName
-                + " where " + tableId + " = ?)";
+        Condition condition = ColumnSpecs.multiJoinCondition(table, metadataUuid, column);
         jdbcRepository.create(CONDITIONS, UUID, condition.toMap());
         eventService.resetAll();
         Log.infof("TABLE SYNC join table ready: %s", joinTableName);

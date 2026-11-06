@@ -13,7 +13,29 @@
       {
         "name": "User"
       }
-    ]
+    ],
+    "client": {
+      "snello-api": [
+        {
+          "name": "Admin",
+          "description": "Snello Admin (read by quarkus.oidc.roles.role-claim-path=resource_access/snello-api/roles)",
+          "composite": false,
+          "clientRole": true
+        },
+        {
+          "name": "Manager",
+          "description": "Snello Manager (read by quarkus.oidc.roles.role-claim-path=resource_access/snello-api/roles)",
+          "composite": false,
+          "clientRole": true
+        },
+        {
+          "name": "User",
+          "description": "Snello User (read by quarkus.oidc.roles.role-claim-path=resource_access/snello-api/roles)",
+          "composite": false,
+          "clientRole": true
+        }
+      ]
+    }
   },
   "users": [
     {
@@ -33,7 +55,12 @@
       ],
       "realmRoles": [
         "Admin"
-      ]
+      ],
+      "clientRoles": {
+        "snello-api": [
+          "Admin"
+        ]
+      }
     }
   ],
   "clients": [

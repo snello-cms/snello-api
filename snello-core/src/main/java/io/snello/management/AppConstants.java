@@ -17,6 +17,9 @@ public class AppConstants {
     public static final String METADATAS = "metadatas";
     public static final String CHAT_INTERACTIONS = "chat_interactions";
     public static final String PUBLIC_DATA = "publicdata";
+    public static final String DRAFTS = "drafts";
+    public static final String CHAT = "chat";
+    public static final String PAGES = "p";
     public static final String SELECT_QUERY = "selectqueries";
     public static final String AI_TOOLS = "ai_tools";
 
@@ -27,7 +30,8 @@ public class AppConstants {
     public static final String BACKUP_PATH = API_PATH + BASE_PATH + BACKUP;
     public static final String CACHE_DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS + "/cache";
     public static final String CHAT_INTERACTIONS_PATH = API_PATH + BASE_PATH + CHAT_INTERACTIONS;
-    public static final String CHAT_PATH = API_PATH + BASE_PATH + "chat";
+    public static final String CHAT_PATH = API_PATH + BASE_PATH + CHAT;
+    public static final String DRAFTS_PATH = API_PATH + BASE_PATH + DRAFTS;
     public static final String CONDITIONS_PATH = API_PATH + BASE_PATH + CONDITIONS;
     public static final String DATALIST_PATH = API_PATH + BASE_PATH + DATALISTS;
     public static final String DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS;

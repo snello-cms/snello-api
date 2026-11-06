@@ -1,5 +1,8 @@
 package io.snello.service;
 
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.snello.management.SnelloPlane;
+
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.event.Observes;
@@ -7,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
+@IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class AuthBootstrapService {
 
     @Inject

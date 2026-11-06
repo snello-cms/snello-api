@@ -3,10 +3,9 @@ package io.snello.service.repository.mysql;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Condition;
-import io.snello.model.FieldDefinition;
-import io.snello.model.Metadata;
+import io.snello.model.facet.EntityQueryFacet;
+import io.snello.model.pojo.ColumnSpec;
 import io.snello.util.ConditionUtils;
-import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 import io.snello.util.SqlHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -38,6 +37,24 @@ public class MysqlJdbcRepository implements JdbcRepository {
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String[] upgradeQueries() {
+        // MySQL 8 has no ADD COLUMN IF NOT EXISTS: re-runs fail with 1060, see isAlreadyApplied
+        return new String[]{
+                "ALTER TABLE metadatas ADD COLUMN ai_profile TEXT",
+                "ALTER TABLE fielddefinitions ADD COLUMN ai_profile TEXT",
+                // row-level security columns existed only in the PostgreSQL schema
+                "ALTER TABLE metadatas ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE metadatas ADD COLUMN username_field varchar(255) DEFAULT NULL"
+        };
+    }
+
+    @Override
+    public boolean isAlreadyApplied(Exception e) {
+        // ER_DUP_FIELDNAME
+        return e instanceof java.sql.SQLException sql && sql.getErrorCode() == 1060;
     }
 
     @Override
@@ -464,60 +481,33 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String fieldDefinition2Sql(FieldDefinition fieldDefinition) {
-        return MysqlFieldDefinitionUtils.sql(fieldDefinition);
+    public String columnSql(ColumnSpec column) {
+        if (column == null || column.kind() == null) {
+            return null;
+        }
+        return escape(column.name()) + switch (column.kind()) {
+            case SHORT_TEXT -> " varchar(200) default null";
+            case MEDIUM_TEXT -> " varchar(2048) default null";
+            case LONG_TEXT -> " text default null";
+            case INTEGER -> " int(10)";
+            case DECIMAL -> " DOUBLE";
+            case BOOLEAN -> " boolean default false";
+            case DATE -> " date default null";
+            case DATETIME -> " datetime default null";
+            case TIME -> " time default null";
+        };
     }
 
     @Override
-    public String createTableSql(Metadata metadata, List<FieldDefinition> fields, List<String> joiQueries, List<Condition> conditions) {
-        if (metadata == null) {
-            throw new IllegalArgumentException("metadata cannot be null");
-        }
-        StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
-        String tableKeyType = metadata.table_key_type == null ? "userdefined" : metadata.table_key_type;
-        if ("autoincrement".equals(tableKeyType)) {
-            sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");
-        } else {
-            sb.append(escape(metadata.table_key) + " VARCHAR(50) NOT NULL ");
-        }
-        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
-        for (FieldDefinition fieldDefinition : safeFields) {
-            if (fieldDefinition == null) {
-                continue;
-            }
-            if (fieldDefinition.sql_definition != null && !fieldDefinition.sql_definition.trim().isEmpty()) {
-                sb.append(",").append(fieldDefinition.sql_definition);
-            } else {
-                String columnSql = fieldDefinition2Sql(fieldDefinition);
-                if (columnSql == null || columnSql.trim().isEmpty()) {
-                    throw new IllegalArgumentException("Unsupported field type in createTableSql: name='" + fieldDefinition.name + "', type='" + fieldDefinition.type + "'");
-                }
-                sb.append(",").append(columnSql);
-            }
-                if (FieldDefinitionUtils.isMultiJoinType(fieldDefinition.type)) {
-                String join_table_name = metadata.table_name + "_" + fieldDefinition.join_table_name;
-                String table_id = metadata.table_name + "_id";
-                String join_table_id = fieldDefinition.join_table_name + "_id";
-                if (joiQueries != null) {
-                    joiQueries.add(String.format(getJoinTableQuery(), metadata.table_name + "_" + fieldDefinition.join_table_name,
-                            metadata.table_name + "_id", fieldDefinition.join_table_name + "_id"));
-                }
-                Condition condition = new Condition();
-                condition.metadata_multijoin_uuid = metadata.uuid;
-                condition.uuid = java.util.UUID.randomUUID().toString();
-                condition.metadata_name = fieldDefinition.join_table_name;
-                condition.metadata_uuid = ""; //?? dove lo dovrei prendere??
-                condition.condition = metadata.table_name + "_id_nn && join_table_nn";
-                condition.query_params = metadata.table_name + "_id";
-                condition.sub_query = fieldDefinition.join_table_key + " in (select " + join_table_id + " from " + join_table_name + " where " + table_id + " = ?)";
-                if (conditions != null) {
-                    conditions.add(condition);
-                }
-            }
-        }
-        sb.append(", PRIMARY KEY (" + escape(metadata.table_key) + ")").append(")  ENGINE=INNODB;");
-        Log.info("QUERY CREATION TABLE: " + sb.toString());
-        return sb.toString();
+    public String keyColumnSql(EntityQueryFacet query) {
+        return "autoincrement".equals(query.table_key_type)
+                ? escape(query.table_key) + " int NOT NULL AUTO_INCREMENT"
+                : escape(query.table_key) + " VARCHAR(50) NOT NULL";
+    }
+
+    @Override
+    public String createTableTail() {
+        return ") ENGINE=INNODB;";
     }
 
     @Override

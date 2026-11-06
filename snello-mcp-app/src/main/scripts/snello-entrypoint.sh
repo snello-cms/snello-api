@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-JAR="${JAVA_APP_JAR:-/deployments/quarkus-run.jar}"
+JAR="${JAVA_APP_JAR:-/deployments/quarkus-app/quarkus-run.jar}"
 
 if [[ -x "${SCRIPT_DIR}/snello-optimize.sh" ]]; then
   "${SCRIPT_DIR}/snello-optimize.sh" "$JAR"
