@@ -20,6 +20,47 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 - Pluggable document storage (filesystem, S3-compatible)
 - Built-in support for derived media generation (formats and webp)
 
+
+## Release 5.1.1
+
+Patch release on Quarkus **3.40.1.1** (same platform as 5.1.0).
+
+### Business-data backup ZIP
+
+Chunked export/import of **row data** only (not metadata schema, not DDL).
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/backup/data` | ZIP of all non-reserved business tables |
+| `GET` | `/api/backup/data/{metadata_name}` | ZIP for a single table |
+| `POST` | `/api/backup/data` | multipart field `file` — import ZIP |
+| `GET`/`POST` | `/api/backup/files` | not implemented |
+
+ZIP layout:
+
+- `manifest.json` — `kind=snello-backup-data`, `page_size`, per-table row/chunk counts
+- `data/{table}/0001.json`, `0002.json`, … — JSON arrays of rows (default page size 500; `snello.backup.data.page-size`)
+
+Import rules: insert with `create` when the table key is missing; **skip** existing keys; **no** `CREATE TABLE` (tables must already exist). Use `POST /api/metadatas/export|import` for schema/fields.
+
+### Slug primary-key VARCHAR sizing
+
+When `table_key_type=slug`, `CREATE TABLE` sizes the key column to the **slug source field** (`table_key_addition`) if that field is wider than the default `VARCHAR(50)`:
+
+| Source field (typical) | Key VARCHAR |
+|---|---|
+| `input` / `text` / `email` / `password` | 200 |
+| `select` / `join` / `media` / … | 2048 |
+| `textarea` / `tinymce` / … | 2048 (capped) |
+| custom `sql_definition` with `VARCHAR(n)` | `n` |
+
+Applies to PostgreSQL, H2, and MySQL (`SlugKeySizes` + dialect `createTableSql`). Plain `uuid` keys stay at `VARCHAR(50)`.
+
+### Docker tags
+
+- `snellocms/snello-api:5.1.1` / `:latest`
+- `ghcr.io/snello-cms/snello-api:5.1.1` / `:latest`
+
 ## Documentation for Final Users
 
 Start here:
@@ -52,21 +93,20 @@ docker compose -f compose-devservices.yml down
 
 ## Docker Image Reference
 
-Suggested image reference for this project:
+Published images (JVM workflow):
 
-- `ghcr.io/snello-cms/snello-api-quarkus:latest`
+- `snellocms/snello-api:5.1.1` (also `:latest`)
+- `ghcr.io/snello-cms/snello-api:5.1.1` (also `:latest`)
 
 Example commands:
 
 ```bash
-# Pull (if published)
-docker pull ghcr.io/snello-cms/snello-api-quarkus:latest
+docker pull snellocms/snello-api:5.1.1
 
 # Build locally from this repository
-docker build -f src/main/docker/Dockerfile.jvm -t snello-api-quarkus:local .
+docker build -f src/main/docker/Dockerfile.jvm -t snellocms/snello-api:local .
 
-# Run local image
-docker run --rm -p 8080:8080 snello-api-quarkus:local
+docker run --rm -p 8080:8080 snellocms/snello-api:local
 ```
 
 ## Local Development Stack
@@ -105,6 +145,7 @@ Run one test class:
 
 ```bash
 ./mvnw -Dtest=io.snello.test.metadata.ProgramsMetadataCreationTest test
+./mvnw -Dtest=io.snello.test.backup.BackupDataZipTest,io.snello.test.metadata.SlugKeySizesTest test
 ```
 
 ## AI Agent

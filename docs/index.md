@@ -2,6 +2,12 @@
 
 This folder contains the functional and technical documentation for the project.
 
+
+## Release 5.1.1 highlights
+
+- Business-data backup ZIP: `GET/POST /api/backup/data`, `GET /api/backup/data/{metadata_name}` — see [README — Release 5.1.1](../README.md#release-511)
+- Slug keys: CREATE TABLE widens the key VARCHAR to the slug source field when needed
+
 ## Index
 
 - [Metadata](metadata.md)
