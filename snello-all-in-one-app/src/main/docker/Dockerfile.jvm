@@ -8,10 +8,11 @@
 #   docker build -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm \
 #     -t snellocms/snello-all-in-one:alpha snello-all-in-one-app
 #
-# Run (SSO required):
+# Run (SSO required; AG-UI optional keys):
 #   docker run --rm -p 8080:8080 -v snello-aio:/data \
 #     -e QUARKUS_OIDC_AUTH_SERVER_URL=https://sso.example/realms/snello \
 #     -e QUARKUS_OIDC_CLIENT_ID=snello-api \
+#     -e SNELLO_AITYPE=ai-gemini -e GEMINI_API_KEY=... \
 #     snellocms/snello-all-in-one:alpha
 ###
 FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
