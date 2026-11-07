@@ -15,6 +15,7 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 - Metadata-first API design
 - Dynamic table and field management
 - Generic REST layer for CRUD and query operations
+- Generated OpenAPI 3 JSON at `GET /openapi` (all JAX-RS methods of the running plane)
 - Pluggable document storage (filesystem, S3-compatible)
 - Built-in support for derived media generation (formats and webp)
 
@@ -60,6 +61,7 @@ Open follow-ups: optional embedded SPA in all-in-one, full MCP protocol, SPA fac
 ## Documentation
 
 - [Documentation Index](docs/index.md)
+- [OpenAPI (`GET /openapi`)](#openapi-get-openapi)
 - [Metadata](docs/metadata.md)
 - [Field Definitions](docs/field-definitions.md)
 - [SelectQuery](docs/select-query.md)
@@ -179,6 +181,31 @@ To re-run DB restore from scratch: `docker compose down -v` then `up --build` ag
 ## Control plane APIs (`snello-control`)
 
 With `snello.control-plane.enabled=true`, control registers the full surface: data CRUD + metadata/DDL + documents + auth + AI. Auth typical: GET/OPTIONS open on `/api/*`; writes need role `Admin|Manager|User`; `/api/auth*` Admin-only.
+
+### OpenAPI (`GET /openapi`)
+
+SmallRye OpenAPI scans every JAX-RS resource registered on the **running plane** (control, query, or all-in-one) and exposes it as an OpenAPI 3 document.
+
+| Method | Path | Format | Auth |
+|---|---|---|---|
+| GET | `/openapi` | **JSON** (preferred) | public (`permit`) |
+| GET | `/q/openapi` | YAML by default; JSON with `Accept: application/json` or `?format=json` | public |
+
+```bash
+# Control / all-in-one
+curl -s http://127.0.0.1:8080/openapi | jq '.paths | keys | length'
+curl -s http://127.0.0.1:8080/openapi | jq '.paths | keys[]' | head
+
+# Query plane
+curl -s http://127.0.0.1:8081/openapi | jq '.info'
+```
+
+Notes:
+
+- Content reflects **this** runtime: query plane documents only the RS that are active there (no metadata/DDL/AI admin when `snello.control-plane.enabled=false`).
+- Dynamic business tables (`GET /api/{table}`) appear as the generic `ApiServiceRs` paths, not as one path per metadata name.
+- Title/version come from `quarkus.smallrye-openapi.info-*` (shared defaults in `snello-core`).
+- Implementation: `OpenApiServiceRs` returns the generated document via `OpenApiDocumentService` as `application/json`.
 
 ### Generic data (metadata-driven tables)
 
@@ -313,6 +340,12 @@ Chunked row export/import. **Does not** touch schema — use `POST /api/metadata
 
 ZIP layout: `manifest.json` (`kind=snello-backup-data`) + `data/{table_name}/0001.json` …
 
+Seed exports used by local all-in-one + Keycloak (`compose-allinone-local.yml`): `dev/exports/metadatas-from-pg.json` + `dev/exports/snello-backup-data.zip`, imported with `./dev/scripts/aio-import-from-exports.sh`.
+
+### Slug primary keys
+
+When `table_key_type=slug`, CREATE TABLE sizes the key column to the **slug source field** (`table_key_addition`) if that field is wider than the default `VARCHAR(50)` (e.g. `input`/`text` → `VARCHAR(200)`, select/join → `VARCHAR(2048)`, or `VARCHAR(n)` from `sql_definition`). Same rule on PostgreSQL, H2, and MySQL (`ColumnSpecs.resolveKeyVarcharLength` / dialect `keyColumnSql`).
+
 ### Other admin
 
 | Path | Purpose |
@@ -327,6 +360,7 @@ More detail: [Metadata](docs/metadata.md), [Field Definitions](docs/field-defini
 ```bash
 ./mvnw -pl snello-control-app -am test
 ./mvnw -pl snello-control-app -Dtest=io.snello.test.metadata.ProgramsMetadataCreationTest test
+./mvnw -pl snello-control-app -Dtest=io.snello.test.openapi.OpenApiJsonTest test
 ```
 
 `compose-test.yml` maps Postgres to host port **5433** so tests can run while the full stack occupies `5432`.

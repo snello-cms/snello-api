@@ -4,6 +4,7 @@ public class AppConstants {
 
     public static final String BASE_PATH = "/";
     public static final String API_PATH = "/api";
+    public static final String OPENAPI_PATH = "/openapi";
     public static final String PAGES_PATH = API_PATH + "/p";
 
     public static final String ACTIONS = "actions";

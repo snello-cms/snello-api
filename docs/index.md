@@ -29,6 +29,13 @@ If you are modeling a new application entity:
 
 ## Useful Endpoints
 
+OpenAPI (any plane — public):
+
+- `GET /openapi` — OpenAPI 3 document as **JSON** (all JAX-RS methods of the running plane)
+- `GET /q/openapi` — same document (YAML by default)
+
+See [README — OpenAPI](../README.md#openapi-get-openapi).
+
 Control plane (`:8080`) — admin + facets:
 
 - `GET /api/metadatas` / `GET /api/fielddefinitions` (flat CRUD rows)
