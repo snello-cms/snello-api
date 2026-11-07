@@ -103,6 +103,9 @@ public class MetadataService {
 
     public Metadata createTableFromMetadata(String uuid) throws Exception {
         Metadata metadata = byUUid(uuid);
+        // Always reload fields from DB: metadata import fires async cache resets that can race
+        // with field inserts, leaving a stale empty map for the last tables (e.g. video_types).
+        this.fielddefinitionsMap = null;
         Map<String, FieldDefinition> fields = fielddefinitionsMap().get(metadata.uuid);
         if (fields == null || fields.size() == 0) {
             throw new Exception("selectQuery without fields: " + metadata.toString());

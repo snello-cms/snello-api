@@ -102,6 +102,21 @@ class DraftServiceTest {
     }
 
     @Test
+    void slugKeyDdlMatchesSourceFieldWidth() throws Exception {
+        DraftResult r = draftService.validate(draft("""
+                {"table_name":"draft_slug_articles",
+                 "ai":{"description":"Articles keyed by title slug"},
+                 "query":{"table_key":"uuid","table_key_type":"slug","table_key_addition":"title","api_protected":false},
+                 "fields":[{"name":"title","ai":{"semantic_type":"text","description":"Title"}}]}
+                """));
+        assertTrue(r.valid(), String.join("\n", r.errors()));
+        String ddl = r.ddl().getFirst();
+        assertTrue(ddl.contains("VARCHAR(200) NOT NULL"),
+                "slug key must widen to SHORT_TEXT source field: " + ddl);
+        assertFalse(ddl.contains("VARCHAR(50) NOT NULL"), ddl);
+    }
+
+    @Test
     @TestSecurity(user = "draft-admin", roles = {"Admin"})
     void applyCreatesMetadataFieldsAndTable() throws Exception {
         String table = "draft_e2e_" + System.nanoTime();

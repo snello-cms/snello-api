@@ -157,6 +157,37 @@ class MetadataImportExportTest {
 
     @Test
     @Order(2)
+    void exportAllShouldReturnEveryMetadata() {
+        String uuid = seedMetadataAndGetUuid();
+
+        @SuppressWarnings("unchecked")
+        List<Map> metadatas =
+                given()
+                        .contentType(ContentType.JSON)
+                        .body(Map.of("all", true))
+                        .when()
+                        .post("/api/metadatas/export")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("metadatas", Map.class);
+
+        assertNotNull(metadatas);
+        assertFalse(metadatas.isEmpty());
+        boolean found = metadatas.stream().anyMatch(entry -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> meta = (Map<String, Object>) entry.get("metadata");
+            return meta != null && TABLE_NAME.equals(meta.get("table_name"));
+        });
+        assertTrue(found, "export all must include seeded table");
+
+        deleteByTableName(TABLE_NAME);
+        assertNotNull(uuid);
+    }
+
+    @Test
+    @Order(3)
     void exportWithUnknownUuidShouldReturnEmptyList() {
         Map<String, Object> exportBody = Map.of("metadatas", List.of("00000000-0000-0000-0000-000000000000"));
 
@@ -176,7 +207,7 @@ class MetadataImportExportTest {
     // ── test import ──────────────────────────────────────────────────────────
 
     @Test
-    @Order(3)
+    @Order(4)
     void importShouldSaveMetadataAndFields() throws Exception {
         deleteByTableName(TABLE_NAME);
 
@@ -225,7 +256,7 @@ class MetadataImportExportTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void importShouldReturnConflictIfMetadataAlreadyExists() throws Exception {
         String uuid = seedMetadataAndGetUuid();
 

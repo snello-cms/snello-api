@@ -25,14 +25,14 @@ public class SnelloTenantResolver implements TenantResolver {
     public String resolve(RoutingContext context) {
         String authorizationHeader = context.request().getHeader("Authorization");
         String issuer = JwtUtils.getIssuer(objectMapper, authorizationHeader);
-        if (issuer.equals(accounting_auth)) {
+        if (issuer != null && issuer.equals(accounting_auth)) {
             String tenant = "snello";
             Log.info("issuer: " + issuer + ", tenant resolved as: " + tenant);
             return tenant;
         }
-        String tenant = "default";
-        Log.info("issuer: " + issuer + ", tenant resolved as: " + tenant);
-        return tenant;
+        // Quarkus OIDC: null selects the default (root) tenant config, not a named "default" tenant.
+        Log.info("issuer: " + issuer + ", tenant resolved as: <default>");
+        return null;
     }
 
 

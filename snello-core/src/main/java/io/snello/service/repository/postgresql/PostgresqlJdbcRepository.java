@@ -421,9 +421,9 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String keyColumnSql(EntityQueryFacet query) {
+    public String keyColumnSql(EntityQueryFacet query, int varcharLength) {
         return switch (query.table_key_type == null ? "userdefined" : query.table_key_type) {
-            case "uuid", "slug" -> escape(query.table_key) + " VARCHAR(50) NOT NULL";
+            case "uuid", "slug" -> escape(query.table_key) + " VARCHAR(" + varcharLength + ") NOT NULL";
             case "autoincrement" -> escape(query.table_key) + " SERIAL";
             // user-defined: the key column is one of the declared fields
             default -> null;

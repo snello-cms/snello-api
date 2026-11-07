@@ -1,0 +1,38 @@
+# All-in-one IT stack: H2 API image only (OIDC off so import/tests need no SSO).
+# Generate the metadata fixture first (see dev/scripts/generate-metadatas-export.sh),
+# then: docker compose -f compose-allinone-test.yml up -d --build
+#
+# Host port 18080 avoids clash with local control (:8080) / query (:8081).
+name: snello-allinone-test
+
+services:
+  snello-all-in-one:
+    image: snellocms/snello-all-in-one:test
+    build:
+      context: ./snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+    ports:
+      - "18080:8080"
+    environment:
+      SNELLO_DB_KIND: h2
+      # Ephemeral DB per container lifecycle (fixture import is part of the IT)
+      SNELLO_JDBC_URL: jdbc:h2:mem:snello;DB_CLOSE_DELAY=-1;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      SNELLO_FS_BASE_PATH: /data/files
+      # Auth off for deterministic import/IT against Docker (production image still uses external SSO)
+      QUARKUS_OIDC_ENABLED: "false"
+      QUARKUS_SMALLRYE_JWT_ENABLED: "false"
+      QUARKUS_HTTP_AUTH_PERMISSION_ROLES1_POLICY: permit
+      QUARKUS_HTTP_AUTH_PERMISSION_AUTH_ADMIN_POLICY: permit
+      # Dummy issuer unused when OIDC is disabled
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://127.0.0.1:9/realms/unused
+    # No persistent volume: mem H2 + clean import each IT run
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q UP <&3",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 40s

@@ -38,7 +38,8 @@ public class StorageProducer {
         switch (storagetype) {
             case "s3":
                 return new S3StorageService(minioClient, bucketName, base_folder);
-            case "f2":
+            case "fs":
+            case "f2": // legacy alias
                 return new FsStorageService(basePath);
             case "blobstorage":
                 return null;

@@ -28,6 +28,8 @@ jobs:
             module: snello-query-app
           - image: snello-mcp
             module: snello-mcp-app
+          - image: snello-all-in-one
+            module: snello-all-in-one-app
 
     steps:
       - name: Git Checkout

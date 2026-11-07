@@ -171,6 +171,7 @@ snello-parent
   snello-control-app    → image snello-control
   snello-query-app      → image snello-query
   snello-mcp-app        → image snello-mcp
+  snello-all-in-one-app → image snello-all-in-one
 ```
 
 DB-facing apps ship as Quarkus **mutable-jar** and specialize the JDBC driver with Keycloak-style **re-augmentation** (`snello-optimize.sh` / `quarkus.launch.rebuild`, driven by `SNELLO_DB_KIND`). Native builds (control) fix `db-kind` at compile time instead.
@@ -180,7 +181,7 @@ DB-facing apps ship as Quarkus **mutable-jar** and specialize the JDBC driver wi
 | `snello-control` | metadata CRUD, DDL, admin RS, AI write tools | Query + UI + AI |
 | `snello-query` | only `GET/POST list/fetch` on `/api/{table}` (+ count); **no** metadata create, **no** DDL, **no** truncate | QueryFacet only (+ security row filter) |
 | `snello-mcp` | MCP server + schema tools; may point at the query plane | AiFacet + QueryFacet |
-| `snello-all-in-one` | full control + query APIs + embedded SPA; **H2 in-memory**; single container for demos / local / eval | Query + UI + AI |
+| `snello-all-in-one` | full control API + **H2** + FS docs; **no SPA**; **external OIDC**; single container for demos / local / eval | Query + UI + AI |
 
 Quarkus mechanism:
 
@@ -188,29 +189,30 @@ Quarkus mechanism:
 - or package exclusion via `quarkus.arc.exclude-types` / index filtering per profile
 - Dockerfiles under each app module (`*/src/main/docker/Dockerfile.jvm`, native under control)
 
-### All-in-one image (H2 + Angular SPA)
+### All-in-one image (H2, no SPA — **done**)
 
-Goal: one container that boots usable Snello with zero external DB and a built-in UI — for demos, onboarding, CI smoke, and AI-authoring experiments.
+Goal: one container that boots usable Snello with zero external DB — for demos, onboarding, CI smoke, and AI-authoring experiments. **v1 ships without an embedded SPA**; SSO is always external.
 
 ```mermaid
 flowchart LR
   subgraph aio [snello-all-in-one container]
-    SPA[Angular static assets]
     API[Quarkus full API]
-    H2[(H2 in-memory)]
-    SPA -->|same origin /api| API
+    H2[(H2 file /data)]
+    FS[/data/files]
     API --> H2
+    API --> FS
   end
-  AngularRepo[snello-angular sibling repo] -->|CI build copy into image| SPA
+  SSO[External OIDC / Keycloak] -->|token validation| API
 ```
 
 Locked choices for this image:
 
-- **DB:** H2 in-memory (`snello.dbtype=h2`), schema bootstrapped on startup from existing init/DDL paths; data is ephemeral unless an optional file-based H2 volume is later added
-- **Frontend:** new Angular app lives in a **separate repository**; the all-in-one Docker build consumes a prebuilt `dist/` (CI multi-repo / multi-stage: clone or artifact download → copy into Quarkus `META-INF/resources` or nginx/static layer served by Quarkus)
-- **API surface:** full (control + data CRUD), not query-only — matches “try everything in one box”
-- **Same origin:** SPA and API on one host/port to avoid CORS in the demo path
-- **Not a production HA target:** production stays control + query replicas + external MySQL/PostgreSQL; all-in-one is the convenience/distribution channel
+- **DB:** H2 (`snello.dbtype=h2`), schema bootstrapped on startup; default JDBC URL is **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` for `jdbc:h2:mem:…` if desired
+- **Frontend:** **not** in the image (API-only). Optional later: sibling Angular `dist/` into `META-INF/resources`
+- **SSO:** external OIDC (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); optional Keycloak admin bootstrap via `SNELLO_KEYCLOAK_ADMIN_*`
+- **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — no MinIO required
+- **API surface:** full control plane, not query-only
+- **Not a production HA target:** production stays control + query replicas + external MySQL/PostgreSQL; all-in-one is the convenience/distribution channel (`compose-allinone.yml`)
 
 ### Query nodes + cache + replica
 
@@ -252,12 +254,14 @@ Internal order, after the models:
 
 ## 5. Incrementally shippable roadmap
 
-1. **Facets + facade** (no new columns; fix fromMap; enums; catalog views) — low risk
-2. **AiFacet JSON + draft schema + tool rewrite** — unlocks AI authoring
-3. **Build profile `query` + Dockerfile + multi-replica compose** — unlocks read scaling
-4. **All-in-one image** (H2 in-memory + Angular SPA from sibling repo) — unlocks one-command demos
-5. **MCP image** (if an external protocol beyond current LangChain4j is needed)
-6. **Unified SqlQueryBuilder** + identifier-quoting hardening
+1. **Facets + facade** (no new columns; fix fromMap; enums; catalog views) — **done** (datalist facet APIs + `EntityCatalog` query/ui/ai)
+2. **AiFacet JSON + draft schema + tool rewrite** — **done** (`ai_profile`, drafts, tools)
+3. **Build profile `query` + Dockerfile + multi-replica compose** — **done** (control/query apps + read-only JDBC interceptor on query)
+4. **All-in-one image** — **done** (H2 + FS + external SSO; no SPA yet — `snello-all-in-one-app` / `compose-allinone.yml`)
+5. **MCP image** (if an external protocol beyond current LangChain4j is needed) — shell module exists; protocol TBD
+6. **Unified SqlQueryBuilder** + identifier-quoting hardening — **done** (`SqlQueryBuilder` + thin dialect facades; MySQL backticks)
+
+Follow-ups still open: optional SPA layer in all-in-one; SPA consumes facet datalist; optional PG double-quote identifiers; JDBC replica URL for query; full MCP tools.
 
 ## Decisions locked in this proposal
 
@@ -267,8 +271,8 @@ Internal order, after the models:
 - Query nodes: shared DB / replica + versioned local metadata cache
 - UI facet stays first-class for the SPA, but is **derivable** from AI/query to reduce authoring work
 - Compatibility: `Metadata`/`FieldDefinition` facade while consumers migrate
-- **All-in-one Docker image** ships full API + **H2 in-memory** + static build of the **new Angular frontend** (separate project); used for demos/local/eval, not as the HA production topology
-- Angular remains a **sibling repository**; coupling is build-time (artifact into the image), not a Maven submodule inside `snello-api`
+- **All-in-one Docker image** ships full API + **H2** + FS docs + **external OIDC**; SPA optional later (sibling Angular repo); used for demos/local/eval, not as the HA production topology
+- Angular remains a **sibling repository** if/when embedded; coupling is build-time only, not a Maven submodule inside `snello-api`
 
 ## Open for discussion
 

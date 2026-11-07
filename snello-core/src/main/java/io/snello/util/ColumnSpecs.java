@@ -3,10 +3,18 @@ package io.snello.util;
 import io.quarkus.logging.Log;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
+import io.snello.model.entity.FieldModel;
+import io.snello.model.enums.InputType;
+import io.snello.model.enums.WidgetType;
+import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;
 import io.snello.model.pojo.ColumnKind;
 import io.snello.model.pojo.ColumnSpec;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The single bridge from facets to storage: turns a field into a {@link ColumnSpec}.
@@ -16,11 +24,83 @@ import io.snello.model.pojo.ColumnSpec;
  */
 public final class ColumnSpecs {
 
+    /** Default VARCHAR length for generated {@code uuid}/{@code slug} key columns. */
+    public static final int DEFAULT_KEY_VARCHAR = 50;
+
+    /** Cap for slug keys sourced from unbounded {@link ColumnKind#LONG_TEXT} fields (TEXT cannot be a practical PK). */
+    public static final int LONG_TEXT_KEY_VARCHAR = 2048;
+
+    private static final Pattern VARCHAR_LEN =
+            Pattern.compile("(?i)varchar(?:_ignorecase)?\\s*\\(\\s*(\\d+)\\s*\\)");
+
     private ColumnSpecs() {
+    }
+
+    /**
+     * Declared varchar capacity of a column kind (the length used in dialect {@code columnSql}).
+     * Returns {@code -1} when the kind is not a bounded varchar.
+     */
+    public static int varcharCapacity(ColumnKind kind) {
+        if (kind == null) {
+            return -1;
+        }
+        return switch (kind) {
+            case SHORT_TEXT -> 200;
+            case MEDIUM_TEXT -> 2048;
+            case LONG_TEXT -> LONG_TEXT_KEY_VARCHAR;
+            default -> -1;
+        };
+    }
+
+    /**
+     * Effective varchar capacity of a column: parses {@code VARCHAR(n)} from {@code sql_definition} when present,
+     * otherwise uses {@link #varcharCapacity(ColumnKind)}.
+     */
+    public static int varcharCapacity(ColumnSpec column) {
+        if (column == null) {
+            return -1;
+        }
+        if (column.sqlDefinition() != null && !column.sqlDefinition().isBlank()) {
+            Matcher m = VARCHAR_LEN.matcher(column.sqlDefinition());
+            if (m.find()) {
+                return Integer.parseInt(m.group(1));
+            }
+        }
+        return varcharCapacity(column.kind());
+    }
+
+    /**
+     * VARCHAR length for the generated key column. For {@code slug} keys, grows to at least the slug-source
+     * field capacity when that field is wider than {@link #DEFAULT_KEY_VARCHAR}.
+     */
+    public static int resolveKeyVarcharLength(EntityQueryFacet query, List<ColumnSpec> columns) {
+        int length = DEFAULT_KEY_VARCHAR;
+        if (query == null || !"slug".equals(query.table_key_type)) {
+            return length;
+        }
+        String source = query.table_key_addition;
+        if (source == null || source.isBlank() || columns == null) {
+            return length;
+        }
+        for (ColumnSpec column : columns) {
+            if (column == null || column.name() == null || !source.equalsIgnoreCase(column.name())) {
+                continue;
+            }
+            int capacity = varcharCapacity(column);
+            if (capacity > length) {
+                length = capacity;
+            }
+            break;
+        }
+        return length;
     }
 
     public static ColumnSpec of(FieldDefinition fd) {
         return of(fd.name, fd.queryFacet(), fd.uiFacet());
+    }
+
+    public static ColumnSpec of(FieldModel model) {
+        return of(model.name, model.query, model.ui);
     }
 
     public static ColumnSpec of(String name, FieldQueryFacet query, FieldUiFacet ui) {
@@ -44,29 +124,30 @@ public final class ColumnSpecs {
 
     /** Legacy widget → column mapping, formerly copied in each {@code *FieldDefinitionUtils}. */
     public static ColumnKind kindForWidget(String type, String inputType) {
-        if (type == null) {
+        WidgetType widget = WidgetType.from(type);
+        if (widget == null) {
             return null;
         }
-        return switch (type) {
-            case "input" -> {
-                if (inputType == null) {
+        InputType input = InputType.from(inputType);
+        return switch (widget) {
+            case INPUT -> {
+                if (input == null) {
                     yield ColumnKind.SHORT_TEXT;
                 }
-                yield switch (inputType) {
-                    case "text", "password", "email" -> ColumnKind.SHORT_TEXT;
-                    case "number" -> ColumnKind.INTEGER;
-                    case "decimal" -> ColumnKind.DECIMAL;
-                    // the old switch fell through to the textarea branch for any other input_type
+                yield switch (input) {
+                    case TEXT, PASSWORD, EMAIL -> ColumnKind.SHORT_TEXT;
+                    case NUMBER -> ColumnKind.INTEGER;
+                    case DECIMAL -> ColumnKind.DECIMAL;
                     default -> ColumnKind.LONG_TEXT;
                 };
             }
-            case "gmappath", "gmaplocation", "monaco", "textarea", "tinymce" -> ColumnKind.LONG_TEXT;
-            case "date" -> ColumnKind.DATE;
-            case "datetime" -> ColumnKind.DATETIME;
-            case "time" -> ColumnKind.TIME;
-            case "checkbox", "passivation" -> ColumnKind.BOOLEAN;
-            case "select", "media", "image", "tags", "multijoin", "multiselect", "multilookup",
-                 "realtionship", "realtionships", "relationship", "relationships", "join", "lookup" ->
+            case GMAPPATH, GMAPLOCATION, MONACO, TEXTAREA, TINYMCE -> ColumnKind.LONG_TEXT;
+            case DATE -> ColumnKind.DATE;
+            case DATETIME -> ColumnKind.DATETIME;
+            case TIME -> ColumnKind.TIME;
+            case CHECKBOX, PASSIVATION -> ColumnKind.BOOLEAN;
+            case SELECT, MEDIA, IMAGE, TAGS, MULTIJOIN, MULTISELECT, MULTILOOKUP,
+                 REALTIONSHIP, REALTIONSHIPS, RELATIONSHIP, RELATIONSHIPS, JOIN, LOOKUP ->
                     ColumnKind.MEDIUM_TEXT;
             default -> null;
         };

@@ -4,7 +4,10 @@ import io.quarkus.logging.Log;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.model.entity.EntityModel;
+import io.snello.model.entity.FieldModel;
+import io.snello.model.pojo.EntityAiView;
 import io.snello.model.pojo.EntityQueryView;
+import io.snello.model.pojo.EntityUiView;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -33,22 +36,48 @@ public class EntityCatalog {
     private volatile Map<String, Metadata> builtFromMetadata;
     private volatile Map<String, Map<String, FieldDefinition>> builtFromFields;
     private volatile Map<String, EntityQueryView> queryViews = Map.of();
+    private volatile Map<String, EntityUiView> uiViews = Map.of();
+    private volatile Map<String, EntityAiView> aiViews = Map.of();
 
     /** Query facet + query-relevant fields of a metadata entity; empty when {@code name} is not a metadata. */
     public Optional<EntityQueryView> queryView(String name) throws Exception {
         if (name == null) {
             return Optional.empty();
         }
-        EntityQueryView view = currentQueryViews().get(name);
+        EntityQueryView view = currentViews().query().get(name);
         if (view == null) {
             Log.debugf("catalog queryView: no metadata for name=%s", name);
         }
         return Optional.ofNullable(view);
     }
 
+    /** UI facet + per-field UI views (control/SPA). Empty on the query plane when UI columns were not loaded. */
+    public Optional<EntityUiView> uiView(String name) throws Exception {
+        if (name == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(currentViews().ui().get(name));
+    }
+
+    /** AI facet + per-field AI views (control/MCP). */
+    public Optional<EntityAiView> aiView(String name) throws Exception {
+        if (name == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(currentViews().ai().get(name));
+    }
+
     /** All query views of the current snapshot (sorted by entity name). */
     public Map<String, EntityQueryView> queryViews() throws Exception {
-        return currentQueryViews();
+        return currentViews().query();
+    }
+
+    public Map<String, EntityUiView> uiViews() throws Exception {
+        return currentViews().ui();
+    }
+
+    public Map<String, EntityAiView> aiViews() throws Exception {
+        return currentViews().ai();
     }
 
     /**
@@ -61,9 +90,14 @@ public class EntityCatalog {
             return Optional.empty();
         }
         EntityModel model = EntityModel.from(metadata);
-        model.fields = metadataService.fielddefinitions(name);
+        model.fields = orderedFields(name);
         model.conditions = metadataService.conditions(name);
         return Optional.of(model);
+    }
+
+    /** Field models (query/ui/ai nested) for a metadata, ordered by {@code view_index}. */
+    public List<FieldModel> fieldModels(String name) throws Exception {
+        return orderedFields(name).stream().map(FieldModel::from).toList();
     }
 
     /** True when {@code name} is a declared resource: a metadata entity or a named select query. */
@@ -72,17 +106,37 @@ public class EntityCatalog {
                 && (metadataService.metadataMap().containsKey(name) || metadataService.selectqueryMap().containsKey(name));
     }
 
-    private Map<String, EntityQueryView> currentQueryViews() throws Exception {
+    private List<FieldDefinition> orderedFields(String name) throws Exception {
+        List<FieldDefinition> list = metadataService.fielddefinitions(name);
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+        return list.stream()
+                .sorted(Comparator
+                        .comparingInt((FieldDefinition fd) -> fd.view_index)
+                        .thenComparing(fd -> fd.name == null ? "" : fd.name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private record Snapshot(
+            Map<String, EntityQueryView> query,
+            Map<String, EntityUiView> ui,
+            Map<String, EntityAiView> ai) {
+    }
+
+    private Snapshot currentViews() throws Exception {
         Map<String, Metadata> metadataMap = metadataService.metadataMap();
         Map<String, Map<String, FieldDefinition>> fieldMap = metadataService.fielddefinitionsMap();
         if (metadataMap == builtFromMetadata && fieldMap == builtFromFields) {
-            return queryViews;
+            return new Snapshot(queryViews, uiViews, aiViews);
         }
         synchronized (this) {
             if (metadataMap == builtFromMetadata && fieldMap == builtFromFields) {
-                return queryViews;
+                return new Snapshot(queryViews, uiViews, aiViews);
             }
-            Map<String, EntityQueryView> views = new TreeMap<>();
+            Map<String, EntityQueryView> q = new TreeMap<>();
+            Map<String, EntityUiView> u = new TreeMap<>();
+            Map<String, EntityAiView> a = new TreeMap<>();
             for (Metadata metadata : metadataMap.values()) {
                 if (metadata == null || metadata.table_name == null) {
                     continue;
@@ -92,14 +146,17 @@ public class EntityCatalog {
                 if (!ordered.isEmpty()) {
                     ordered.sort(Comparator.comparingInt(fd -> fd.view_index));
                 }
-                views.put(metadata.table_name, EntityQueryView.of(metadata, ordered));
+                q.put(metadata.table_name, EntityQueryView.of(metadata, ordered));
+                u.put(metadata.table_name, EntityUiView.of(metadata, ordered));
+                a.put(metadata.table_name, EntityAiView.of(metadata, ordered));
             }
-            Map<String, EntityQueryView> published = Collections.unmodifiableMap(views);
-            queryViews = published;
+            queryViews = Collections.unmodifiableMap(q);
+            uiViews = Collections.unmodifiableMap(u);
+            aiViews = Collections.unmodifiableMap(a);
             builtFromFields = fieldMap;
             builtFromMetadata = metadataMap;
-            Log.infof("catalog: rebuilt %d entity query views", published.size());
-            return published;
+            Log.infof("catalog: rebuilt %d entity query/ui/ai views", q.size());
+            return new Snapshot(queryViews, uiViews, aiViews);
         }
     }
 }

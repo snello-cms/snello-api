@@ -71,7 +71,7 @@ public class ApiService {
     public boolean isPassivable(List<FieldDefinition> fields) throws Exception {
         if (fields == null || fields.isEmpty()) return false;
         for (FieldDefinition fd : fields) {
-            if ("passivation".equals(fd.input_type)) {
+            if (FieldDefinitionUtils.isPassivation(fd)) {
                 return true;
             }
         }
@@ -80,7 +80,7 @@ public class ApiService {
 
     public String getPassivableField(List<FieldDefinition> fields) throws Exception {
         for (FieldDefinition fd : fields) {
-            if ("passivation".equals(fd.input_type)) {
+            if (FieldDefinitionUtils.isPassivation(fd)) {
                 return fd.name;
             }
         }
@@ -228,7 +228,7 @@ public class ApiService {
         metadata.fields = metadataService.fielddefinitions(metadata.table_name);
         List<FieldDefinition> fields = metadata.fields == null ? List.of() : metadata.fields;
         for (FieldDefinition fd : fields) {
-            if (FieldDefinitionUtils.isMultiJoinType(fd.type)) {
+            if (FieldDefinitionUtils.isMultiJoin(fd)) {
                 String join_table_name = metadata.table_name + "_" + fd.join_table_name;
                 jdbcRepository.query(DROP_TABLE + join_table_name, null);
             }

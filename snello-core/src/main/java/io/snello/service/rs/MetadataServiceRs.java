@@ -225,10 +225,10 @@ public class MetadataServiceRs extends AbstractServiceRs {
     @POST
     @Path("/export")
     public Response export(Map<String, Object> body) throws Exception {
-        @SuppressWarnings("unchecked")
-        List<String> uuids = (List<String>) body.get("metadatas");
-        if (uuids == null || uuids.isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("metadatas list is required").build();
+        List<String> uuids = resolveExportUuids(body);
+        if (uuids.isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("metadatas list is required (or pass \"all\": true)").build();
         }
         List<Map<String, Object>> result = new ArrayList<>();
         for (String uuid : uuids) {
@@ -245,6 +245,30 @@ public class MetadataServiceRs extends AbstractServiceRs {
         return Response.ok(Map.of("metadatas", result))
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .build();
+    }
+
+    /**
+     * Resolves metadata UUIDs to export. Body may list explicit ids under {@code metadatas},
+     * or set {@code "all": true} to export every row (admin panel / dump round-trip).
+     */
+    private List<String> resolveExportUuids(Map<String, Object> body) throws Exception {
+        if (body != null && Boolean.TRUE.equals(body.get("all"))) {
+            List<Map<String, Object>> rows = getApiService().list(METADATAS, null, "table_name asc", 10_000, 0);
+            List<String> all = new ArrayList<>(rows.size());
+            for (Map<String, Object> row : rows) {
+                Object id = row.get(UUID);
+                if (id != null && !id.toString().isBlank()) {
+                    all.add(id.toString());
+                }
+            }
+            return all;
+        }
+        if (body == null) {
+            return List.of();
+        }
+        @SuppressWarnings("unchecked")
+        List<String> uuids = (List<String>) body.get("metadatas");
+        return uuids != null ? uuids : List.of();
     }
 
     @POST
@@ -296,7 +320,8 @@ public class MetadataServiceRs extends AbstractServiceRs {
                         .entity("metadata already exists: " + tableName).build();
             }
         }
-        // Fase 2: salva i metadati e le field definitions
+        // Fase 2: salva i metadati e le field definitions (one cache refresh at the end —
+        // per-row async resets race with field inserts and leave empty field maps).
         List<Map<String, Object>> saved = new ArrayList<>();
         for (Map<String, Object> entry : metadatasList) {
             @SuppressWarnings("unchecked")
@@ -312,7 +337,6 @@ public class MetadataServiceRs extends AbstractServiceRs {
             String metaUuid = metadataToPersist.get(UUID).toString();
             // Salva il metadata
             Map<String, Object> savedMeta = getApiService().createIfNotExists(METADATAS, metadataToPersist, UUID);
-            eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(savedMeta));
             // Salva le field definitions
             if (fieldsList != null) {
                 for (Map<String, Object> fdMap : fieldsList) {
@@ -329,6 +353,9 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 }
             }
             saved.add(savedMeta);
+        }
+        if (!saved.isEmpty()) {
+            eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(saved.getLast()));
         }
         return ok(Map.of("imported", saved)).build();
     }

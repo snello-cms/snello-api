@@ -1,0 +1,39 @@
+# All-in-one API only (H2 + filesystem). No Postgres / Keycloak / MinIO in this compose —
+# configure an external OIDC issuer via env (or a .env file next to this compose).
+#
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#   export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
+#   docker compose -f compose-allinone.yml up -d --build
+#
+name: snello-allinone
+
+services:
+  snello-all-in-one:
+    image: snellocms/snello-all-in-one:alpha
+    build:
+      context: ./snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+    ports:
+      - "8080:8080"
+    environment:
+      SNELLO_DB_KIND: h2
+      # Required: external SSO (Keycloak / any OIDC issuer)
+      QUARKUS_OIDC_AUTH_SERVER_URL: ${QUARKUS_OIDC_AUTH_SERVER_URL:?set QUARKUS_OIDC_AUTH_SERVER_URL to your SSO realm URL}
+      QUARKUS_OIDC_CLIENT_ID: ${QUARKUS_OIDC_CLIENT_ID:-snello-api}
+      QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: ${QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH:-resource_access/snello-api/roles}
+      # Optional second tenant
+      QUARKUS_OIDC_TENANT_ENABLED: ${QUARKUS_OIDC_TENANT_ENABLED:-false}
+      QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: ${QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL:-}
+      QUARKUS_OIDC_SNELLO_CLIENT_ID: ${QUARKUS_OIDC_SNELLO_CLIENT_ID:-accounting}
+      # Optional Keycloak admin bootstrap (groups Admin/Manager/User). Leave defaults to skip usefully.
+      SNELLO_KEYCLOAK_ADMIN_SERVER_URL: ${SNELLO_KEYCLOAK_ADMIN_SERVER_URL:-}
+      SNELLO_KEYCLOAK_ADMIN_AUTH_REALM: ${SNELLO_KEYCLOAK_ADMIN_AUTH_REALM:-master}
+      SNELLO_KEYCLOAK_ADMIN_TARGET_REALM: ${SNELLO_KEYCLOAK_ADMIN_TARGET_REALM:-snello}
+      SNELLO_KEYCLOAK_ADMIN_USERNAME: ${SNELLO_KEYCLOAK_ADMIN_USERNAME:-}
+      SNELLO_KEYCLOAK_ADMIN_PASSWORD: ${SNELLO_KEYCLOAK_ADMIN_PASSWORD:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+    volumes:
+      - snello-aio-data:/data
+
+volumes:
+  snello-aio-data:

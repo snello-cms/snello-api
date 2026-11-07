@@ -121,8 +121,13 @@ public interface JdbcRepository {
     /** Dialect SQL for one column (without the raw {@code sql_definition} override); null if the kind is null. */
     String columnSql(ColumnSpec column);
 
-    /** Dialect SQL for the generated key column; null when the key is user-defined and declared among the fields. */
-    String keyColumnSql(EntityQueryFacet query);
+    /**
+     * Dialect SQL for the generated key column; null when the key is user-defined and declared among the fields.
+     *
+     * @param varcharLength target VARCHAR size for {@code uuid}/{@code slug} keys (see
+     *                      {@link ColumnSpecs#resolveKeyVarcharLength})
+     */
+    String keyColumnSql(EntityQueryFacet query, int varcharLength);
 
     /** Closes a CREATE TABLE after the primary key (e.g. {@code ") ENGINE=INNODB;"} on MySQL). */
     default String createTableTail() {
@@ -158,7 +163,8 @@ public interface JdbcRepository {
         Log.infof("createTableSql table=%s key=%s key_type=%s columns=%d", table, query.table_key,
                 query.table_key_type, columns == null ? 0 : columns.size());
         List<String> parts = new ArrayList<>();
-        String keyColumn = keyColumnSql(query);
+        int keyVarchar = ColumnSpecs.resolveKeyVarcharLength(query, columns);
+        String keyColumn = keyColumnSql(query, keyVarchar);
         if (keyColumn != null) {
             parts.add(keyColumn);
         }

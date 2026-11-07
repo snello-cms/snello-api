@@ -1,0 +1,7 @@
+*
+!target/*-runner
+!target/*-runner.jar
+!target/quarkus-app/
+!target/quarkus-app/**
+!src/main/scripts/
+!src/main/scripts/**

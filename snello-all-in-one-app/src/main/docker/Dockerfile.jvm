@@ -1,0 +1,39 @@
+####
+# Snello all-in-one — JVM mutable-jar (H2 by default, no embedded SPA).
+#
+# Full control API surface + local H2 + filesystem docs. Point OIDC at an external SSO.
+#
+# Build:
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#   docker build -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm \
+#     -t snellocms/snello-all-in-one:alpha snello-all-in-one-app
+#
+# Run (SSO required):
+#   docker run --rm -p 8080:8080 -v snello-aio:/data \
+#     -e QUARKUS_OIDC_AUTH_SERVER_URL=https://sso.example/realms/snello \
+#     -e QUARKUS_OIDC_CLIENT_ID=snello-api \
+#     snellocms/snello-all-in-one:alpha
+###
+FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
+
+ENV LANGUAGE='en_US:en'
+ENV SNELLO_DB_KIND=h2
+ENV JAVA_APP_JAR=/deployments/quarkus-app/quarkus-run.jar
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+
+# Keep the quarkus-app/ folder name: mutable-jar re-augmentation (snello-optimize.sh) resolves its
+# inputs as <parent>/quarkus-app/..., so flattening into /deployments breaks the rebuild at startup.
+COPY --chown=185 target/quarkus-app/ /deployments/quarkus-app/
+COPY --chown=185 src/main/scripts/snello-optimize.sh /deployments/snello-optimize.sh
+COPY --chown=185 src/main/scripts/snello-entrypoint.sh /deployments/snello-entrypoint.sh
+
+USER root
+RUN chmod +x /deployments/snello-optimize.sh /deployments/snello-entrypoint.sh \
+ && mkdir -p /data/files \
+ && chown -R 185:0 /data
+
+USER 185
+EXPOSE 8080
+VOLUME ["/data"]
+
+ENTRYPOINT [ "/deployments/snello-entrypoint.sh" ]

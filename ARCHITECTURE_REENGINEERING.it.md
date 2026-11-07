@@ -171,6 +171,7 @@ snello-parent
   snello-control-app    → image snello-control
   snello-query-app      → image snello-query
   snello-mcp-app        → image snello-mcp
+  snello-all-in-one-app → image snello-all-in-one
 ```
 
 Le app DB-facing partono come Quarkus **mutable-jar** e specializzano il driver JDBC con **re-augmentation** stile Keycloak (`snello-optimize.sh` / `quarkus.launch.rebuild`, via `SNELLO_DB_KIND`). Le build native (control) fissano `db-kind` a compile-time.
@@ -180,7 +181,7 @@ Le app DB-facing partono come Quarkus **mutable-jar** e specializzano il driver 
 | `snello-control` | CRUD metadati, DDL, admin RS, AI write tools | Query + UI + AI |
 | `snello-query` | solo `GET/POST list/fetch` su `/api/{table}` (+ count); **no** create metadata, **no** DDL, **no** truncate | solo QueryFacet (+ security row filter) |
 | `snello-mcp` | MCP server + schema tools; può puntare a query plane | AiFacet + QueryFacet |
-| `snello-all-in-one` | API full control + query + SPA embedded; **H2 in-memory**; singolo container per demo / local / eval | Query + UI + AI |
+| `snello-all-in-one` | API full control + **H2** + FS docs; **senza SPA**; **OIDC esterno**; singolo container per demo / local / eval | Query + UI + AI |
 
 Meccanismo tecnico Quarkus:
 
@@ -188,29 +189,30 @@ Meccanismo tecnico Quarkus:
 - oppure exclusion di package in `quarkus.arc.exclude-types` / index filtering per profilo
 - Dockerfile sotto ogni modulo app (`*/src/main/docker/Dockerfile.jvm`, native sotto control)
 
-### Immagine all-in-one (H2 + Angular SPA)
+### Immagine all-in-one (H2, senza SPA — **fatto**)
 
-Obiettivo: un container che avvia Snello usabile senza DB esterno e con UI inclusa — per demo, onboarding, smoke CI ed esperimenti di authoring AI.
+Obiettivo: un container che avvia Snello usabile senza DB esterno — per demo, onboarding, smoke CI ed esperimenti di authoring AI. **v1 senza SPA embedded**; SSO sempre esterno.
 
 ```mermaid
 flowchart LR
   subgraph aio [snello-all-in-one container]
-    SPA[Angular static assets]
     API[Quarkus full API]
-    H2[(H2 in-memory)]
-    SPA -->|same origin /api| API
+    H2[(H2 file /data)]
+    FS[/data/files]
     API --> H2
+    API --> FS
   end
-  AngularRepo[snello-angular sibling repo] -->|CI build copy into image| SPA
+  SSO[OIDC / Keycloak esterno] -->|validazione token| API
 ```
 
 Scelte fissate per questa immagine:
 
-- **DB:** H2 in-memory (`snello.dbtype=h2`), schema bootstrap all’avvio dai path init/DDL esistenti; dati effimeri salvo eventuale volume H2 file-based in seguito
-- **Frontend:** la nuova app Angular vive in un **repository separato**; il build Docker all-in-one consuma un `dist/` precompilato (CI multi-repo / multi-stage: clone o download artifact → copia in Quarkus `META-INF/resources` o layer statico servito da Quarkus)
-- **Superficie API:** full (control + data CRUD), non query-only — allineata a “prova tutto in un box”
-- **Same origin:** SPA e API sullo stesso host/port per evitare CORS nel path demo
-- **Non è target HA di produzione:** la produzione resta control + query replicas + MySQL/PostgreSQL esterno; all-in-one è il canale di comodità/distribuzione
+- **DB:** H2 (`snello.dbtype=h2`), schema bootstrap all’avvio; JDBC default **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` per `jdbc:h2:mem:…`
+- **Frontend:** **non** nell’immagine (solo API). Opzionale in seguito: `dist/` Angular sibling in `META-INF/resources`
+- **SSO:** OIDC esterno (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); bootstrap admin Keycloak opzionale via `SNELLO_KEYCLOAK_ADMIN_*`
+- **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — MinIO non richiesto
+- **Superficie API:** full control plane, non query-only
+- **Non è target HA di produzione:** la produzione resta control + query replicas + MySQL/PostgreSQL esterno; all-in-one è il canale di comodità (`compose-allinone.yml`)
 
 ### Nodi query + cache + replica
 
@@ -252,12 +254,12 @@ Ordine interno, dopo i model:
 
 ## 5. Roadmap incrementalmente shippable
 
-1. **Facet + facade** (nessuna nuova colonna; fix fromMap; enum; catalog views) — basso rischio
-2. **AiFacet JSON + draft schema + tool rewrite** — sblocca authoring AI
-3. **Build profile `query` + Dockerfile + compose multi-replica** — sblocca scaling read
-4. **Immagine all-in-one** (H2 in-memory + Angular SPA da sibling repo) — sblocca demo one-command
-5. **Immagine MCP** (se serve protocollo esterno oltre LangChain4j attuale)
-6. **SqlQueryBuilder unificato** + hardening identifier quoting
+1. **Facet + facade** — **fatto** (datalist facet + `EntityCatalog` query/ui/ai)
+2. **AiFacet JSON + draft schema + tool rewrite** — **fatto**
+3. **Build profile `query` + Dockerfile + compose multi-replica** — **fatto** (+ JDBC read-only sul query plane)
+4. **Immagine all-in-one** — **fatto** (H2 + FS + SSO esterno; senza SPA — `snello-all-in-one-app` / `compose-allinone.yml`)
+5. **Immagine MCP** — shell presente; protocollo TBD
+6. **SqlQueryBuilder unificato** — **fatto** (`SqlQueryBuilder` + facade dialetti)
 
 ## Decisioni fissate in questa proposta
 
@@ -267,12 +269,12 @@ Ordine interno, dopo i model:
 - Query nodes: DB condiviso/replica + cache metadati locale versionata
 - UI facet resta first-class per la SPA, ma **derivabile** da AI/query per ridurre lavoro di authoring
 - Compatibilità: facade `Metadata`/`FieldDefinition` durante la migrazione dei consumer
-- **Immagine Docker all-in-one** con API full + **H2 in-memory** + build statico del **nuovo frontend Angular** (progetto separato); per demo/local/eval, non come topologia HA di produzione
-- Angular resta un **repository sibling**; coupling solo a build-time (artifact nell’immagine), non un Maven submodule dentro `snello-api`
+- **Immagine Docker all-in-one** con API full + **H2** + FS + **OIDC esterno**; SPA opzionale in seguito (repo Angular sibling); per demo/local/eval, non come topologia HA di produzione
+- Angular resta un **repository sibling** se/quando embedded; coupling solo a build-time, non un Maven submodule dentro `snello-api`
 
 ## Aperti alla discussione
 
 - Ordine di priorità degli step di roadmap
 - Se MCP serve come immagine separata in v1, o bastano i tool LangChain4j all’inizio
 - Naming delle immagini Docker / profili Quarkus
-- Se all-in-one debba supportare persistenza H2 file-based opzionale via volume
+- Se/quando aggiungere la SPA Angular dentro all-in-one (oggi API-only)

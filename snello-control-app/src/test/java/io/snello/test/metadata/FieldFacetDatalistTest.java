@@ -65,6 +65,25 @@ class FieldFacetDatalistTest {
                 .statusCode(200)
                 .body("size()", greaterThan(0))
                 .body("[0].name", notNullValue());
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/ui", name)
+                .then()
+                .statusCode(200)
+                .body("tableName", notNullValue())
+                .body("$", hasKey("ui"))
+                .body("$", hasKey("fields"));
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/ai", name)
+                .then()
+                .statusCode(200)
+                .body("tableName", notNullValue())
+                .body("$", hasKey("ai"));
     }
 
     @Test

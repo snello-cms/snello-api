@@ -49,32 +49,33 @@ public class H2Constants {
                         "  PRIMARY KEY (uuid)\n" +
                         ") ;";
 
+        // Long text columns use VARCHAR(1000000) (not CLOB) so JDBC returns String for fromMap.
         public static String creationQueryFieldDefinitions = "CREATE TABLE IF NOT EXISTS fielddefinitions (\n" +
                         "  uuid varchar(255) NOT NULL,\n" +
                         "  metadata_uuid varchar(255) NOT NULL,\n" +
                         "  metadata_name varchar(255) NOT NULL,\n" +
                         "  name varchar(255) NOT NULL,\n" +
-                        "  label varchar(255)  NOT NULL,\n" +
-                        "  description varchar(255) DEFAULT NULL,\n" +
+                        "  label varchar(1000000)  NOT NULL,\n" +
+                        "  description varchar(1000000) DEFAULT NULL,\n" +
                         "  type varchar(255) NOT NULL,\n" +
                         "  input_type varchar(255) DEFAULT NULL,\n" +
-                        "  options varchar(255) DEFAULT NULL,\n" +
+                        "  options varchar(1000000) DEFAULT NULL,\n" +
                         "  group_name varchar(255) DEFAULT NULL,\n" +
                         "  tab_name varchar(255) DEFAULT NULL,\n" +
-                        "  validations varchar(255) DEFAULT NULL,\n" +
+                        "  validations varchar(1000000) DEFAULT NULL,\n" +
                         "  table_key BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                         "  input_disabled BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-                        "  function_def varchar(255) DEFAULT NULL ,\n" +
-                        "  sql_type varchar(255) DEFAULT NULL,\n" +
-                        "  sql_definition varchar(255) DEFAULT NULL,\n" +
-                        "  default_value varchar(255) DEFAULT NULL,\n" +
-                        "  pattern varchar(255) DEFAULT NULL,\n" +
+                        "  function_def varchar(1000000) DEFAULT NULL ,\n" +
+                        "  sql_type varchar(1000000) DEFAULT NULL,\n" +
+                        "  sql_definition varchar(1000000) DEFAULT NULL,\n" +
+                        "  default_value varchar(1000000) DEFAULT NULL,\n" +
+                        "  pattern varchar(1000000) DEFAULT NULL,\n" +
                         "  join_table_name varchar(100) DEFAULT NULL,\n" +
                         "  join_table_key varchar(100) DEFAULT NULL,\n" +
-                        "  join_table_select_fields varchar(100) DEFAULT NULL,\n" +
+                        "  join_table_select_fields varchar(1000000) DEFAULT NULL,\n" +
                         "  searchable BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-                        "  search_condition varchar(100) DEFAULT NULL,\n" +
-                        "  search_field_name varchar(100) DEFAULT NULL,\n" +
+                        "  search_condition varchar(1000000) DEFAULT NULL,\n" +
+                        "  search_field_name varchar(1000000) DEFAULT NULL,\n" +
                         "  show_in_list BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                         "  view_index int(12),\n" +
                         "  mandatory BOOLEAN NOT NULL DEFAULT FALSE,\n" +
@@ -86,18 +87,18 @@ public class H2Constants {
                         "  uuid varchar(255) NOT NULL,\n" +
                         "  table_name varchar(255) NOT NULL,\n" +
                         "  icon varchar(100) DEFAULT NULL,\n" +
-                        "  select_fields varchar(255) DEFAULT NULL,\n" +
-                        "  search_fields varchar(255) DEFAULT NULL,\n" +
-                        "  description varchar(255) DEFAULT NULL,\n" +
+                        "  select_fields varchar(1000000) DEFAULT NULL,\n" +
+                        "  search_fields varchar(1000000) DEFAULT NULL,\n" +
+                        "  description varchar(1000000) DEFAULT NULL,\n" +
                         "  alias_table varchar(255) DEFAULT NULL,\n" +
-                        "  alias_condition varchar(255) DEFAULT NULL,\n" +
+                        "  alias_condition varchar(1000000) DEFAULT NULL,\n" +
                         "  table_key varchar(255) NOT NULL,\n" +
                         "  table_key_type varchar(255) DEFAULT NULL,\n" +
                         "  table_key_addition varchar(255) DEFAULT NULL,\n" +
-                        "  creation_query varchar(255) DEFAULT NULL,\n" +
-                        "  order_by varchar(255) DEFAULT NULL,\n" +
+                        "  creation_query varchar(1000000) DEFAULT NULL,\n" +
+                        "  order_by varchar(1000000) DEFAULT NULL,\n" +
                         "  metadata_group varchar(150) DEFAULT NULL,\n" +
-                        "  tab_groups varchar(255) DEFAULT NULL,\n" +
+                        "  tab_groups varchar(1000000) DEFAULT NULL,\n" +
                         "  already_exist BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                         "  calendar_enabled BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                         "  calendar_field varchar(255) DEFAULT NULL,\n" +

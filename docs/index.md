@@ -2,10 +2,11 @@
 
 Functional and technical documentation for Snello.
 
-Architecture / 6.x proposal (repo root):
+Architecture / 6.x (repo root; facets + control/query planes largely landed):
 
 - [ARCHITECTURE_REENGINEERING.md](../ARCHITECTURE_REENGINEERING.md)
 - [ARCHITECTURE_REENGINEERING.it.md](../ARCHITECTURE_REENGINEERING.it.md)
+- [README — Planes & facets](../README.md#planes--facets-6x)
 
 ## Index
 
@@ -24,12 +25,26 @@ If you are modeling a new application entity:
 
 1. read [Metadata](metadata.md) first
 2. then complete the configuration with [Field Definitions](field-definitions.md)
+3. for SPA reads, prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`
 
 ## Useful Endpoints
 
-- `GET /api/metadatas`
-- `GET /api/fielddefinitions`
+Control plane (`:8080`) — admin + facets:
+
+- `GET /api/metadatas` / `GET /api/fielddefinitions` (flat CRUD rows)
 - `GET /api/datalist/metadata/{name}` (facet: identity/query/ui/ai)
 - `GET /api/datalist/metadata/{name}/fielddefinitions` (FieldModel facets)
-- `GET /api/datalist/metadata/{name}/fields/ui`
-- `GET /api/datalist/metadata/{name}/fields/query`
+- `GET /api/datalist/metadata/{name}/fields/ui|query|ai`
+- `GET /api/datalist/metadata/{name}/ui` (`EntityUiView`)
+- `GET /api/datalist/metadata/{name}/ai` (`EntityAiView`)
+
+Query plane (`:8081`) — read-only data GETs only:
+
+- `GET /api/{table}` / `GET /api/{table}/{uuid}` (declared metadata / select queries)
+
+## All-in-one dump round-trip
+
+See [README — All-in-one dump → export → import IT](../README.md#all-in-one-dump--export--import-it):
+
+1. `./dev/scripts/generate-metadatas-export.sh` (dump → `metadatas-from-dump.json`)
+2. `./dev/scripts/run-aio-import-tests.sh` (import into Docker all-in-one + Failsafe IT)

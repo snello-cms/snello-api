@@ -46,7 +46,27 @@ public class H2JdbcRepository implements JdbcRepository {
                 "ALTER TABLE fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile VARCHAR(1000000)",
                 // row-level security columns existed only in the PostgreSQL schema
                 "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS api_protected BOOLEAN DEFAULT FALSE NOT NULL",
-                "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS username_field VARCHAR(255) DEFAULT NULL"
+                "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS username_field VARCHAR(255) DEFAULT NULL",
+                // Widen legacy varchar(255) so dump metadata import (long options lists) fits
+                "ALTER TABLE fielddefinitions ALTER COLUMN options SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN label SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN description SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN validations SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN function_def SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN sql_type SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN sql_definition SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN default_value SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN pattern SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN join_table_select_fields SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN search_condition SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE fielddefinitions ALTER COLUMN search_field_name SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN select_fields SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN search_fields SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN description SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN alias_condition SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN creation_query SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN order_by SET DATA TYPE VARCHAR(1000000)",
+                "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)"
         };
     }
 
@@ -454,9 +474,12 @@ public class H2JdbcRepository implements JdbcRepository {
     }
 
     @Override
-    public String keyColumnSql(EntityQueryFacet query) {
-        return "autoincrement".equals(query.table_key_type)
-                ? escape(query.table_key) + " int NOT NULL AUTO_INCREMENT"
-                : escape(query.table_key) + " VARCHAR(50) NOT NULL";
+    public String keyColumnSql(EntityQueryFacet query, int varcharLength) {
+        return switch (query.table_key_type == null ? "userdefined" : query.table_key_type) {
+            case "uuid", "slug" -> escape(query.table_key) + " VARCHAR(" + varcharLength + ") NOT NULL";
+            case "autoincrement" -> escape(query.table_key) + " int NOT NULL AUTO_INCREMENT";
+            // user-defined: the key column is one of the declared fields
+            default -> null;
+        };
     }
 }

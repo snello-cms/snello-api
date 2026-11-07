@@ -16,6 +16,7 @@ import io.snello.model.facet.EntityUiFacet;
 import io.snello.model.facet.FieldAiFacet;
 import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;
+import io.snello.model.enums.WidgetType;
 import io.snello.model.pojo.ColumnSpec;
 import io.snello.model.pojo.DraftResult;
 import io.snello.model.pojo.EntityDraft;
@@ -269,7 +270,7 @@ public class DraftService {
             // only without an explicit ui facet: a primitive false cannot be told apart from "not set"
             ui.show_in_list = FieldUiDerivation.shownInListByDefault(semantic);
         }
-        if ("select".equals(ui.type) && (ui.options == null || ui.options.isBlank())) {
+        if (WidgetType.SELECT == WidgetType.from(ui.type) && (ui.options == null || ui.options.isBlank())) {
             errors.add(where + ": enum/select needs ui.options (comma separated values)");
         }
         if (model.ai.description == null || model.ai.description.isBlank()) {
@@ -281,8 +282,8 @@ public class DraftService {
     }
 
     private void checkJoin(String uiType, FieldModel model, String where, List<String> errors) throws Exception {
-        boolean join = "join".equals(uiType) || "lookup".equals(uiType)
-                || "multijoin".equals(uiType) || "multilookup".equals(uiType);
+        WidgetType widget = WidgetType.from(uiType);
+        boolean join = widget != null && widget.isJoinLike();
         if (!join) {
             return;
         }

@@ -22,10 +22,11 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 
 ```text
 snello-parent
-  snello-core            shared domain / JDBC / services
-  snello-control-app  →  snellocms/snello-control
-  snello-query-app    →  snellocms/snello-query
-  snello-mcp-app      →  snellocms/snello-mcp
+  snello-core               shared domain / JDBC / services
+  snello-control-app     →  snellocms/snello-control
+  snello-query-app       →  snellocms/snello-query
+  snello-mcp-app         →  snellocms/snello-mcp
+  snello-all-in-one-app  →  snellocms/snello-all-in-one
 ```
 
 DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augmentation**: set `SNELLO_DB_KIND=postgresql|mysql|h2` so the entrypoint runs `snello-optimize.sh` once, then starts.
@@ -37,7 +38,24 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | `main` | `5.1.0` | 3.40.1.1 | `:5.1.0`, `:latest` |
 | `6.0.0-alpha` | `6.0.0-alpha` | 4.0.0.Beta3 | `:6.0.0-alpha`, `:alpha` (no `:latest`) |
 
-Architecture proposal for 6.x: [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REENGINEERING.md).
+Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REENGINEERING.md) · [IT](ARCHITECTURE_REENGINEERING.it.md).
+
+## Planes & facets (6.x)
+
+Same flat DB tables (`metadatas` / `fielddefinitions`); concerns split in Java and in REST contracts.
+
+| Plane | Image | Surface |
+|---|---|---|
+| **Control** | `snello-control` (`:8080`) | Full API: data CRUD, metadata/DDL, documents, auth, AI, drafts |
+| **Query** | `snello-query` (`:8081`) | Read-only GETs on declared metadata / select queries; no admin RS, no writes, no AI |
+| **MCP** | `snello-mcp` | AI / tools plane (shell module; protocol TBD) |
+| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs; **no SPA**; **external SSO** (OIDC) |
+
+**Query plane JDBC:** connections are forced read-only (`quarkus.datasource.jdbc.additional-jdbc-properties.readOnly=true` + `ReadOnlyConnectionInterceptor`). Point `QUARKUS_DATASOURCE_JDBC_URL` at a replica when you have one. Metadata snapshots refresh on an interval (`SNELLO_METADATA_REFRESH_INTERVAL`, default `30s` / compose `10s`).
+
+**Catalog / facets:** `EntityCatalog` exposes `queryView` / `uiView` / `aiView`. List/fetch use the query view; the SPA should prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`. Typed enums (`WidgetType`, `InputType`, `KeyType`, `SearchOp`, `SemanticType`) back widget/SQL mapping. SQL list/count/CRUD fragments go through a shared `SqlQueryBuilder` (thin H2/MySQL/PostgreSQL facades).
+
+Open follow-ups: optional embedded SPA in all-in-one, full MCP protocol, SPA facet consumers, optional PG identifier quoting.
 
 ## Documentation
 
@@ -71,6 +89,7 @@ docker compose -f compose-devservices.yml down
 | `snellocms/snello-control` | control plane (also aliased as `snello-api` during alpha) |
 | `snellocms/snello-query` | query plane |
 | `snellocms/snello-mcp` | MCP / AI tools plane |
+| `snellocms/snello-all-in-one` | single container: H2 + full API, no SPA, external OIDC |
 
 ```bash
 # Build all modules
@@ -86,17 +105,54 @@ docker run --rm -p 8080:8080 -e SNELLO_DB_KIND=postgresql snellocms/snello-contr
   snello-control-app/target/quarkus-app/quarkus-run.jar
 ```
 
+### All-in-one (H2, no SPA, external SSO)
+
+Single JVM image with the full control API, embedded **H2** (file under `/data` by default), and **filesystem** document storage. No Postgres, MinIO, or Keycloak in the container — point OIDC at your issuer.
+
+```bash
+./mvnw -pl snello-all-in-one-app -am package -DskipTests
+docker build -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm \
+  -t snellocms/snello-all-in-one:local snello-all-in-one-app
+
+docker run --rm -p 8080:8080 -v snello-aio:/data \
+  -e QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello \
+  -e QUARKUS_OIDC_CLIENT_ID=snello-api \
+  snellocms/snello-all-in-one:local
+```
+
+Or with compose (requires `QUARKUS_OIDC_AUTH_SERVER_URL` in the environment):
+
+```bash
+export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
+docker compose -f compose-allinone.yml up -d --build
+```
+
+Useful env vars:
+
+| Variable | Default / notes |
+|---|---|
+| `QUARKUS_OIDC_AUTH_SERVER_URL` | **required** — OIDC realm / issuer URL |
+| `QUARKUS_OIDC_CLIENT_ID` | `snello-api` |
+| `QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH` | `resource_access/snello-api/roles` |
+| `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
+| `SNELLO_FS_BASE_PATH` | `/data/files` |
+| `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
+| `OPENAI_API_KEY` | optional; needed only for `/api/chat` |
+
 ## Compose files
 
 | File | Purpose |
 |---|---|
 | `compose-devservices.yml` | Quarkus `%dev` dependencies |
 | `compose-test.yml` | Quarkus test dependencies (PostgreSQL) |
-| `compose.yml` | Full stack + `snellocms/snello-control:alpha` |
+| `compose.yml` | Full stack: deps + `snello-control` + `snello-query` (`:alpha`) |
+| `compose-allinone.yml` | Single `snello-all-in-one` + volume `/data` (external SSO) |
+| `compose-allinone-test.yml` | All-in-one IT on `:18080` (OIDC off; dump import tests) |
 
 ```bash
-# Full local stack (control image + deps)
-docker compose up -d
+# Full local stack (control + query + deps)
+./mvnw package -DskipTests
+docker compose up -d --build
 ```
 
 Pinned service images (current):
@@ -135,7 +191,9 @@ With `snello.control-plane.enabled=true`, control registers the full surface: da
 | PUT | `/api/{table}/{uuid}` | update |
 | DELETE | `/api/{table}/{uuid}` | delete |
 
-On **snello-query** only the GET variants of `/api/{table…}` remain registered; admin RS are not present.
+### Query plane APIs (`snello-query`)
+
+Only GET variants of `/api/{table…}` for **declared** metadata / select queries. Undeclared system tables (`metadatas`, `fielddefinitions`, …) return `404`. Mutations return `405`. Admin/metadata/AI RS are not registered.
 
 ### Metadata & schema
 
@@ -154,13 +212,16 @@ On **snello-query** only the GET variants of `/api/{table…}` remain registered
 | `/api/datalist/metadata/{name}/fielddefinitions` | fields as **FieldModel** (nested facets) |
 | `/api/datalist/metadata/{name}/fields/ui` | UI facet only |
 | `/api/datalist/metadata/{name}/fields/query` | query facet only |
+| `/api/datalist/metadata/{name}/fields/ai` | AI facet only |
+| `/api/datalist/metadata/{name}/ui` | full `EntityUiView` |
+| `/api/datalist/metadata/{name}/ai` | full `EntityAiView` |
 | `/api/datalist/metadata/{name}/condition` | conditions for an entity |
 | `POST /api/drafts/validate` | validate AI/schema draft |
 | `POST /api/drafts/apply` | apply draft |
 
 ### How to read field definitions
 
-Preferred for the SPA (by **table name** / `table_name`):
+Preferred for the SPA (by **table name** / `table_name`), on control (`:8080`):
 
 ```http
 GET http://localhost:8080/api/datalist/metadata/kayaks/fielddefinitions
@@ -180,11 +241,19 @@ Returns `FieldModel[]` with nested facets, for example:
 }
 ```
 
-Single-concern projections:
+Single-concern field projections:
 
 ```http
 GET /api/datalist/metadata/kayaks/fields/ui
 GET /api/datalist/metadata/kayaks/fields/query
+GET /api/datalist/metadata/kayaks/fields/ai
+```
+
+Entity-level catalog views (`EntityUiView` / `EntityAiView`):
+
+```http
+GET /api/datalist/metadata/kayaks/ui
+GET /api/datalist/metadata/kayaks/ai
 ```
 
 Metadata itself as facets:
@@ -231,12 +300,24 @@ Storage stays a single flat `fielddefinitions` table; the split is in the **mode
 | `/api/chat_interactions` | CRUD chat interactions |
 | `/api/ai_tools` | CRUD AI tools |
 
+### Backup (business data ZIP)
+
+Chunked row export/import. **Does not** touch schema — use `POST /api/metadatas/export|import` for metadata/fields. Import does **not** create tables (DDL must already exist).
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/backup/data` | ZIP of all business tables (pages of 500 rows → `data/{table}/NNNN.json` + `manifest.json`) |
+| GET | `/api/backup/data/{metadata_name}` | ZIP for a single table |
+| POST | `/api/backup/data` | multipart `file` ZIP → insert rows (`create` if key missing, skip if exists) |
+| GET/POST | `/api/backup/files` | not implemented yet |
+
+ZIP layout: `manifest.json` (`kind=snello-backup-data`) + `data/{table_name}/0001.json` …
+
 ### Other admin
 
 | Path | Purpose |
 |---|---|
 | `/api/links` | CRUD CMS links |
-| `/api/backup/data\|files` | GET export / POST restore |
 | `GET /api/p/{table}/{uuid}` | template/pages |
 
 More detail: [Metadata](docs/metadata.md), [Field Definitions](docs/field-definitions.md), [REST Query Params](docs/rest-query-params.md).
@@ -249,6 +330,30 @@ More detail: [Metadata](docs/metadata.md), [Field Definitions](docs/field-defini
 ```
 
 `compose-test.yml` maps Postgres to host port **5433** so tests can run while the full stack occupies `5432`.
+
+### All-in-one dump → export → import IT
+
+Plan: restore the `dev/db` dump → export all metadatas as JSON (`POST /api/metadatas/export` with `{"all":true}`) → import that JSON into a Docker all-in-one → assert datalist/facets.
+
+```bash
+# One-shot (regenerates fixture if missing, starts compose-allinone-test, runs Failsafe)
+./dev/scripts/run-aio-import-tests.sh
+
+# Refresh the committed fixture from the dump
+REGENERATE_EXPORT=1 ./dev/scripts/run-aio-import-tests.sh
+
+# Or only regenerate JSON:
+./dev/scripts/generate-metadatas-export.sh
+```
+
+| Piece | Role |
+|---|---|
+| `compose-test.yml` + dump | source DB for export |
+| `dev/scripts/generate-metadatas-export.sh` | boots control against dump, writes `metadatas-from-dump.json` |
+| `compose-allinone-test.yml` | all-in-one on `:18080` (OIDC off for deterministic IT) |
+| `AllInOneDumpImportIT` | RestAssured black-box import + kayaks facet checks |
+
+Fixture path: `snello-all-in-one-app/src/test/resources/fixtures/metadatas-from-dump.json`.
 
 ## AI Agent
 
