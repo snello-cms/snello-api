@@ -106,7 +106,140 @@ Pinned service images (current):
 - `pgsty/silo:RELEASE.2026-09-16T00-00-00Z` (MinIO-compatible; official `minio/minio` is no longer publicly pullable)
 - `amazon/aws-cli:2.31.38` (bucket bootstrap)
 
-DB seed / restore scripts live under `dev/db/`. Keycloak realm imports under `dev/keycloak/`.
+DB seed / restore scripts live under `dev/db/` (mounted as `/seed` by `compose.yml`; restore runs only on first Postgres volume init). Keycloak realm imports under `dev/keycloak/`.
+
+Local stack ports after `docker compose up -d --build`:
+
+| Service | Port |
+|---|---|
+| snello-control | `8080` |
+| snello-query | `8081` |
+| PostgreSQL | `5432` |
+| Keycloak | `8180` |
+| MinIO / Silo | `9000` / `9001` |
+
+To re-run DB restore from scratch: `docker compose down -v` then `up --build` again.
+
+## Control plane APIs (`snello-control`)
+
+With `snello.control-plane.enabled=true`, control registers the full surface: data CRUD + metadata/DDL + documents + auth + AI. Auth typical: GET/OPTIONS open on `/api/*`; writes need role `Admin|Manager|User`; `/api/auth*` Admin-only.
+
+### Generic data (metadata-driven tables)
+
+| Method | Path | Role |
+|---|---|---|
+| GET | `/api/{table}` | list (+ sort/limit/start + query filters) |
+| GET | `/api/{table}/{uuid}` | fetch |
+| GET | `/api/{table}/{uuid}/{path…}` | nested / join path |
+| POST | `/api/{table}` | create |
+| PUT | `/api/{table}/{uuid}` | update |
+| DELETE | `/api/{table}/{uuid}` | delete |
+
+On **snello-query** only the GET variants of `/api/{table…}` remain registered; admin RS are not present.
+
+### Metadata & schema
+
+| Path | Purpose |
+|---|---|
+| `/api/metadatas` | CRUD metadatas (flat admin rows) |
+| `GET /api/metadatas/{uuid}/create\|delete\|truncate` | DDL table actions |
+| `GET /api/metadatas/groups` | metadata groups |
+| `POST /api/metadatas/export\|import` | export/import |
+| `/api/fielddefinitions` | CRUD field definitions (**flat** rows → DB) |
+| `/api/conditions` | CRUD conditions |
+| `/api/selectqueries` | CRUD select queries |
+| `/api/actions` | CRUD actions |
+| `/api/datalist/names` | entity names for the SPA |
+| `/api/datalist/metadata/{name}` | metadata as **facets** (`identity` / `query` / `ui` / `ai`) |
+| `/api/datalist/metadata/{name}/fielddefinitions` | fields as **FieldModel** (nested facets) |
+| `/api/datalist/metadata/{name}/fields/ui` | UI facet only |
+| `/api/datalist/metadata/{name}/fields/query` | query facet only |
+| `/api/datalist/metadata/{name}/condition` | conditions for an entity |
+| `POST /api/drafts/validate` | validate AI/schema draft |
+| `POST /api/drafts/apply` | apply draft |
+
+### How to read field definitions
+
+Preferred for the SPA (by **table name** / `table_name`):
+
+```http
+GET http://localhost:8080/api/datalist/metadata/kayaks/fielddefinitions
+```
+
+Returns `FieldModel[]` with nested facets, for example:
+
+```json
+{
+  "uuid": "...",
+  "metadata_uuid": "...",
+  "metadata_name": "kayaks",
+  "name": "category",
+  "query": { "searchable": true, "search_field_name": "category", "table_key": false },
+  "ui": { "label": "category", "type": "select", "options": "single,double", "show_in_list": true },
+  "ai": { "description": null }
+}
+```
+
+Single-concern projections:
+
+```http
+GET /api/datalist/metadata/kayaks/fields/ui
+GET /api/datalist/metadata/kayaks/fields/query
+```
+
+Metadata itself as facets:
+
+```http
+GET /api/datalist/metadata/kayaks
+```
+
+→ `{ "identity": { "table_name": "kayaks", ... }, "query": {...}, "ui": {...}, "ai": {...} }`
+
+Flat admin/CRUD (still used for writes to `fielddefinitions`):
+
+```http
+GET /api/fielddefinitions?metadata_name=kayaks
+GET /api/fielddefinitions/{uuid}
+```
+
+List available entity names: `GET /api/datalist/names`.
+
+Storage stays a single flat `fielddefinitions` table; the split is in the **model / datalist responses** (`query` vs `ui` vs `ai`), not in separate DB tables.
+
+### Documents & media
+
+| Path | Purpose |
+|---|---|
+| `/api/documents` | list/CRUD documents, upload |
+| `/api/documents/{uuid}/download`, `/webp`, `/download/{name}`, `/video/{name}` | download / derivatives |
+| `/api/documents/cache/...` | cached document surface |
+
+### Auth (Keycloak admin)
+
+| Path | Purpose |
+|---|---|
+| `GET/POST /api/auth/users`, `PUT /api/auth/users/{id}` | users |
+| `GET /api/auth/users/{id}/groups` | user groups |
+| `GET /api/auth/groups`, `.../groups/{id}/users` | groups |
+| `POST /api/auth/createGroups` | bootstrap groups |
+
+### AI / chat
+
+| Path | Purpose |
+|---|---|
+| `POST /api/chat` | LangChain4j chatbot |
+| `/api/chat_interactions` | CRUD chat interactions |
+| `/api/ai_tools` | CRUD AI tools |
+
+### Other admin
+
+| Path | Purpose |
+|---|---|
+| `/api/links` | CRUD CMS links |
+| `/api/backup/data\|files` | GET export / POST restore |
+| `GET /api/p/{table}/{uuid}` | template/pages |
+
+More detail: [Metadata](docs/metadata.md), [Field Definitions](docs/field-definitions.md), [REST Query Params](docs/rest-query-params.md).
 
 ## Testing
 
@@ -114,6 +247,8 @@ DB seed / restore scripts live under `dev/db/`. Keycloak realm imports under `de
 ./mvnw -pl snello-control-app -am test
 ./mvnw -pl snello-control-app -Dtest=io.snello.test.metadata.ProgramsMetadataCreationTest test
 ```
+
+`compose-test.yml` maps Postgres to host port **5433** so tests can run while the full stack occupies `5432`.
 
 ## AI Agent
 
