@@ -407,11 +407,13 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         }
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
         boolean escape = false;
+        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
         String tableKeyType = metadata.table_key_type == null ? "userdefined" : metadata.table_key_type;
+        int keyVarchar = io.snello.util.SlugKeySizes.resolveKeyVarcharLength(metadata, safeFields);
         switch (tableKeyType) {
             case "uuid":
             case "slug":
-                sb.append(escape(metadata.table_key) + " VARCHAR(50) NOT NULL ");
+                sb.append(escape(metadata.table_key) + " VARCHAR(" + keyVarchar + ") NOT NULL ");
                 break;
             case "autoincrement":
                 sb.append(escape(metadata.table_key) + " SERIAL ");
@@ -421,7 +423,6 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 escape = true;
         }
 
-        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
         for (FieldDefinition fieldDefinition : safeFields) {
             if (escape) {
                 // skip the first comma

@@ -13,6 +13,8 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 ## Why Snello
 
 - Metadata-first API design
+- Business-data backup ZIP: `GET/POST /api/backup/data` (all tables) and `GET /api/backup/data/{metadata_name}` (single table); import skips existing keys and does not run DDL
+- Slug primary keys: CREATE TABLE sizes the key VARCHAR to the slug source field when that field is wider than 50
 - Dynamic table and field management
 - Generic REST layer for CRUD and query operations
 - Pluggable document storage (filesystem, S3-compatible)

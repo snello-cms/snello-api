@@ -435,25 +435,32 @@ public class H2JdbcRepository implements JdbcRepository {
             throw new IllegalArgumentException("metadata cannot be null");
         }
         StringBuffer sb = new StringBuffer(" CREATE TABLE " + escape(metadata.table_name) + " (");
+        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
         String tableKeyType = metadata.table_key_type == null ? "userdefined" : metadata.table_key_type;
+        int keyVarchar = io.snello.util.SlugKeySizes.resolveKeyVarcharLength(metadata, safeFields);
+        boolean keyEmitted = true;
         if ("autoincrement".equals(tableKeyType)) {
             sb.append(escape(metadata.table_key) + " int NOT NULL AUTO_INCREMENT ");
+        } else if ("userdefined".equals(tableKeyType)) {
+            keyEmitted = false; // key column is one of the declared fields
         } else {
-            sb.append(escape(metadata.table_key) + " VARCHAR(50) NOT NULL ");
+            sb.append(escape(metadata.table_key) + " VARCHAR(" + keyVarchar + ") NOT NULL ");
         }
-        List<FieldDefinition> safeFields = fields == null ? List.of() : fields;
+
         for (FieldDefinition fieldDefinition : safeFields) {
             if (fieldDefinition == null) {
                 continue;
             }
+            String prefix = keyEmitted ? "," : "";
+            keyEmitted = true;
             if (fieldDefinition.sql_definition != null && !fieldDefinition.sql_definition.trim().isEmpty()) {
-                sb.append(",").append(fieldDefinition.sql_definition);
+                sb.append(prefix).append(fieldDefinition.sql_definition);
             } else {
                 String columnSql = fieldDefinition2Sql(fieldDefinition);
                 if (columnSql == null || columnSql.trim().isEmpty()) {
                     throw new IllegalArgumentException("Unsupported field type in createTableSql: name='" + fieldDefinition.name + "', type='" + fieldDefinition.type + "'");
                 }
-                sb.append(",").append(columnSql);
+                sb.append(prefix).append(columnSql);
             }
                 if (FieldDefinitionUtils.isMultiJoinType(fieldDefinition.type)) {
                 String join_table_name = metadata.table_name + "_" + fieldDefinition.join_table_name;
