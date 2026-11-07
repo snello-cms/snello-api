@@ -1,7 +1,5 @@
-# All-in-one + local Keycloak (realm from dev/keycloak — same dump used in compose.yml).
-# Ports avoid clash with full stack (:8080/:8180):
-#   all-in-one → http://127.0.0.1:18080
-#   keycloak  → http://127.0.0.1:18180
+# Local Keycloak on :18180 / API on :18080 (mem H2). For published docs prefer
+# docker-compose-aio-sso.yaml (ports 8080/8180, file H2 for both). See docs/all-in-one.md.
 #
 #   ./mvnw -pl snello-all-in-one-app -am package -Dmaven.test.skip=true
 #   docker compose -f compose-allinone-local.yml up -d --build

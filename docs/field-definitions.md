@@ -2,7 +2,7 @@
 
 `FieldDefinition` entries describe metadata fields: UI input behavior, SQL mapping, search rules, and list visibility.
 
-In code, the model is defined in [src/main/java/io/snello/model/FieldDefinition.java](../src/main/java/io/snello/model/FieldDefinition.java).
+In code, the flat model is [`FieldDefinition`](../snello-core/src/main/java/io/snello/model/FieldDefinition.java). Datalist returns nested facets (`FieldModel`: `query` / `ui` / `ai`). Typed enums: `WidgetType`, `InputType`, `SearchOp`, `SemanticType`.
 
 ## Role in the System
 

@@ -1,9 +1,8 @@
-# All-in-one API only (H2 + filesystem). No Postgres / Keycloak / MinIO in this compose —
-# configure an external OIDC issuer via env (or a .env file next to this compose).
+# Legacy: prefer docker-compose-aio.yaml (same layout + healthcheck + file H2 URL).
+# Docs: docs/all-in-one.md
 #
-#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
 #   export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
-#   docker compose -f compose-allinone.yml up -d --build
+#   docker compose -f docker-compose-aio.yaml up -d --build
 #
 name: snello-allinone
 

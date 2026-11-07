@@ -1,0 +1,57 @@
+# All-in-one + external SSO. Persists H2 DB + filesystem docs under volume `snello-aio-data` → `/data`.
+#
+# Prerequisites:
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#   export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
+#
+#   docker compose -f docker-compose-aio.yaml up -d --build
+#
+# Docs: docs/all-in-one.md
+#
+name: snello-aio
+
+services:
+  snello-all-in-one:
+    image: snellocms/snello-all-in-one:alpha
+    build:
+      context: ./snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+    ports:
+      - "8080:8080"
+    environment:
+      SNELLO_DB_KIND: h2
+      # File-backed H2 (survives restarts when /data is a volume)
+      SNELLO_JDBC_URL: jdbc:h2:file:/data/snello;DB_CLOSE_DELAY=-1;AUTO_SERVER=FALSE;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      SNELLO_FS_BASE_PATH: /data/files
+      # Required: external OIDC issuer (Keycloak / any OIDC realm URL)
+      QUARKUS_OIDC_AUTH_SERVER_URL: ${QUARKUS_OIDC_AUTH_SERVER_URL:?set QUARKUS_OIDC_AUTH_SERVER_URL to your SSO realm URL}
+      QUARKUS_OIDC_CLIENT_ID: ${QUARKUS_OIDC_CLIENT_ID:-snello-api}
+      QUARKUS_OIDC_APPLICATION_TYPE: ${QUARKUS_OIDC_APPLICATION_TYPE:-service}
+      QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: ${QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH:-resource_access/snello-api/roles}
+      # Optional second tenant
+      QUARKUS_OIDC_TENANT_ENABLED: ${QUARKUS_OIDC_TENANT_ENABLED:-false}
+      QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: ${QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL:-}
+      QUARKUS_OIDC_SNELLO_CLIENT_ID: ${QUARKUS_OIDC_SNELLO_CLIENT_ID:-accounting}
+      # Optional Keycloak Admin API bootstrap (groups Admin/Manager/User)
+      SNELLO_KEYCLOAK_ADMIN_SERVER_URL: ${SNELLO_KEYCLOAK_ADMIN_SERVER_URL:-}
+      SNELLO_KEYCLOAK_ADMIN_AUTH_REALM: ${SNELLO_KEYCLOAK_ADMIN_AUTH_REALM:-master}
+      SNELLO_KEYCLOAK_ADMIN_TARGET_REALM: ${SNELLO_KEYCLOAK_ADMIN_TARGET_REALM:-snello}
+      SNELLO_KEYCLOAK_ADMIN_USERNAME: ${SNELLO_KEYCLOAK_ADMIN_USERNAME:-}
+      SNELLO_KEYCLOAK_ADMIN_PASSWORD: ${SNELLO_KEYCLOAK_ADMIN_PASSWORD:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+    volumes:
+      - snello-aio-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/datalist/names HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\\[' <&3",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 50s
+
+volumes:
+  # H2 file DB at /data/snello.* + uploaded files under /data/files
+  snello-aio-data:

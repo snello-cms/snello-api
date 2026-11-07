@@ -1,0 +1,89 @@
+# All-in-one + bundled Keycloak (dev-file H2) for local SSO.
+# Realms imported from ./dev/keycloak (same dump as the full stack).
+#
+# Ports:
+#   snello-all-in-one → http://127.0.0.1:8080
+#   keycloak          → http://127.0.0.1:8180
+#
+# Prerequisites:
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#
+#   docker compose -f docker-compose-aio-sso.yaml up -d --build
+#
+# Docs: docs/all-in-one.md
+#
+name: snello-aio-sso
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+      # Persist Keycloak's embedded H2 (dev-file) under /opt/keycloak/data
+      KC_DB: dev-file
+    command:
+      - start-dev
+      - --db=dev-file
+      - --import-realm
+      - --http-port=8080
+      - --hostname-strict=false
+    ports:
+      - "8180:8080"
+    volumes:
+      - snello-aio-keycloak-data:/opt/keycloak/data
+      - ./dev/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 40s
+
+  snello-all-in-one:
+    image: snellocms/snello-all-in-one:alpha
+    build:
+      context: ./snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SNELLO_DB_KIND: h2
+      SNELLO_JDBC_URL: jdbc:h2:file:/data/snello;DB_CLOSE_DELAY=-1;AUTO_SERVER=FALSE;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      SNELLO_FS_BASE_PATH: /data/files
+      # Same Docker network → issuer must match tokens minted against http://keycloak:8080/...
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
+      QUARKUS_OIDC_CLIENT_ID: snello-api
+      QUARKUS_OIDC_APPLICATION_TYPE: service
+      QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: resource_access/snello-api/roles
+      # Named tenant → same realm (avoids sso.example placeholders)
+      QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
+      QUARKUS_OIDC_SNELLO_CLIENT_ID: snello-api
+      SNELLO_KEYCLOAK_ADMIN_SERVER_URL: http://keycloak:8080
+      SNELLO_KEYCLOAK_ADMIN_AUTH_REALM: master
+      SNELLO_KEYCLOAK_ADMIN_TARGET_REALM: snello
+      SNELLO_KEYCLOAK_ADMIN_USERNAME: admin
+      SNELLO_KEYCLOAK_ADMIN_PASSWORD: admin
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+    volumes:
+      - snello-aio-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/datalist/names HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\\[' <&3",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 50s
+
+volumes:
+  snello-aio-data:
+  snello-aio-keycloak-data:

@@ -12,28 +12,40 @@ A metadata entry represents the configuration of a table/entity:
 - conditions and sorting
 - details used to create or manage the table
 
-In code, the model is defined in [src/main/java/io/snello/model/Metadata.java](../src/main/java/io/snello/model/Metadata.java).
+In code, the flat model is [`Metadata`](../snello-core/src/main/java/io/snello/model/Metadata.java); REST also exposes facet views via datalist (`identity` / `query` / `ui` / `ai`).
 
 ## Main Fields
 
 - `uuid`: unique metadata identifier
 - `table_name`: table/resource name (required)
 - `table_key`: table key field (required)
-- `table_key_type`: key type
-- `table_key_addition`: key extensions
-- `description`: functional description
+- `table_key_type`: key type (`uuid` | `slug` | `autoincrement` | `userdefined`) — see [Table key types](#table-key-types)
+- `table_key_addition`: for `slug`, the source field name the slug is built from
+- `description`: functional description (also used by AI tools when `ai_profile` allows)
 - `select_fields`: field list used in select queries
 - `search_fields`: field list used in search
 - `order_by`: default ordering
-- `creation_query`: SQL table creation query
+- `creation_query`: optional raw SQL table creation query (otherwise derived from fields)
 - `tab_groups`: tab/wizard group definition
 - `icon`: icon associated with the resource
 - `already_exist`: true if the table already exists and is not created by SNELLO
 - `created`: true if the table was created by the system
 - `api_protected`: enables API protection for the resource
 - `username_field`: user ownership/authorization field
+- `ai_profile`: JSON profile (description, synonyms, `tool_visible`, …)
 - `fields`: linked `FieldDefinition` list
 - `conditions`: linked condition list
+
+## Table key types
+
+| `table_key_type` | CREATE TABLE key column | Notes |
+|---|---|---|
+| `uuid` | `VARCHAR(50) NOT NULL` | random UUID on create |
+| `slug` | `VARCHAR(N)` sized to source field | `table_key_addition` must name the source field; `N` ≥ 50 and grows with the field (e.g. text → 200) |
+| `autoincrement` | dialect serial / identity | |
+| `userdefined` | no generated key column | key is one of the declared fields (`table_key` flag) |
+
+Slug sizing is shared across PostgreSQL, H2, and MySQL (`ColumnSpecs.resolveKeyVarcharLength` / `SlugKeySizes` on 5.1.x). See also [Drafts](drafts.md).
 
 ## Ownership Protection: `api_protected` and `username_field`
 
@@ -117,8 +129,15 @@ Related datalist endpoints:
 - `GET /api/datalist/metadata/{name}/fielddefinitions` → `FieldModel[]` (nested facets)
 - `GET /api/datalist/metadata/{name}/fields/ui`
 - `GET /api/datalist/metadata/{name}/fields/query`
+- `GET /api/datalist/metadata/{name}/fields/ai`
+- `GET /api/datalist/metadata/{name}/ui` / `…/ai`
 
-Admin CRUD on `/api/metadatas` remains flat (table columns).
+Export / import (metadata + fielddefinitions, not row data):
+
+- `POST /api/metadatas/export`
+- `POST /api/metadatas/import`
+
+Admin CRUD on `/api/metadatas` remains flat (table columns). For row backup see [Backup](backup.md).
 
 ## Example Payload (datalist facet)
 

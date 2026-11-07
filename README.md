@@ -61,7 +61,8 @@ Open follow-ups: optional embedded SPA in all-in-one, full MCP protocol, SPA fac
 ## Documentation
 
 - [Documentation Index](docs/index.md)
-- [OpenAPI (`GET /openapi`)](#openapi-get-openapi)
+- [All-in-one](docs/all-in-one.md) — Docker / `docker-compose-aio.yaml` / `docker-compose-aio-sso.yaml`
+- [OpenAPI](docs/openapi.md) · [Backup](docs/backup.md) · [Drafts](docs/drafts.md)
 - [Metadata](docs/metadata.md)
 - [Field Definitions](docs/field-definitions.md)
 - [SelectQuery](docs/select-query.md)
@@ -122,11 +123,15 @@ docker run --rm -p 8080:8080 -v snello-aio:/data \
   snellocms/snello-all-in-one:local
 ```
 
-Or with compose (requires `QUARKUS_OIDC_AUTH_SERVER_URL` in the environment):
+Or with Compose — see **[docs/all-in-one.md](docs/all-in-one.md)** for the full guide:
 
 ```bash
+# External SSO + persistent H2 volume
 export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
-docker compose -f compose-allinone.yml up -d --build
+docker compose -f docker-compose-aio.yaml up -d --build
+
+# Bundled Keycloak (dev-file H2) + all-in-one (file H2)
+docker compose -f docker-compose-aio-sso.yaml up -d --build
 ```
 
 Useful env vars:
@@ -148,7 +153,10 @@ Useful env vars:
 | `compose-devservices.yml` | Quarkus `%dev` dependencies |
 | `compose-test.yml` | Quarkus test dependencies (PostgreSQL) |
 | `compose.yml` | Full stack: deps + `snello-control` + `snello-query` (`:alpha`) |
-| `compose-allinone.yml` | Single `snello-all-in-one` + volume `/data` (external SSO) |
+| `docker-compose-aio.yaml` | **All-in-one** + external SSO + volume `/data` (H2) — [docs](docs/all-in-one.md) |
+| `docker-compose-aio-sso.yaml` | **All-in-one** + Keycloak (`dev-file` H2) + volume `/data` — [docs](docs/all-in-one.md) |
+| `compose-allinone.yml` | Legacy external-SSO layout (prefer `docker-compose-aio.yaml`) |
+| `compose-allinone-local.yml` | Local Keycloak on `:18180` / API `:18080` |
 | `compose-allinone-test.yml` | All-in-one IT on `:18080` (OIDC off; dump import tests) |
 
 ```bash

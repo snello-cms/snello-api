@@ -1,8 +1,8 @@
 # Snello API Docs
 
-Functional and technical documentation for Snello.
+Functional and technical documentation for Snello **6.x** (`6.0.0-alpha`).
 
-Architecture / 6.x (repo root; facets + control/query planes largely landed):
+Architecture (repo root):
 
 - [ARCHITECTURE_REENGINEERING.md](../ARCHITECTURE_REENGINEERING.md)
 - [ARCHITECTURE_REENGINEERING.it.md](../ARCHITECTURE_REENGINEERING.it.md)
@@ -10,33 +10,54 @@ Architecture / 6.x (repo root; facets + control/query planes largely landed):
 
 ## Index
 
+### Runtimes & ops
+
+- [All-in-one](all-in-one.md) — Docker / Compose (`docker-compose-aio.yaml`, `docker-compose-aio-sso.yaml`)
+- [OpenAPI](openapi.md) — `GET /openapi` JSON
+- [Backup (data ZIP)](backup.md) — `GET/POST /api/backup/data`
+
+### Modeling
+
 - [Metadata](metadata.md)
 - [Metadata: Ownership Protection](metadata.md#ownership-protection-api_protected-and-username_field)
+- [Metadata: Table key types](metadata.md#table-key-types)
 - [Field Definitions](field-definitions.md)
+- [Entity drafts](drafts.md) — `/api/drafts/validate|apply`
 - [SelectQuery](select-query.md)
-- [Document Management](document-management.md)
 - [REST Query Params](rest-query-params.md)
+
+### Documents & AI
+
+- [Document Management](document-management.md)
 - [AI Agent](ai-agent.md)
 - [AI Tools Schema](ai-tools-schema.md)
 
 ## Where to Start
 
-If you are modeling a new application entity:
+1. Pick a runtime: full stack (`compose.yml`), or [All-in-one](all-in-one.md).
+2. Model entities with [Metadata](metadata.md) + [Field Definitions](field-definitions.md), or [Drafts](drafts.md).
+3. For SPA reads, prefer **datalist facet** endpoints over flat `/api/fielddefinitions`.
+4. Discover the live API surface: [OpenAPI](openapi.md).
 
-1. read [Metadata](metadata.md) first
-2. then complete the configuration with [Field Definitions](field-definitions.md)
-3. for SPA reads, prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`
+## Planes (6.x)
+
+| Plane | Image | Surface |
+|---|---|---|
+| **Control** | `snello-control` (`:8080`) | Full API: data CRUD, metadata/DDL, documents, auth, AI, drafts, backup |
+| **Query** | `snello-query` (`:8081`) | Read-only GETs on declared metadata / select queries |
+| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs; **no SPA**; OIDC |
+| **MCP** | `snello-mcp` | AI / tools shell (protocol TBD) |
+
+Same flat DB tables (`metadatas` / `fielddefinitions`); concerns split in Java facets (`identity` / `query` / `ui` / `ai`) and in REST contracts.
 
 ## Useful Endpoints
 
 OpenAPI (any plane — public):
 
-- `GET /openapi` — OpenAPI 3 document as **JSON** (all JAX-RS methods of the running plane)
-- `GET /q/openapi` — same document (YAML by default)
+- `GET /openapi` — OpenAPI 3 **JSON**
+- `GET /q/openapi` — YAML (or JSON via `Accept` / `?format=json`)
 
-See [README — OpenAPI](../README.md#openapi-get-openapi).
-
-Control plane (`:8080`) — admin + facets:
+Control / all-in-one — admin + facets:
 
 - `GET /api/metadatas` / `GET /api/fielddefinitions` (flat CRUD rows)
 - `GET /api/datalist/metadata/{name}` (facet: identity/query/ui/ai)
@@ -44,6 +65,8 @@ Control plane (`:8080`) — admin + facets:
 - `GET /api/datalist/metadata/{name}/fields/ui|query|ai`
 - `GET /api/datalist/metadata/{name}/ui` (`EntityUiView`)
 - `GET /api/datalist/metadata/{name}/ai` (`EntityAiView`)
+- `POST /api/drafts/validate` / `POST /api/drafts/apply`
+- `GET/POST /api/backup/data` — see [Backup](backup.md)
 
 Query plane (`:8081`) — read-only data GETs only:
 
@@ -51,7 +74,8 @@ Query plane (`:8081`) — read-only data GETs only:
 
 ## All-in-one dump round-trip
 
-See [README — All-in-one dump → export → import IT](../README.md#all-in-one-dump--export--import-it):
+See [All-in-one](all-in-one.md#seed-metadata--data-optional) and [README — dump IT](../README.md#all-in-one-dump--export--import-it):
 
-1. `./dev/scripts/generate-metadatas-export.sh` (dump → `metadatas-from-dump.json`)
-2. `./dev/scripts/run-aio-import-tests.sh` (import into Docker all-in-one + Failsafe IT)
+1. `./dev/scripts/generate-metadatas-export.sh`
+2. Import metadatas → create tables → `POST /api/backup/data`
+3. Or `./dev/scripts/aio-import-from-exports.sh` / `./dev/scripts/run-aio-import-tests.sh`

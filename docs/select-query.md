@@ -4,7 +4,7 @@ A SelectQuery defines a virtual REST table backed by custom SQL.
 
 Instead of querying a physical table directly, clients can call standard API endpoints and use a query name as if it were a table name.
 
-In code, the model is defined in [src/main/java/io/snello/model/SelectQuery.java](../src/main/java/io/snello/model/SelectQuery.java).
+In code, the model is defined in [snello-core/src/main/java/io/snello/model/SelectQuery.java](../snello-core/src/main/java/io/snello/model/SelectQuery.java).
 
 ## What It Is Used For
 
@@ -25,7 +25,7 @@ If `query_name` is `user_actions_feed`, these calls work like a normal table end
 
 The name in the URL is resolved as follows:
 
-1. API receives `/api/{table}` in [src/main/java/io/snello/service/rs/ApiServiceRs.java](../src/main/java/io/snello/service/rs/ApiServiceRs.java)
+1. API receives `/api/{table}` in [snello-core/src/main/java/io/snello/service/rs/ApiServiceRs.java](../snello-core/src/main/java/io/snello/service/rs/ApiServiceRs.java)
 2. `table` is passed to `ApiService.list` and `ApiService.count`
 3. if `table` exists in `selectqueryMap`, SQL from SelectQuery is executed
 
@@ -47,7 +47,7 @@ SelectQuery entries are managed through the dedicated REST resource:
 - `PUT /api/selectqueries/{uuid}`
 - `DELETE /api/selectqueries/{uuid}`
 
-Implementation is in [src/main/java/io/snello/service/rs/SelectQueryServiceRs.java](../src/main/java/io/snello/service/rs/SelectQueryServiceRs.java).
+Implementation is in [snello-core/src/main/java/io/snello/service/rs/SelectQueryServiceRs.java](../snello-core/src/main/java/io/snello/service/rs/SelectQueryServiceRs.java).
 
 ### Example: create a virtual endpoint
 
