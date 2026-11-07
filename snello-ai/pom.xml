@@ -13,7 +13,7 @@
     <artifactId>snello-ai</artifactId>
     <packaging>jar</packaging>
     <name>snello-ai</name>
-    <description>Snello AI facet runtime: LangChain4j assistant, CMS tools, chat endpoint.
+    <description>Snello AI: AG-UI WebSocket, history, skills/MCP tools, LangChain4j agents.
         Depended on by control (and mcp); the query plane does not ship it.</description>
 
     <dependencies>
@@ -28,6 +28,14 @@
         <dependency>
             <groupId>io.quarkiverse.langchain4j</groupId>
             <artifactId>quarkus-langchain4j-ai-gemini</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
         </dependency>
     </dependencies>
 

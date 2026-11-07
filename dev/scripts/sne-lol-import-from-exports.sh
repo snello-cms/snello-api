@@ -49,18 +49,13 @@ PY
 TOKEN=$(cat "$WORKDIR/access.tok")
 AUTH_H=("Authorization: Bearer ${TOKEN}")
 
-echo "[sne-lol] probe POST /api/metadatas"
+echo "[sne-lol] probe auth (GET /api/auth)"
 PROBE_CODE=$(curl -sS -o "$WORKDIR/probe.body" -w "%{http_code}" \
-  -H "${AUTH_H[0]}" -H "Content-Type: application/json" \
-  -X POST "${BASE}/api/metadatas" \
-  -d '{"table_name":"__sne_probe__","unique_key":"uuid","table_key":"uuid"}')
-echo "probe_http=${PROBE_CODE} body=$(head -c 240 "$WORKDIR/probe.body")"
-if [[ "$PROBE_CODE" != "200" && "$PROBE_CODE" != "201" ]]; then
-  # cleanup probe if somehow created later; for now abort on auth failure
-  if [[ "$PROBE_CODE" == "401" || "$PROBE_CODE" == "403" ]]; then
-    echo "auth failed for writes (need Admin|Manager|User on resource_access/snello-api/roles)" >&2
-    exit 2
-  fi
+  -H "${AUTH_H[0]}" "${BASE}/api/auth")
+echo "probe_http=${PROBE_CODE} body=$(head -c 160 "$WORKDIR/probe.body")"
+if [[ "$PROBE_CODE" == "401" || "$PROBE_CODE" == "403" ]]; then
+  echo "auth failed for writes (need Admin|Manager|User on resource_access/snello-api/roles)" >&2
+  exit 2
 fi
 
 echo "[sne-lol] POST /api/metadatas/import"

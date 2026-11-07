@@ -34,7 +34,7 @@ class RowMappingTest {
     @Test
     void everySystemPathIsReserved() {
         for (String name : new String[]{"metadatas", "fielddefinitions", "conditions", "actions", "auth", "backup",
-                "chat", "chat_interactions", "datalist", "documents", "drafts", "links", "p", "selectqueries", "ai_tools"}) {
+                "datalist", "documents", "drafts", "links", "p", "selectqueries", "ai_tools", "history_session", "history_event", "ai_project", "ai_skill", "ai_mcp_tool", "ai_ui_card", "ai_service_account", "ai", "agui"}) {
             assertTrue(MetadataUtils.isReserved(name), name);
         }
         assertFalse(MetadataUtils.isReserved("products"));

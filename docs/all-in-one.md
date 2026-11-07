@@ -4,7 +4,8 @@
 
 | Included | Not included |
 |---|---|
-| Full REST API (CRUD, metadata/DDL, documents, auth admin, AI, drafts, backup, OpenAPI) | Embedded SPA / admin UI |
+| Full REST API (CRUD, metadata/DDL, documents, auth admin, AI `/api/ai/*`, drafts, backup, OpenAPI) | Embedded SPA / admin UI |
+| AG-UI WebSocket `WS /agui` (`snello-ai`) | Separate history/NATS services |
 | H2 database (file under `/data` by default) | PostgreSQL / MySQL |
 | Filesystem docs (`SNELLO_FS_BASE_PATH`) | MinIO / S3 (optional; unused when `snello.storagetype=fs`) |
 | OIDC (external or bundled Keycloak) | — |
@@ -63,7 +64,9 @@ Useful env vars:
 | `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
-| `OPENAI_API_KEY` | optional; needed only for `/api/chat` |
+| `OPENAI_API_KEY` | optional; AG-UI when `snello.aitype=openai` |
+| `GEMINI_API_KEY` | optional; AG-UI quick/pro Gemini models |
+| `GEMINI_MODEL_QUICK` / `GEMINI_MODEL_PRO` | optional model ids (defaults in `application.properties`) |
 
 Check:
 

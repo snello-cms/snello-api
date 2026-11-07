@@ -1,50 +1,38 @@
-# AI Agent
+# AI Agent (AG-UI)
 
-Snello includes an AI assistant exposed by the backend chat endpoint:
+Snello AI is the **flower-style** agent stack: authenticated WebSocket AG-UI, CDI-async agent runs (no NATS), history + skills + MCP tools, and CMS/SQL tools.
 
-- POST /api/chat
+## WebSocket
 
-The assistant is implemented with Quarkus LangChain4j and can use CMS tools
-to read metadata, list records and suggest create/update payloads.
+- Path: `ws(s)://host/agui`
+- Auth: OIDC bearer (header) or browser subprotocol `bearer-token-carrier` (see flower README pattern)
+- Protocol: AG-UI events (`SESSION_STARTED`, `RUN_*`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `RUN_ERROR`)
+- Each frame is a RunAgentInput; `forwardedProps.projectUuid` is required; `model` = `quick`|`pro`; `language` = `it`|`en`
 
-## Provider Configuration
+Pipeline: `AguiServiceWss` → `Event.fireAsync(AguiRequest)` → `AguiAgentWorker` → `Event.fireAsync(AguiResponse)` → WS events.
 
-Both providers can be configured at the same time in
-src/main/resources/application.properties:
+## REST (control plane)
 
-- OpenAI
-- Gemini
+| Path | Role |
+|------|------|
+| `GET /api/ai/history`, `GET /api/ai/history/{uuid}` | User history events (scoped to token `sub`) |
+| `GET /api/ai/history/sessions` | User sessions |
+| `POST /api/ai/feedback` | Feedback history event |
+| `GET /api/ai/me/projects` | Projects accessible to caller |
+| `GET /api/ai/card-catalog?projectUuid=` | UI cards for project |
+| Admin CRUD `/api/ai/projects`, `/skills`, `/mcp-tools`, `/cards`, `/service-accounts` | `Admin` |
 
-Relevant keys:
+SQL dynamic tools remain at `/api/ai_tools`.
 
-- snello.aitype
-- quarkus.langchain4j.chat-model.provider=${snello.aitype:openai}
-- quarkus.langchain4j.openai.*
-- quarkus.langchain4j.ai.gemini.*
+## Persistence (system tables)
 
-Environment variables:
+`history_session`, `history_event`, `ai_project`, `ai_skill`, `ai_mcp_tool`, `ai_ui_card`, `ai_service_account`, `ai_tools`.
 
-- OPENAI_API_KEY
-- GEMINI_API_KEY
+## Provider configuration
 
-## Switch Between Models
+- `snello.aitype=openai` \| `ai-gemini`
+- Named models: `quick` / `pro` under OpenAI or Gemini (`GEMINI_MODEL_QUICK`, `GEMINI_MODEL_PRO`)
+- Keys: `OPENAI_API_KEY`, `GEMINI_API_KEY`
+- MCP HTTP base: `snello.ai.mcp.http.base-url` (or `MCPTOOLS_HTTP_BASE_URL`)
 
-Switch is controlled by one property:
-
-- snello.aitype=openai -> uses OpenAI
-- snello.aitype=ai-gemini -> uses Gemini
-
-After changing provider, restart the application.
-
-Example:
-
-```bash
-# OpenAI
-./mvnw quarkus:dev -Dsnello.aitype=openai
-
-# Gemini
-./mvnw quarkus:dev -Dsnello.aitype=ai-gemini
-```
-
-If you run in Docker or Kubernetes, pass the same property as an environment
-variable or JVM system property and keep both API keys available.
+Default project seeded as `snello.cms` when empty (see `AiProjectSeeder`).

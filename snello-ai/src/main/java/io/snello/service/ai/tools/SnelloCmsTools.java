@@ -4,7 +4,6 @@ import dev.langchain4j.agent.tool.Tool;
 import tools.jackson.databind.json.JsonMapper;
 import io.quarkus.logging.Log;
 import io.quarkus.security.identity.SecurityIdentity;
-import io.snello.model.ChatInteraction;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
 import io.snello.model.facet.EntityAiFacet;
@@ -15,7 +14,8 @@ import io.snello.model.pojo.EntityDraft;
 import io.snello.service.ApiService;
 import io.snello.service.DraftService;
 import io.snello.service.MetadataService;
-import io.snello.service.ai.AiRequestContext;
+import io.snello.service.ai.wss.ActiveAguiRun;
+import io.snello.service.ai.wss.AguiServiceWss;
 import jakarta.enterprise.context.ApplicationScoped;
 import io.snello.util.FieldTypeUtils;
 import jakarta.inject.Inject;
@@ -24,8 +24,6 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
-
 import static io.snello.management.AppConstants.*;
 
 /**
@@ -58,7 +56,7 @@ public class SnelloCmsTools {
     JsonMapper objectMapper;
 
     @Inject
-    AiRequestContext aiRequestContext;
+    ActiveAguiRun activeAguiRun;
 
     @Inject
     AiPaginationContextStore aiPaginationContextStore;
@@ -288,11 +286,12 @@ public class SnelloCmsTools {
             boolean hasMore = remaining > 0;
             int nextStart = start + currentSize;
 
-            String conversationId = aiRequestContext.getConversationId();
+            String conversationId = paginationKey();
+            if (conversationId != null) {
                 AiPaginationContextStore.LastSearchContext lastSearchContext = AiPaginationContextStore.LastSearchContext
-                    .of(entityName, params, limit, nextStart, hasMore);
+                        .of(entityName, params, limit, nextStart, hasMore);
                 aiPaginationContextStore.save(conversationId, lastSearchContext);
-                persistPaginationContext(conversationId, lastSearchContext);
+            }
 
             SearchResult result = new SearchResult(count, count, start, limit, hasMore, remaining, nextStart, records);
             return objectMapper.writeValueAsString(result);
@@ -302,22 +301,11 @@ public class SnelloCmsTools {
         }
     }
 
-    private void persistPaginationContext(String conversationId, AiPaginationContextStore.LastSearchContext context) {
-        if (conversationId == null || conversationId.isBlank() || context == null) {
-            return;
+    private String paginationKey() {
+        if (activeAguiRun != null && activeAguiRun.isBound()) {
+            return AguiServiceWss.memoryId(activeAguiRun.userId(), activeAguiRun.threadId());
         }
-        try {
-            ChatInteraction interaction = new ChatInteraction();
-            interaction.uuid = java.util.UUID.randomUUID().toString();
-            interaction.conversation_uuid = conversationId;
-            interaction.user_id = currentUsernameOrNull();
-            interaction.user_message = AiPaginationContextStore.PAGINATION_CONTEXT_MARKER;
-            interaction.ai_response = objectMapper.writeValueAsString(context.toMap());
-            interaction.creation_date = LocalDateTime.now();
-            apiService.create(CHAT_INTERACTIONS, interaction.toMap(), UUID);
-        } catch (Exception e) {
-            Log.warn("Cannot persist pagination context for conversation " + conversationId + ": " + e.getMessage());
-        }
+        return null;
     }
 
     private String currentUsernameOrNull() {
@@ -332,7 +320,7 @@ public class SnelloCmsTools {
             "It automatically reuses the same entity and filters from the previous search.")
     public String loadMoreRecords() {
         try {
-            String conversationId = aiRequestContext.getConversationId();
+            String conversationId = paginationKey();
             AiPaginationContextStore.LastSearchContext context = aiPaginationContextStore.get(conversationId);
             if (context == null) {
                 return LOAD_MORE_NO_PREVIOUS_CONTEXT;

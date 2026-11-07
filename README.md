@@ -144,7 +144,7 @@ Useful env vars:
 | `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
-| `OPENAI_API_KEY` | optional; needed only for `/api/chat` |
+| `OPENAI_API_KEY` | optional; needed for AG-UI agent (OpenAI provider) |
 
 ## Compose files
 
@@ -327,13 +327,15 @@ Storage stays a single flat `fielddefinitions` table; the split is in the **mode
 | `GET /api/auth/groups`, `.../groups/{id}/users` | groups |
 | `POST /api/auth/createGroups` | bootstrap groups |
 
-### AI / chat
+### AI (AG-UI)
 
-| Path | Purpose |
+| Method / path | Purpose |
 |---|---|
-| `POST /api/chat` | LangChain4j chatbot |
-| `/api/chat_interactions` | CRUD chat interactions |
-| `/api/ai_tools` | CRUD AI tools |
+| `WS /agui` | AG-UI WebSocket agent (OIDC) |
+| `/api/ai/history`, `/sessions`, `/feedback` | Conversation history |
+| `/api/ai/me/projects`, `/card-catalog` | Caller projects / cards |
+| `/api/ai/projects`, `/skills`, `/mcp-tools`, `/cards`, `/service-accounts` | Admin CRUD |
+| `/api/ai_tools` | Dynamic SQL tools |
 
 ### Backup (business data ZIP)
 

@@ -66,10 +66,7 @@ public class H2JdbcRepository implements JdbcRepository {
                 "ALTER TABLE metadatas ALTER COLUMN alias_condition SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE metadatas ALTER COLUMN creation_query SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE metadatas ALTER COLUMN order_by SET DATA TYPE VARCHAR(1000000)",
-                "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)",
-                // Widen legacy chat varchar limits (run one-by-one; already-CLOB is non-fatal)
-                upgradeChatInteractionsUserMessage,
-                upgradeChatInteractionsAiResponse
+                "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)"
         };
     }
 
@@ -83,8 +80,14 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationQueryDocuments,
                 creationQuerySelectQueries,
                 creationLinksQueries,
-                creationChatInteractions,
-                creationAiTools
+                creationAiTools,
+                creationHistorySession,
+                creationHistoryEvent,
+                creationAiProject,
+                creationAiSkill,
+                creationAiMcpTool,
+                creationAiUiCard,
+                creationAiServiceAccount
         };
     }
 

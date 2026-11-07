@@ -17,8 +17,6 @@ public class MetadataUtils {
             case ACTIONS:
             case AUTH:
             case BACKUP:
-            case CHAT:
-            case CHAT_INTERACTIONS:
             case DRAFTS:
             case PAGES:
             case CONDITIONS:
@@ -30,6 +28,15 @@ public class MetadataUtils {
             case PUBLIC_DATA:
             case SELECT_QUERY:
             case AI_TOOLS:
+            case HISTORY_SESSION:
+            case HISTORY_EVENT:
+            case AI_PROJECT:
+            case AI_SKILL:
+            case AI_MCP_TOOL:
+            case AI_UI_CARD:
+            case AI_SERVICE_ACCOUNT:
+            case "ai":
+            case "agui":
                 return true;
             default:
                 return false;

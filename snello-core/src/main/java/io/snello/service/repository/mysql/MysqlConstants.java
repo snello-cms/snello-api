@@ -154,6 +154,95 @@ public class MysqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+    public static String creationHistorySession = "CREATE TABLE IF NOT EXISTS `history_session` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `session_id` varchar(255) NOT NULL,\n" +
+            "  `user_id` varchar(255) DEFAULT NULL,\n" +
+            "  `message_count` BIGINT NOT NULL DEFAULT 0,\n" +
+            "  `started_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n" +
+            "  PRIMARY KEY (uuid),\n" +
+            "  UNIQUE KEY `uk_history_session_session_id` (`session_id`)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationHistoryEvent = "CREATE TABLE IF NOT EXISTS `history_event` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `occurred_at` timestamp NOT NULL,\n" +
+            "  `channel` varchar(32) NOT NULL,\n" +
+            "  `user_id` varchar(255) DEFAULT NULL,\n" +
+            "  `username` varchar(255) DEFAULT NULL,\n" +
+            "  `type` varchar(32) NOT NULL,\n" +
+            "  `body` text DEFAULT NULL,\n" +
+            "  `session_id` varchar(255) DEFAULT NULL,\n" +
+            "  `model` varchar(16) DEFAULT NULL,\n" +
+            "  `recorded_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationAiProject = "CREATE TABLE IF NOT EXISTS `ai_project` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `name` varchar(128) NOT NULL,\n" +
+            "  `description` text DEFAULT NULL,\n" +
+            "  `global_message` text NOT NULL,\n" +
+            "  `sso_group` varchar(256) NOT NULL DEFAULT '',\n" +
+            "  `roles` text NOT NULL,\n" +
+            "  PRIMARY KEY (uuid),\n" +
+            "  UNIQUE KEY `uk_ai_project_name` (`name`)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationAiSkill = "CREATE TABLE IF NOT EXISTS `ai_skill` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `project_uuid` varchar(36) NOT NULL,\n" +
+            "  `name` varchar(128) NOT NULL,\n" +
+            "  `description` varchar(1024) NOT NULL,\n" +
+            "  `instructions` text NOT NULL,\n" +
+            "  `allowed_roles` text DEFAULT NULL,\n" +
+            "  `enabled` BOOLEAN NOT NULL DEFAULT TRUE,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationAiMcpTool = "CREATE TABLE IF NOT EXISTS `ai_mcp_tool` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `project_uuid` varchar(36) NOT NULL,\n" +
+            "  `name` varchar(128) NOT NULL,\n" +
+            "  `description` varchar(1024) NOT NULL,\n" +
+            "  `http_method` varchar(16) NOT NULL DEFAULT 'GET',\n" +
+            "  `url` varchar(2048) NOT NULL,\n" +
+            "  `parameters_json` text NOT NULL,\n" +
+            "  `arg_binding` varchar(16) NOT NULL DEFAULT 'QUERY',\n" +
+            "  `arg_names_json` text DEFAULT NULL,\n" +
+            "  `fixed_query_json` text DEFAULT NULL,\n" +
+            "  `catalog_page_path_template` varchar(1024) DEFAULT NULL,\n" +
+            "  `result_type` varchar(128) DEFAULT NULL,\n" +
+            "  `result_path` varchar(256) DEFAULT NULL,\n" +
+            "  `authenticated` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
+            "  `service_account_uuid` varchar(255) DEFAULT NULL,\n" +
+            "  `allowed_roles` text DEFAULT NULL,\n" +
+            "  `enabled` BOOLEAN NOT NULL DEFAULT TRUE,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationAiUiCard = "CREATE TABLE IF NOT EXISTS `ai_ui_card` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `project_uuid` varchar(36) NOT NULL,\n" +
+            "  `name` varchar(128) NOT NULL,\n" +
+            "  `result_type` varchar(128) DEFAULT NULL,\n" +
+            "  `template` text DEFAULT NULL,\n" +
+            "  `enabled` BOOLEAN NOT NULL DEFAULT TRUE,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationAiServiceAccount = "CREATE TABLE IF NOT EXISTS `ai_service_account` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `project_uuid` varchar(36) NOT NULL,\n" +
+            "  `name` varchar(128) NOT NULL,\n" +
+            "  `host` varchar(512) NOT NULL,\n" +
+            "  `realm` varchar(128) NOT NULL,\n" +
+            "  `client_id` varchar(255) NOT NULL,\n" +
+            "  `client_secret` text NOT NULL,\n" +
+            "  `enabled` BOOLEAN NOT NULL DEFAULT TRUE,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationQuerySystemEventLogs = "CREATE TABLE IF NOT EXISTS `systemeventlogs` (\n" +
             "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `query_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
