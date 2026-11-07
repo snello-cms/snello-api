@@ -7,13 +7,17 @@ import io.quarkus.security.identity.SecurityIdentityAugmentor;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.annotation.Priority;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -21,13 +25,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Ensures Keycloak client roles ({@code resource_access.snello-api.roles}), realm roles and
- * {@code groups} map onto HTTP policy roles {@code Admin|Manager|User}.
+ * Maps Keycloak {@code resource_access.snello-api.roles}, {@code realm_access.roles} and {@code groups}
+ * onto HTTP policy roles {@code Admin|Manager|User}.
  * <p>
- * Quarkus may expose nested JWT claims as {@link Map}, Jakarta {@link JsonObject} or Vert.x JsonObject
- * depending on version — all are handled so client-credentials tokens with client role Admin work.
+ * Nested JWT claims may arrive as {@link Map}, Jakarta JSON, Vert.x JSON, Jackson JsonNode, or only via
+ * the raw access-token payload — all are handled so client-credentials tokens work.
  */
 @ApplicationScoped
+@Priority(1)
 public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
 
     private static final String SNELLO_API_CLIENT = "snello-api";
@@ -39,16 +44,32 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         }
 
         Principal principal = identity.getPrincipal();
+        Set<String> derivedRoles = new HashSet<>();
+
         if (!(principal instanceof JsonWebToken jwt)) {
+            Log.warnf("OIDC roles augmentor: principal is not JsonWebToken (%s) existingRoles=%s",
+                    principal == null ? "null" : principal.getClass().getName(), identity.getRoles());
             return Uni.createFrom().item(identity);
         }
 
-        Set<String> derivedRoles = new HashSet<>();
-        addRolesFromResourceAccess(jwt, derivedRoles);
-        addRolesFromRealmAccess(jwt, derivedRoles);
-        addRolesFromGroups(jwt, derivedRoles);
+        addRolesFromResourceAccess(jwt.getClaim("resource_access"), derivedRoles);
+        addRolesFromRealmAccess(jwt.getClaim("realm_access"), derivedRoles);
+        addRolesFromGroups(jwt.getClaim("groups"), derivedRoles);
+        // Fallback: some Quarkus/OIDC stacks expose nested claims only in the raw token
+        if (derivedRoles.isEmpty()) {
+            Object payload = decodePayload(jwt);
+            if (payload != null) {
+                addRolesFromResourceAccess(nested(payload, "resource_access"), derivedRoles);
+                addRolesFromRealmAccess(nested(payload, "realm_access"), derivedRoles);
+                addRolesFromGroups(nested(payload, "groups"), derivedRoles);
+            }
+        }
 
         if (derivedRoles.isEmpty()) {
+            Object ra = jwt.getClaim("resource_access");
+            Log.warnf("OIDC roles augmentor: no Admin/Manager/User derived for principal=%s existingRoles=%s resource_accessType=%s",
+                    identity.getPrincipal().getName(), identity.getRoles(),
+                    ra == null ? "null" : ra.getClass().getName());
             return Uni.createFrom().item(identity);
         }
 
@@ -56,36 +77,32 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         for (String role : derivedRoles) {
             builder.addRole(role);
         }
-        if (Log.isDebugEnabled()) {
-            Log.debugf("OIDC roles augmented for %s: %s (was %s)",
-                    identity.getPrincipal().getName(), derivedRoles, identity.getRoles());
-        }
+        Log.infof("OIDC roles augmentor: principal=%s +roles=%s (was %s)",
+                identity.getPrincipal().getName(), derivedRoles, identity.getRoles());
         return Uni.createFrom().item(builder.build());
     }
 
-    private void addRolesFromResourceAccess(JsonWebToken jwt, Set<String> outRoles) {
-        Object snelloApi = nested(jwt.getClaim("resource_access"), SNELLO_API_CLIENT);
+    private void addRolesFromResourceAccess(Object resourceAccess, Set<String> outRoles) {
+        Object snelloApi = nested(resourceAccess, SNELLO_API_CLIENT);
         if (snelloApi == null) {
             return;
         }
         addRolesFromCollection(nested(snelloApi, "roles"), outRoles);
     }
 
-    private void addRolesFromRealmAccess(JsonWebToken jwt, Set<String> outRoles) {
-        addRolesFromCollection(nested(jwt.getClaim("realm_access"), "roles"), outRoles);
+    private void addRolesFromRealmAccess(Object realmAccess, Set<String> outRoles) {
+        addRolesFromCollection(nested(realmAccess, "roles"), outRoles);
     }
 
-    private void addRolesFromGroups(JsonWebToken jwt, Set<String> outRoles) {
-        Object groupsClaim = jwt.getClaim("groups");
+    private void addRolesFromGroups(Object groupsClaim, Set<String> outRoles) {
         if (groupsClaim == null) {
             return;
         }
         for (String rawGroup : asStringList(groupsClaim)) {
             String group = normalizeGroup(rawGroup);
-            if (group.isBlank()) {
-                continue;
+            if (!group.isBlank()) {
+                mapKnownRole(group, outRoles);
             }
-            mapKnownRole(group, outRoles);
         }
     }
 
@@ -112,7 +129,35 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         }
     }
 
-    /** Resolve one nested key from Map / Jakarta JsonObject / Vert.x JsonObject. */
+    private static Object decodePayload(JsonWebToken jwt) {
+        try {
+            String raw = jwt.getRawToken();
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+            String[] parts = raw.split("\\.");
+            if (parts.length < 2) {
+                return null;
+            }
+            byte[] decoded = Base64.getUrlDecoder().decode(pad(parts[1]));
+            String json = new String(decoded, StandardCharsets.UTF_8);
+            try (var reader = jakarta.json.Json.createReader(new java.io.StringReader(json))) {
+                return reader.readObject();
+            }
+        } catch (Exception e) {
+            Log.debugf(e, "OIDC roles augmentor: raw token payload parse failed");
+            return null;
+        }
+    }
+
+    private static String pad(String b64) {
+        int mod = b64.length() % 4;
+        if (mod == 0) {
+            return b64;
+        }
+        return b64 + "====".substring(mod);
+    }
+
     private static Object nested(Object parent, String key) {
         if (parent == null || key == null) {
             return null;
@@ -123,10 +168,33 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         if (parent instanceof JsonObject json) {
             return json.containsKey(key) ? toPlain(json.get(key)) : null;
         }
-        // Vert.x JsonObject (avoid hard dependency): getJsonObject / getValue via reflection-free duck typing
+        // Jackson 2/3 JsonNode: path(key) / get(key)
         try {
-            var getValue = parent.getClass().getMethod("getValue", String.class);
-            return getValue.invoke(parent, key);
+            var get = parent.getClass().getMethod("get", String.class);
+            Object node = get.invoke(parent, key);
+            if (node == null) {
+                return null;
+            }
+            // JsonNode.isMissingNode / isNull
+            try {
+                var isMissing = parent.getClass().getMethod("isMissingNode");
+                // method is on the node
+                if (Boolean.TRUE.equals(node.getClass().getMethod("isMissingNode").invoke(node))) {
+                    return null;
+                }
+                if (Boolean.TRUE.equals(node.getClass().getMethod("isNull").invoke(node))) {
+                    return null;
+                }
+            } catch (ReflectiveOperationException ignored) {
+                // ignore
+            }
+            return node;
+        } catch (ReflectiveOperationException ignored) {
+            // fall through
+        }
+        // Vert.x JsonObject
+        try {
+            return parent.getClass().getMethod("getValue", String.class).invoke(parent, key);
         } catch (ReflectiveOperationException ignored) {
             return null;
         }
@@ -154,13 +222,27 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         if (rolesObj instanceof JsonArray array) {
             return array.stream().map(OidcRolesAugmentor::stringify).filter(s -> s != null && !s.isBlank()).toList();
         }
-        // Vert.x JsonArray
+        // Jackson ArrayNode / Vert.x JsonArray: iterable or size()/getString
+        if (rolesObj instanceof Iterable<?> it && !(rolesObj instanceof Map)) {
+            List<String> out = new ArrayList<>();
+            for (Object o : it) {
+                String s = stringify(o);
+                if (s != null && !s.isBlank()) {
+                    out.add(s);
+                }
+            }
+            if (!out.isEmpty()) {
+                return out;
+            }
+        }
         try {
             var size = (int) rolesObj.getClass().getMethod("size").invoke(rolesObj);
-            var getString = rolesObj.getClass().getMethod("getString", int.class);
-            java.util.ArrayList<String> out = new java.util.ArrayList<>(size);
+            List<String> out = new ArrayList<>(size);
+            // ArrayNode.get(i) or JsonArray already handled; try get(int) then asText/getString
+            var get = rolesObj.getClass().getMethod("get", int.class);
             for (int i = 0; i < size; i++) {
-                String s = (String) getString.invoke(rolesObj, i);
+                Object el = get.invoke(rolesObj, i);
+                String s = stringify(el);
                 if (s != null && !s.isBlank()) {
                     out.add(s);
                 }
@@ -185,7 +267,17 @@ public class OidcRolesAugmentor implements SecurityIdentityAugmentor {
         if (value instanceof JsonValue jv && jv.getValueType() == JsonValue.ValueType.STRING) {
             return ((JsonString) jv).getString();
         }
-        return String.valueOf(value);
+        // Jackson TextNode.asText()
+        try {
+            return (String) value.getClass().getMethod("asText").invoke(value);
+        } catch (ReflectiveOperationException ignored) {
+            // fall through
+        }
+        try {
+            return (String) value.getClass().getMethod("getString").invoke(value);
+        } catch (ReflectiveOperationException ignored) {
+            return String.valueOf(value);
+        }
     }
 
     private String normalizeGroup(String rawGroup) {
