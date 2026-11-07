@@ -36,7 +36,7 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
-| `main` | `5.1.0` | 3.40.1.1 | `:5.1.0`, `:latest` |
+| `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
 | `6.0.0-alpha` | `6.0.0-alpha` | 4.0.0.Beta3 | `:6.0.0-alpha`, `:alpha` (no `:latest`) |
 
 Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REENGINEERING.md) · [IT](ARCHITECTURE_REENGINEERING.it.md).
