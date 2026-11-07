@@ -33,6 +33,6 @@ SQL dynamic tools remain at `/api/ai_tools`.
 - `snello.aitype=openai` \| `ai-gemini`
 - Named models: `quick` / `pro` under OpenAI or Gemini (`GEMINI_MODEL_QUICK`, `GEMINI_MODEL_PRO`)
 - Keys: `OPENAI_API_KEY`, `GEMINI_API_KEY`
-- MCP HTTP base: `snello.ai.mcp.http.base-url` (or `MCPTOOLS_HTTP_BASE_URL`)
+- MCP HTTP base: `snello.ai.mcp.http.base-url` (env `SNELLO_AI_MCP_BASE_URL`)
 
 Default project seeded as `snello.cms` when empty (see `AiProjectSeeder`).

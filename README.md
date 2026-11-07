@@ -144,7 +144,10 @@ Useful env vars:
 | `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
-| `OPENAI_API_KEY` | optional; needed for AG-UI agent (OpenAI provider) |
+| `SNELLO_AITYPE` | optional; `ai-gemini` (compose default) or `openai` |
+| `OPENAI_API_KEY` / `GEMINI_API_KEY` | optional; AG-UI agent keys |
+| `GEMINI_MODEL_QUICK` / `GEMINI_MODEL_PRO` | optional Gemini model ids |
+| `SNELLO_AI_MCP_BASE_URL` | optional base URL for MCP HTTP tools |
 
 ## Compose files
 

@@ -64,9 +64,11 @@ Useful env vars:
 | `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
-| `OPENAI_API_KEY` | optional; AG-UI when `snello.aitype=openai` |
+| `SNELLO_AITYPE` | `ai-gemini` (default in compose) or `openai` |
+| `OPENAI_API_KEY` | optional; when `SNELLO_AITYPE=openai` |
 | `GEMINI_API_KEY` | optional; AG-UI quick/pro Gemini models |
-| `GEMINI_MODEL_QUICK` / `GEMINI_MODEL_PRO` | optional model ids (defaults in `application.properties`) |
+| `GEMINI_MODEL_QUICK` / `GEMINI_MODEL_PRO` | optional model ids |
+| `SNELLO_AI_MCP_BASE_URL` | base URL for DB-defined MCP HTTP tools (default `http://127.0.0.1:8080`) |
 
 Check:
 
@@ -89,7 +91,9 @@ File: [`docker-compose-aio.yaml`](../docker-compose-aio.yaml)
 export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
 # optional:
 # export QUARKUS_OIDC_CLIENT_ID=snello-api
-# export OPENAI_API_KEY=...
+# export SNELLO_AITYPE=ai-gemini
+# export GEMINI_API_KEY=...
+# export OPENAI_API_KEY=...   # only if SNELLO_AITYPE=openai
 
 docker compose -f docker-compose-aio.yaml up -d --build
 ```

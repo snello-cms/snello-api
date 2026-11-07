@@ -58,6 +58,13 @@ services:
       SNELLO_KEYCLOAK_ADMIN_TARGET_REALM: snello
       SNELLO_KEYCLOAK_ADMIN_USERNAME: admin
       SNELLO_KEYCLOAK_ADMIN_PASSWORD: admin
+      # AG-UI agent (WS /agui)
+      SNELLO_AITYPE: ${SNELLO_AITYPE:-ai-gemini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-changeme}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-changeme}
+      GEMINI_MODEL_QUICK: ${GEMINI_MODEL_QUICK:-gemini-2.0-flash}
+      GEMINI_MODEL_PRO: ${GEMINI_MODEL_PRO:-gemini-2.0-pro}
+      SNELLO_AI_MCP_BASE_URL: ${SNELLO_AI_MCP_BASE_URL:-http://127.0.0.1:8080}
       QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL: DEBUG
     healthcheck:
       test:
