@@ -6,6 +6,7 @@ Snello AI is the **flower-style** agent stack: authenticated WebSocket AG-UI, CD
 
 - Path: `ws(s)://host/agui`
 - Auth: OIDC bearer (header) or browser subprotocol `bearer-token-carrier` (see flower README pattern)
+- Requires `quarkus.http.auth.proactive=false` (needed by `@BearerTokenAuthentication` on the WS endpoint)
 - Protocol: AG-UI events (`SESSION_STARTED`, `RUN_*`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `RUN_ERROR`)
 - Each frame is a RunAgentInput; `forwardedProps.projectUuid` is required; `model` = `quick`|`pro`; `language` = `it`|`en`
 
