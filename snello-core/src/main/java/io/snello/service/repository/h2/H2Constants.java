@@ -138,10 +138,9 @@ public class H2Constants {
                         "  PRIMARY KEY (uuid)\n" +
                         ") ;";
 
-        // Upgrade legacy schemas with varchar(4000) limits on chat messages.
-        public static String upgradeChatInteractionsTextColumns = "ALTER TABLE chat_interactions " +
-                        "ALTER COLUMN user_message CLOB; " +
-                        "ALTER COLUMN ai_response CLOB";
+        // Upgrade legacy schemas with varchar(4000) limits on chat messages (H2 syntax).
+        public static String upgradeChatInteractionsUserMessage = "ALTER TABLE chat_interactions ALTER COLUMN user_message SET DATA TYPE CLOB";
+        public static String upgradeChatInteractionsAiResponse = "ALTER TABLE chat_interactions ALTER COLUMN ai_response SET DATA TYPE CLOB";
 
         public static String creationAiTools = "CREATE TABLE IF NOT EXISTS ai_tools (\n" +
                         "  uuid varchar(255) NOT NULL,\n" +
