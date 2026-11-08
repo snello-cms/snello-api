@@ -86,7 +86,7 @@ class QueryPlaneSurfaceTest {
     @Test
     void aiRuntimeIsNotShipped() {
         assertThrows(ClassNotFoundException.class,
-                () -> Class.forName("io.snello.service.ai.tools.SnelloCmsTools"));
+                () -> Class.forName("io.snello.service.ai.agent.CompositeToolProvider"));
         assertThrows(ClassNotFoundException.class,
                 () -> Class.forName("dev.langchain4j.model.chat.ChatModel"));
     }

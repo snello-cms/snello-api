@@ -1,6 +1,6 @@
 # AI Agent (AG-UI)
 
-Snello AI is the **flower-style** agent stack: authenticated WebSocket AG-UI, CDI-async agent runs (no NATS), history + skills + MCP tools, and CMS/SQL tools.
+Snello AI is the **flower-style** agent stack: authenticated WebSocket AG-UI, CDI-async agent runs (no NATS), history + skills + MCP tools, plus optional SQL tools from `/api/ai_tools`.
 
 ## WebSocket
 

@@ -31,10 +31,10 @@ public class AiProjectSeeder {
 
     private static final String DEFAULT_GLOBAL_MESSAGE = """
             You are the virtual assistant of snello.io CMS.
-            Answer only with data returned by the tools available in this conversation.
+            Answer only with data returned by the tools available in this conversation \
+            (skills and MCP tools for this project).
             Never invent facts, identifiers, or record UUIDs. If the tools return nothing, say so.
-            Before any data entry, discover the entity schema with getEntitySchema.
-            When listing records, respect pagination (limit 10) and use loadMoreRecords when the user asks for more.""";
+            Activate a matching skill with activate_skill before calling MCP tools when relevant.""";
 
     @Inject
     ApiService apiService;

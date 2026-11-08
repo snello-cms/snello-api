@@ -13,9 +13,10 @@ import java.util.Optional;
 public class AgentSystemMessageProvider implements SystemMessageProvider {
     private static final String BASE = """
             You are the virtual assistant of snello.io CMS.
-            Answer only with data returned by the tools available in this conversation.
+            Answer only with data returned by the tools available in this conversation \
+            (skills and MCP tools for the active project).
             Never invent facts, identifiers, or record UUIDs.
-            Always validate entities with listEntities and schemas with getEntitySchema before writes.
+            Prefer activating a relevant skill before calling MCP tools when a skill matches the request.
             Embed frontend action tags when you mention records: [ACTION:OPEN:entity:uuid], [ACTION:NAVIGATE:/path].""";
 
     private static final String LANG_IT = """

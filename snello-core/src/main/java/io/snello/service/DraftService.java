@@ -38,8 +38,7 @@ import static io.snello.management.AppConstants.*;
  * Turns AI-authored {@link EntityDraft}s into metadata (roadmap step 2): validate → derive the UI facet →
  * dry-run the DDL → (apply) persist rows and optionally create the table.
  * <p>
- * Shared by {@code DraftServiceRs} ({@code /api/drafts}) and the AI tools {@code proposeEntity} /
- * {@code applyEntity}. Control plane only.
+ * Exposed by {@code DraftServiceRs} ({@code /api/drafts}). Control plane only.
  */
 @Singleton
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)

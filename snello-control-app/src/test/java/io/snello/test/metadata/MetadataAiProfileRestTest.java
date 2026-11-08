@@ -4,7 +4,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.snello.model.Metadata;
 import io.snello.service.MetadataService;
-import io.snello.service.ai.tools.SnelloCmsTools;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,7 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * ai_profile end to end: REST write (object form) → JSON column → catalog → AI tools honour tool_visible.
+ * ai_profile end to end: REST write (object form) → JSON column → Metadata.aiFacet.
  */
 @QuarkusTest
 class MetadataAiProfileRestTest {
@@ -23,11 +22,8 @@ class MetadataAiProfileRestTest {
     @Inject
     MetadataService metadataService;
 
-    @Inject
-    SnelloCmsTools tools;
-
     @Test
-    void aiProfileIsStoredAndHiddenEntitiesDisappearFromTools() throws Exception {
+    void aiProfileIsStoredAndToolVisibleIsHonoured() {
         String visible = "ai_visible_" + System.nanoTime();
         String hidden = "ai_hidden_" + System.nanoTime();
         String visibleUuid = create(visible, Map.of("summary", "test entity", "synonyms", List.of("demo thing")));
@@ -40,13 +36,17 @@ class MetadataAiProfileRestTest {
             assertInstanceOf(String.class, stored.get("ai_profile"), "ai_profile must be persisted as JSON text");
             Metadata metadata = new Metadata(stored);
             assertEquals(List.of("demo thing"), metadata.aiFacet().synonyms);
+            assertTrue(metadata.aiFacet().tool_visible);
+
+            Map<String, Object> hiddenStored = given().accept(ContentType.JSON)
+                    .when().get("/api/metadatas/{uuid}", hiddenUuid)
+                    .then().statusCode(200)
+                    .extract().jsonPath().getMap("");
+            assertFalse(new Metadata(hiddenStored).aiFacet().tool_visible);
 
             metadataService.refreshIfChanged();
-            String entities = tools.listEntities();
-            assertTrue(entities.contains(visible), entities);
-            assertTrue(entities.contains("demo thing"), "synonyms should be shown to the model: " + entities);
-            assertFalse(entities.contains(hidden), "tool_visible=false must hide the entity: " + entities);
-            assertTrue(tools.getEntitySchema(hidden).contains("not found"));
+            assertTrue(metadataService.metadataMap().get(visible).aiFacet().tool_visible);
+            assertFalse(metadataService.metadataMap().get(hidden).aiFacet().tool_visible);
         } finally {
             delete(visibleUuid);
             delete(hiddenUuid);

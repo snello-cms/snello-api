@@ -19,7 +19,7 @@ public class EntityAiFacet {
     public String description;
     public String summary;
     public List<String> synonyms;
-    /** Exposed to AI / MCP tools ({@code listEntities}, schema, data tools). */
+    /** Hint for AI / MCP tooling that may expose this entity. */
     public boolean tool_visible = true;
     /** Sample create / update payloads. */
     public List<Map<String, Object>> examples;
