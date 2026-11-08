@@ -37,3 +37,15 @@ SQL dynamic tools remain at `/api/ai_tools`.
 - MCP HTTP base: `snello.ai.mcp.http.base-url` (env `SNELLO_AI_MCP_BASE_URL`)
 
 Default project seeded as `snello.cms` when empty (see `AiProjectSeeder`).
+
+## Flower catalog import (kayak.love)
+
+Export from [ai.kayak.love](https://ai.kayak.love) (Admin APIs under `/api/v1/…`, camelCase) into Snello snake_case fixture, then upsert on a control/all-in-one node:
+
+```bash
+FLOWER_TOKEN='Bearer …' ./dev/scripts/export-flower-ai-catalog.sh
+AIO_BASE_URL=https://api.sne.lol ./dev/scripts/import-ai-catalog.sh
+AIO_BASE_URL=https://api.sne.lol ./dev/scripts/test-ai-catalog-remote.sh
+```
+
+Fixture: `dev/exports/flower-ai-kayaklove.json` (also under control-app test resources). Service accounts are skipped (flower endpoint 500; kayak.love MCP tools are unauthenticated).

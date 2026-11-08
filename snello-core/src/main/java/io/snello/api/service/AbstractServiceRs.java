@@ -39,7 +39,10 @@ public abstract class AbstractServiceRs {
     @POST
     public Response persist(Map<String, Object> map) throws Exception {
         prePersist(map);
-        map.put(UUID, java.util.UUID.randomUUID().toString());
+        Object existingUuid = map.get(UUID);
+        if (existingUuid == null || existingUuid.toString().isBlank()) {
+            map.put(UUID, java.util.UUID.randomUUID().toString());
+        }
         map = apiService.create(table, map, UUID);
         postPersist(map);
         return ok(map).build();
