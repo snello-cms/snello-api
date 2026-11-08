@@ -1,4 +1,4 @@
-package io.snello.service.ai.pojo;
+package io.snello.model.ai.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

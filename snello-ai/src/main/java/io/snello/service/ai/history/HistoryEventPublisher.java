@@ -1,8 +1,8 @@
 package io.snello.service.ai.history;
 
 import io.quarkus.logging.Log;
-import io.snello.service.ai.pojo.HistoryEvent;
-import io.snello.service.ai.pojo.HistoryEvent.Type;
+import io.snello.model.ai.pojo.HistoryEvent;
+import io.snello.model.ai.pojo.HistoryEvent.Type;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;

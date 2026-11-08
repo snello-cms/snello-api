@@ -4,7 +4,7 @@ import io.quarkus.logging.Log;
 import io.snello.model.ai.HistoryEntry;
 import io.snello.model.ai.HistorySession;
 import io.snello.service.ApiService;
-import io.snello.service.ai.pojo.HistoryEvent;
+import io.snello.model.ai.pojo.HistoryEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.ObservesAsync;
 import jakarta.inject.Inject;

@@ -7,6 +7,7 @@ import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
 import io.quarkus.logging.Log;
 import io.snello.model.ai.AiMcpTool;
+import io.snello.model.ai.pojo.McpToolResultShape;
 import io.snello.service.ApiService;
 import io.snello.service.ai.skills.CallerProject;
 import io.snello.service.ai.skills.CallerRoles;

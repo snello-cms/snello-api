@@ -1,4 +1,4 @@
-package io.snello.service.ai.pojo;
+package io.snello.model.ai.pojo;
 
 public record AguiResponse(
         String connectionId,

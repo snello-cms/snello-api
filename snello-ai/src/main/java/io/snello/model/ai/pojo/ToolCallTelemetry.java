@@ -1,4 +1,4 @@
-package io.snello.service.ai.wss;
+package io.snello.model.ai.pojo;
 
 public record ToolCallTelemetry(
         String connectionId,

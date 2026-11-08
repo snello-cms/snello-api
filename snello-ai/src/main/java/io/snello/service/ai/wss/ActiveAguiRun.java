@@ -1,6 +1,6 @@
 package io.snello.service.ai.wss;
 
-import io.snello.service.ai.pojo.AguiRequest;
+import io.snello.model.ai.pojo.AguiRequest;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
