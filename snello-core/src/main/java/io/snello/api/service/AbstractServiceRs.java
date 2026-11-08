@@ -136,7 +136,10 @@ public abstract class AbstractServiceRs {
     }
 
     protected void prePersist(Map<String, Object> object) throws Exception {
-        object.put(UUID, java.util.UUID.randomUUID().toString());
+        Object existingUuid = object.get(UUID);
+        if (existingUuid == null || existingUuid.toString().isBlank()) {
+            object.put(UUID, java.util.UUID.randomUUID().toString());
+        }
     }
 
     protected ApiService getApiService() {
