@@ -72,14 +72,6 @@ public class EntityCatalog {
         return currentViews().query();
     }
 
-    public Map<String, EntityUiView> uiViews() throws Exception {
-        return currentViews().ui();
-    }
-
-    public Map<String, EntityAiView> aiViews() throws Exception {
-        return currentViews().ai();
-    }
-
     /**
      * Full facet composition (identity / query / UI / AI) of a metadata entity. Control-plane API: on the query
      * plane only the query facet is loaded, so the UI / AI facets would be empty.

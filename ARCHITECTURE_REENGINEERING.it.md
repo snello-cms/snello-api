@@ -10,7 +10,7 @@ Oggi [`Metadata`](src/main/java/io/snello/model/Metadata.java) e [`FieldDefiniti
 
 - **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
 - **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … serviti da [`DataListServiceRs`](src/main/java/io/snello/service/rs/DataListServiceRs.java), quasi mai usati server-side
-- **AI**: solo `description` + remap tipi in [`FieldTypeUtils`](src/main/java/io/snello/util/FieldTypeUtils.java) / [`SnelloCmsTools`](src/main/java/io/snello/service/ai/tools/) — non c’è ancora MCP
+- **AI**: stack flower-style — skills + MCP tools + SQL `ai_tools` opzionali (`SnelloCmsTools` hardcoded rimosso)
 
 Il monolitico Quarkus ha un solo deployable; la “cache” metadati è una `Map` in [`MetadataService`](src/main/java/io/snello/service/MetadataService.java) invalidata da eventi CDI.
 
@@ -152,7 +152,7 @@ Assunzione: **l’AI diventa il writer principale** di metadati; l’UI admin di
 - Definire JSON Schema (o record Java + OpenAPI) per:
   - `EntityDraft` = QueryFacet + AiFacet (+ UiFacet opzionale)
   - `FieldDraft` = name + QueryFacet minimo + AiFacet + UiFacet default derivabile
-- Tools CMS esistenti (`SnelloCmsTools`) accettano/emettono **draft tipizzati**, non `Map` grezze
+- API draft (`DraftService` / `/api/drafts`) accettano/emettono **draft tipizzati**, non `Map` grezze
 - Derivazioni automatiche (riducono carico sull’AI):
   - da `semantic_type` / `sql_type` → default `type`/`input_type` UI
   - da `show_in_list`/`searchable` → ricomposizione `select_fields` / search hints

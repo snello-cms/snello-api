@@ -10,7 +10,7 @@ Today [`Metadata`](src/main/java/io/snello/model/Metadata.java) and [`FieldDefin
 
 - **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
 - **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … served by [`DataListServiceRs`](src/main/java/io/snello/service/rs/DataListServiceRs.java), almost never used server-side
-- **AI**: only `description` + type remapping in [`FieldTypeUtils`](src/main/java/io/snello/util/FieldTypeUtils.java) / [`SnelloCmsTools`](src/main/java/io/snello/service/ai/tools/) — no MCP yet
+- **AI**: flower-style stack — skills + MCP tools + optional SQL `ai_tools` (hardcoded `SnelloCmsTools` removed)
 
 The Quarkus monolith has a single deployable; the metadata “cache” is a `Map` in [`MetadataService`](src/main/java/io/snello/service/MetadataService.java) invalidated by CDI events.
 
@@ -152,7 +152,7 @@ Assumption: **AI becomes the primary writer** of metadata; the admin UI becomes 
 - Define JSON Schema (or Java records + OpenAPI) for:
   - `EntityDraft` = QueryFacet + AiFacet (+ optional UiFacet)
   - `FieldDraft` = name + minimal QueryFacet + AiFacet + derivable default UiFacet
-- Existing CMS tools (`SnelloCmsTools`) accept/emit **typed drafts**, not raw `Map`s
+- Draft APIs (`DraftService` / `/api/drafts`) accept/emit **typed drafts**, not raw `Map`s
 - Automatic derivations (reduce AI load):
   - from `semantic_type` / `sql_type` → default UI `type`/`input_type`
   - from `show_in_list`/`searchable` → recompose `select_fields` / search hints
