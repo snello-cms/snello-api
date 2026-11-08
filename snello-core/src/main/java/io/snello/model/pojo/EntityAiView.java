@@ -19,7 +19,7 @@ public record EntityAiView(String tableName, EntityAiFacet ai, List<FieldAiView>
                 : fieldDefinitions.stream().map(FieldAiView::of).toList();
         return new EntityAiView(
                 metadata == null ? null : metadata.table_name,
-                metadata == null ? new EntityAiFacet() : metadata.aiFacet(),
+                metadata == null ? EntityAiFacet.empty() : metadata.aiFacet(),
                 fields);
     }
 }

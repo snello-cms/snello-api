@@ -14,32 +14,40 @@ import java.util.Map;
  * JSON column {@code metadatas.ai_profile} (see {@link EntityAiProfile}), so new AI attributes need no ALTER.
  */
 @RegisterForReflection
-public class EntityAiFacet {
+public record EntityAiFacet(
+        String description,
+        String summary,
+        List<String> synonyms,
+        Boolean tool_visible,
+        List<Map<String, Object>> examples) {
 
-    public String description;
-    public String summary;
-    public List<String> synonyms;
-    /** Hint for AI / MCP tooling that may expose this entity. */
-    public boolean tool_visible = true;
-    /** Sample create / update payloads. */
-    public List<Map<String, Object>> examples;
-
-    public EntityAiFacet() {
+    public EntityAiFacet {
+        if (synonyms == null) {
+            synonyms = List.of();
+        }
+        if (tool_visible == null) {
+            tool_visible = true;
+        }
     }
 
-    public EntityAiFacet(String description) {
-        this.description = description;
+    public static EntityAiFacet empty() {
+        return new EntityAiFacet(null, null, List.of(), true, null);
+    }
+
+    /** Convenience for tests / drafts that only set the free-text description. */
+    public static EntityAiFacet ofDescription(String description) {
+        return new EntityAiFacet(description, null, List.of(), true, null);
     }
 
     /** Builds the facet from the two persisted columns. */
     public static EntityAiFacet of(String description, String aiProfileJson) {
-        EntityAiFacet facet = new EntityAiFacet(description);
         EntityAiProfile profile = AiProfileUtils.parseEntity(aiProfileJson);
-        facet.summary = profile.summary();
-        facet.synonyms = profile.synonyms();
-        facet.tool_visible = profile.tool_visible() == null || profile.tool_visible();
-        facet.examples = profile.examples();
-        return facet;
+        return new EntityAiFacet(
+                description,
+                profile.summary(),
+                profile.synonyms(),
+                profile.tool_visible() == null || profile.tool_visible(),
+                profile.examples());
     }
 
     /** Value for the {@code ai_profile} column ({@code null} when nothing beyond the defaults is set). */
@@ -50,5 +58,33 @@ public class EntityAiFacet {
 
     public boolean hasDescription() {
         return description != null && !description.isBlank();
+    }
+
+    public Builder builder() {
+        return new Builder(this);
+    }
+
+    public static Builder builder(EntityAiFacet base) {
+        return new Builder(base == null ? empty() : base);
+    }
+
+    public static final class Builder {
+        public String description;
+        public String summary;
+        public List<String> synonyms;
+        public Boolean tool_visible;
+        public List<Map<String, Object>> examples;
+
+        private Builder(EntityAiFacet base) {
+            this.description = base.description;
+            this.summary = base.summary;
+            this.synonyms = base.synonyms;
+            this.tool_visible = base.tool_visible;
+            this.examples = base.examples;
+        }
+
+        public EntityAiFacet build() {
+            return new EntityAiFacet(description, summary, synonyms, tool_visible, examples);
+        }
     }
 }

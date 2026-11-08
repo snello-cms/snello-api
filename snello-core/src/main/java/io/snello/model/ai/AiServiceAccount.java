@@ -1,7 +1,10 @@
 package io.snello.model.ai;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.*;
+import io.snello.model.MapReads;
+import io.snello.model.MapWrites;
+
+import java.util.Map;
 
 @RegisterForReflection
 public class AiServiceAccount {
@@ -14,30 +17,34 @@ public class AiServiceAccount {
     public String client_secret;
     public boolean enabled = true;
 
-    public AiServiceAccount() {}
-    public AiServiceAccount(Map<String, Object> map) { fromMap(map); }
+    public AiServiceAccount() {
+    }
+
+    public AiServiceAccount(Map<String, Object> map) {
+        fromMap(map);
+    }
 
     public void fromMap(Map<String, Object> map) {
-        if (map.get("uuid") instanceof String s) uuid = s;
-        if (map.get("project_uuid") instanceof String s) project_uuid = s;
-        if (map.get("name") instanceof String s) name = s;
-        if (map.get("host") instanceof String s) host = s;
-        if (map.get("realm") instanceof String s) realm = s;
-        if (map.get("client_id") instanceof String s) client_id = s;
-        if (map.get("client_secret") instanceof String s) client_secret = s;
-        if (map.get("enabled") instanceof Boolean b) enabled = b;
+        uuid = MapReads.str(map, "uuid");
+        project_uuid = MapReads.str(map, "project_uuid");
+        name = MapReads.str(map, "name");
+        host = MapReads.str(map, "host");
+        realm = MapReads.str(map, "realm");
+        client_id = MapReads.str(map, "client_id");
+        client_secret = MapReads.str(map, "client_secret");
+        enabled = MapReads.bool(map, "enabled", true);
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new LinkedHashMap<>();
-        if (uuid != null) m.put("uuid", uuid);
-        if (project_uuid != null) m.put("project_uuid", project_uuid);
-        if (name != null) m.put("name", name);
-        if (host != null) m.put("host", host);
-        if (realm != null) m.put("realm", realm);
-        if (client_id != null) m.put("client_id", client_id);
-        if (client_secret != null) m.put("client_secret", client_secret);
-        m.put("enabled", enabled);
+        Map<String, Object> m = MapWrites.map();
+        MapWrites.put(m, "uuid", uuid);
+        MapWrites.put(m, "project_uuid", project_uuid);
+        MapWrites.put(m, "name", name);
+        MapWrites.put(m, "host", host);
+        MapWrites.put(m, "realm", realm);
+        MapWrites.put(m, "client_id", client_id);
+        MapWrites.put(m, "client_secret", client_secret);
+        MapWrites.putBool(m, "enabled", enabled);
         return m;
     }
 

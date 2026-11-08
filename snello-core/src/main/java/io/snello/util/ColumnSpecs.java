@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
 /**
  * The single bridge from facets to storage: turns a field into a {@link ColumnSpec}.
  * <p>
- * Resolution order: {@code query.sql_definition} (raw, wins) → UI widget {@code type}/{@code input_type} (how every
- * existing row was authored) → {@code query.sql_type}. Dialects never look at UI fields.
+ * Resolution order: {@code query.sql_definition()} (raw, wins) → UI widget {@code type}/{@code input_type} (how every
+ * existing row was authored) → {@code query.sql_type()}. Dialects never look at UI fields.
  */
 public final class ColumnSpecs {
 
@@ -75,10 +75,10 @@ public final class ColumnSpecs {
      */
     public static int resolveKeyVarcharLength(EntityQueryFacet query, List<ColumnSpec> columns) {
         int length = DEFAULT_KEY_VARCHAR;
-        if (query == null || !"slug".equals(query.table_key_type)) {
+        if (query == null || !"slug".equals(query.table_key_type())) {
             return length;
         }
-        String source = query.table_key_addition;
+        String source = query.table_key_addition();
         if (source == null || source.isBlank() || columns == null) {
             return length;
         }
@@ -104,21 +104,21 @@ public final class ColumnSpecs {
     }
 
     public static ColumnSpec of(String name, FieldQueryFacet query, FieldUiFacet ui) {
-        String type = ui == null ? null : ui.type;
-        String inputType = ui == null ? null : ui.input_type;
+        String type = ui == null ? null : ui.type();
+        String inputType = ui == null ? null : ui.input_type();
         ColumnKind kind = kindForWidget(type, inputType);
         String source = "type='" + type + "'";
-        if (kind == null && query != null && query.sql_type != null) {
-            kind = kindForSqlType(query.sql_type);
-            source = source + ", sql_type='" + query.sql_type + "'";
-            Log.debugf("column %s: no widget kind, sql_type '%s' -> %s", name, query.sql_type, kind);
+        if (kind == null && query != null && query.sql_type() != null) {
+            kind = kindForSqlType(query.sql_type());
+            source = source + ", sql_type='" + query.sql_type() + "'";
+            Log.debugf("column %s: no widget kind, sql_type '%s' -> %s", name, query.sql_type(), kind);
         }
         boolean multiJoin = FieldDefinitionUtils.isMultiJoinType(type);
         return new ColumnSpec(name, kind,
-                query == null ? null : query.sql_definition,
+                query == null ? null : query.sql_definition(),
                 multiJoin,
-                query == null ? null : query.join_table_name,
-                query == null ? null : query.join_table_key,
+                query == null ? null : query.join_table_name(),
+                query == null ? null : query.join_table_key(),
                 source);
     }
 
@@ -153,7 +153,7 @@ public final class ColumnSpecs {
         };
     }
 
-    /** {@code query.sql_type} → kind, via the semantic vocabulary; null when not recognised. */
+    /** {@code query.sql_type()} → kind, via the semantic vocabulary; null when not recognised. */
     public static ColumnKind kindForSqlType(String sqlType) {
         String semantic = FieldUiDerivation.semanticFromSqlType(sqlType);
         if (semantic == null) {

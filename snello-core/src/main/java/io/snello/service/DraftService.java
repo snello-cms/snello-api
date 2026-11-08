@@ -11,6 +11,7 @@ import io.snello.model.entity.EntityModel;
 import io.snello.model.entity.FieldModel;
 import io.snello.model.events.MetadataCreateUpdateEvent;
 import io.snello.model.facet.EntityAiFacet;
+import io.snello.model.facet.EntityIdentity;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.facet.EntityUiFacet;
 import io.snello.model.facet.FieldAiFacet;
@@ -76,8 +77,11 @@ public class DraftService {
 
         EntityModel entity = buildEntity(draft, errors, warnings);
         List<FieldModel> fields = buildFields(draft, entity, errors, warnings);
-        entity.ui.search_fields = entity.ui.search_fields != null ? entity.ui.search_fields
-                : deriveSearchFields(fields);
+        if (entity.ui.search_fields() == null) {
+            EntityUiFacet.Builder ui = EntityUiFacet.builder(entity.ui);
+            ui.search_fields = deriveSearchFields(fields);
+            entity.ui = ui.build();
+        }
 
         List<String> ddl = List.of();
         if (errors.isEmpty()) {
@@ -163,10 +167,12 @@ public class DraftService {
         } else if (catalog.isDeclared(name)) {
             errors.add("entity '" + name + "' already exists (drafts only create new entities)");
         }
-        entity.identity.table_name = name;
-        entity.identity.metadata_group = draft.metadata_group();
+        EntityIdentity.Builder identity = EntityIdentity.builder(entity.identity);
+        identity.table_name = name;
+        identity.metadata_group = draft.metadata_group();
+        entity.identity = identity.build();
 
-        EntityQueryFacet query = draft.query() == null ? new EntityQueryFacet() : draft.query();
+        EntityQueryFacet.Builder query = EntityQueryFacet.builder(draft.query());
         if (query.table_key == null || query.table_key.isBlank()) {
             query.table_key = UUID;
         }
@@ -176,15 +182,15 @@ public class DraftService {
         if (!KEY_TYPES.contains(query.table_key_type)) {
             errors.add("query.table_key_type '" + query.table_key_type + "' must be one of " + KEY_TYPES);
         }
-        entity.query = query;
+        entity.query = query.build();
 
-        EntityAiFacet ai = draft.ai() == null ? new EntityAiFacet() : draft.ai();
+        EntityAiFacet ai = draft.ai() == null ? EntityAiFacet.empty() : draft.ai();
         if (!ai.hasDescription()) {
             errors.add("ai.description is required: it is what AI tools show for this entity");
         }
         entity.ai = ai;
-        entity.ui = draft.ui() == null ? new EntityUiFacet() : draft.ui();
-        if (entity.ui.icon == null) {
+        entity.ui = draft.ui() == null ? EntityUiFacet.empty() : draft.ui();
+        if (entity.ui.icon() == null) {
             warnings.add("ui.icon not set: the admin SPA shows a default icon");
         }
         return entity;
@@ -199,8 +205,8 @@ public class DraftService {
             errors.add("at least one field is required");
             return fields;
         }
-        String key = entity.query.table_key;
-        boolean generatedKey = !"userdefined".equals(entity.query.table_key_type);
+        String key = entity.query.table_key();
+        boolean generatedKey = !"userdefined".equals(entity.query.table_key_type());
         Set<String> names = new HashSet<>();
         int index = 0;
         for (FieldDraft fd : draft.fields()) {
@@ -219,14 +225,14 @@ public class DraftService {
                 errors.add(where + ": duplicate name");
             }
             if (generatedKey && name.equals(key)) {
-                errors.add(where + ": '" + key + "' is the generated " + entity.query.table_key_type
+                errors.add(where + ": '" + key + "' is the generated " + entity.query.table_key_type()
                         + " key column, do not declare it as a field");
             }
             FieldModel model = new FieldModel();
             model.name = name;
-            model.metadata_name = entity.identity.table_name;
-            model.query = fd.query() == null ? new FieldQueryFacet() : fd.query();
-            model.ai = fd.ai() == null ? new FieldAiFacet() : fd.ai();
+            model.metadata_name = entity.identity.table_name();
+            model.query = fd.query() == null ? FieldQueryFacet.empty() : fd.query();
+            model.ai = fd.ai() == null ? FieldAiFacet.empty() : fd.ai();
             model.ui = deriveUi(fd, model, where, errors, warnings, index);
             fields.add(model);
         }
@@ -236,19 +242,21 @@ public class DraftService {
 
     private FieldUiFacet deriveUi(FieldDraft fd, FieldModel model, String where, List<String> errors,
                                   List<String> warnings, int viewIndex) throws Exception {
-        FieldUiFacet ui = fd.ui() == null ? new FieldUiFacet() : fd.ui();
-        String semantic = model.ai.semantic_type;
+        FieldUiFacet.Builder ui = FieldUiFacet.builder(fd.ui());
+        String semantic = model.ai.semantic_type();
         if (semantic == null || semantic.isBlank()) {
-            semantic = FieldUiDerivation.semanticFromSqlType(model.query.sql_type);
+            semantic = FieldUiDerivation.semanticFromSqlType(model.query.sql_type());
             if (semantic != null) {
-                model.ai.semantic_type = semantic;
+                FieldAiFacet.Builder ai = FieldAiFacet.builder(model.ai);
+                ai.semantic_type = semantic;
+                model.ai = ai.build();
             }
         }
         if (ui.type == null || ui.type.isBlank()) {
             if (semantic == null) {
                 errors.add(where + ": set ai.semantic_type (one of " + String.join(", ", FieldUiDerivation.SEMANTIC_TYPES)
                         + "), a recognised query.sql_type, or ui.type");
-                return ui;
+                return ui.build();
             }
             try {
                 String[] uiType = FieldUiDerivation.uiTypeFor(semantic);
@@ -256,7 +264,7 @@ public class DraftService {
                 ui.input_type = ui.input_type != null ? ui.input_type : uiType[1];
             } catch (IllegalArgumentException e) {
                 errors.add(where + ": " + e.getMessage());
-                return ui;
+                return ui.build();
             }
         }
         if (ui.label == null || ui.label.isBlank()) {
@@ -272,12 +280,12 @@ public class DraftService {
         if (WidgetType.SELECT == WidgetType.from(ui.type) && (ui.options == null || ui.options.isBlank())) {
             errors.add(where + ": enum/select needs ui.options (comma separated values)");
         }
-        if (model.ai.description == null || model.ai.description.isBlank()) {
+        if (model.ai.description() == null || model.ai.description().isBlank()) {
             warnings.add(where + ": no ai.description, AI tools will only see the name");
         }
         checkJoin(ui.type, model, where, errors);
         deriveSearch(semantic, model);
-        return ui;
+        return ui.build();
     }
 
     private void checkJoin(String uiType, FieldModel model, String where, List<String> errors) throws Exception {
@@ -286,7 +294,7 @@ public class DraftService {
         if (!join) {
             return;
         }
-        String target = model.query.join_table_name;
+        String target = model.query.join_table_name();
         if (target == null || target.isBlank()) {
             errors.add(where + ": a reference needs query.join_table_name (the referenced entity)");
             return;
@@ -296,40 +304,44 @@ public class DraftService {
             errors.add(where + ": query.join_table_name '" + target + "' is not an existing entity");
             return;
         }
-        if (model.query.join_table_key == null || model.query.join_table_key.isBlank()) {
-            model.query.join_table_key = targetView.get().tableKey();
+        if (model.query.join_table_key() == null || model.query.join_table_key().isBlank()) {
+            FieldQueryFacet.Builder query = FieldQueryFacet.builder(model.query);
+            query.join_table_key = targetView.get().tableKey();
+            model.query = query.build();
         }
     }
 
     private static void deriveSearch(String semantic, FieldModel model) {
-        if (!model.query.searchable || model.query.search_condition != null) {
+        if (!model.query.searchable() || model.query.search_condition() != null) {
             return;
         }
+        FieldQueryFacet.Builder query = FieldQueryFacet.builder(model.query);
         if (FieldUiDerivation.textLike(semantic)) {
-            model.query.search_condition = "contains";
-            model.query.search_field_name = model.name + "_contains";
+            query.search_condition = "contains";
+            query.search_field_name = model.name + "_contains";
         } else {
-            model.query.search_condition = "=";
-            model.query.search_field_name = model.name;
+            query.search_condition = "=";
+            query.search_field_name = model.name;
         }
+        model.query = query.build();
     }
 
     private static void checkKeyReferences(EntityModel entity, Set<String> names, List<String> errors) {
         EntityQueryFacet q = entity.query;
-        if ("userdefined".equals(q.table_key_type) && !names.contains(q.table_key)) {
-            errors.add("query.table_key '" + q.table_key + "' must be one of the fields for a userdefined key");
+        if ("userdefined".equals(q.table_key_type()) && !names.contains(q.table_key())) {
+            errors.add("query.table_key '" + q.table_key() + "' must be one of the fields for a userdefined key");
         }
-        if ("slug".equals(q.table_key_type)
-                && (q.table_key_addition == null || !names.contains(q.table_key_addition))) {
+        if ("slug".equals(q.table_key_type())
+                && (q.table_key_addition() == null || !names.contains(q.table_key_addition()))) {
             errors.add("slug key: query.table_key_addition must name the field the slug is built from");
         }
-        if (q.api_protected && (q.username_field == null || !names.contains(q.username_field))) {
+        if (q.api_protected() && (q.username_field() == null || !names.contains(q.username_field()))) {
             errors.add("api_protected: query.username_field must name the owner field");
         }
     }
 
     private static String deriveSearchFields(List<FieldModel> fields) {
-        String joined = String.join(",", fields.stream().filter(f -> f.query.searchable).map(f -> f.name).toList());
+        String joined = String.join(",", fields.stream().filter(f -> f.query.searchable()).map(f -> f.name).toList());
         return joined.isEmpty() ? null : joined;
     }
 

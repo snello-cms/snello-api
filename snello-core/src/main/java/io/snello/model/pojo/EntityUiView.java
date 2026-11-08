@@ -19,7 +19,7 @@ public record EntityUiView(String tableName, EntityUiFacet ui, List<FieldUiView>
                 : fieldDefinitions.stream().map(FieldUiView::of).toList();
         return new EntityUiView(
                 metadata == null ? null : metadata.table_name,
-                metadata == null ? new EntityUiFacet() : metadata.uiFacet(),
+                metadata == null ? EntityUiFacet.empty() : metadata.uiFacet(),
                 fields);
     }
 }

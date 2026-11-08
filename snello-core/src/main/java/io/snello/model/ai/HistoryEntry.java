@@ -1,7 +1,10 @@
 package io.snello.model.ai;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.*;
+import io.snello.model.MapReads;
+import io.snello.model.MapWrites;
+
+import java.util.Map;
 
 @RegisterForReflection
 public class HistoryEntry {
@@ -16,34 +19,38 @@ public class HistoryEntry {
     public String model;
     public String recorded_at;
 
-    public HistoryEntry() {}
-    public HistoryEntry(Map<String, Object> map) { fromMap(map); }
+    public HistoryEntry() {
+    }
+
+    public HistoryEntry(Map<String, Object> map) {
+        fromMap(map);
+    }
 
     public void fromMap(Map<String, Object> map) {
-        if (map.get("uuid") instanceof String s) uuid = s;
-        if (map.get("occurred_at") != null) occurred_at = String.valueOf(map.get("occurred_at"));
-        if (map.get("channel") instanceof String s) channel = s;
-        if (map.get("user_id") instanceof String s) user_id = s;
-        if (map.get("username") instanceof String s) username = s;
-        if (map.get("type") instanceof String s) type = s;
-        if (map.get("body") instanceof String s) body = s;
-        if (map.get("session_id") instanceof String s) session_id = s;
-        if (map.get("model") instanceof String s) model = s;
-        if (map.get("recorded_at") != null) recorded_at = String.valueOf(map.get("recorded_at"));
+        uuid = MapReads.str(map, "uuid");
+        occurred_at = MapReads.asString(map, "occurred_at");
+        channel = MapReads.str(map, "channel");
+        user_id = MapReads.str(map, "user_id");
+        username = MapReads.str(map, "username");
+        type = MapReads.str(map, "type");
+        body = MapReads.str(map, "body");
+        session_id = MapReads.str(map, "session_id");
+        model = MapReads.str(map, "model");
+        recorded_at = MapReads.asString(map, "recorded_at");
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new LinkedHashMap<>();
-        if (uuid != null) m.put("uuid", uuid);
-        if (occurred_at != null) m.put("occurred_at", occurred_at);
-        if (channel != null) m.put("channel", channel);
-        if (user_id != null) m.put("user_id", user_id);
-        if (username != null) m.put("username", username);
-        if (type != null) m.put("type", type);
-        if (body != null) m.put("body", body);
-        if (session_id != null) m.put("session_id", session_id);
-        if (model != null) m.put("model", model);
-        if (recorded_at != null) m.put("recorded_at", recorded_at);
+        Map<String, Object> m = MapWrites.map();
+        MapWrites.put(m, "uuid", uuid);
+        MapWrites.put(m, "occurred_at", occurred_at);
+        MapWrites.put(m, "channel", channel);
+        MapWrites.put(m, "user_id", user_id);
+        MapWrites.put(m, "username", username);
+        MapWrites.put(m, "type", type);
+        MapWrites.put(m, "body", body);
+        MapWrites.put(m, "session_id", session_id);
+        MapWrites.put(m, "model", model);
+        MapWrites.put(m, "recorded_at", recorded_at);
         return m;
     }
 }

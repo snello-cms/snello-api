@@ -480,9 +480,9 @@ public class H2JdbcRepository implements JdbcRepository {
 
     @Override
     public String keyColumnSql(EntityQueryFacet query, int varcharLength) {
-        return switch (query.table_key_type == null ? "userdefined" : query.table_key_type) {
-            case "uuid", "slug" -> escape(query.table_key) + " VARCHAR(" + varcharLength + ") NOT NULL";
-            case "autoincrement" -> escape(query.table_key) + " int NOT NULL AUTO_INCREMENT";
+        return switch (query.table_key_type() == null ? "userdefined" : query.table_key_type()) {
+            case "uuid", "slug" -> escape(query.table_key()) + " VARCHAR(" + varcharLength + ") NOT NULL";
+            case "autoincrement" -> escape(query.table_key()) + " int NOT NULL AUTO_INCREMENT";
             // user-defined: the key column is one of the declared fields
             default -> null;
         };

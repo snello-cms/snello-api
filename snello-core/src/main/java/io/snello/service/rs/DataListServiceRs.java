@@ -4,6 +4,7 @@ import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.entity.EntityModel;
+import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.pojo.EntityAiView;
 import io.snello.model.pojo.EntityQueryView;
 import io.snello.model.pojo.EntityUiView;
@@ -59,7 +60,9 @@ public class DataListServiceRs {
                     model.fields = null;
                     model.conditions = null;
                     if (model.query != null) {
-                        model.query.table_key = null;
+                        EntityQueryFacet.Builder query = EntityQueryFacet.builder(model.query);
+                        query.table_key = null;
+                        model.query = query.build();
                     }
                     return ok(model).build();
                 })

@@ -7,7 +7,6 @@ import io.snello.model.facet.EntityIdentity;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.facet.EntityUiFacet;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,10 +24,8 @@ public class Metadata {
     public String description;
     /** JSON column: summary, synonyms, tool_visible, examples (see {@link io.snello.model.pojo.EntityAiProfile}). */
     public String ai_profile;
-    //serve per tabelle preesistenti
     public String alias_table;
     public String alias_condition;
-
 
     public String table_key;
     public String table_key_type;
@@ -39,7 +36,6 @@ public class Metadata {
 
     public String metadata_group;
 
-    // tab1:group0,group1;tab2:
     public String tab_groups;
 
     public String icon;
@@ -54,11 +50,8 @@ public class Metadata {
     public String calendar_field;
     public String calendar_label;
 
-    // la tabella esiste e non deve essere gestita da SNELLO
     public boolean already_exist;
-    //la tabella VA CREATA E GESTISTA DA SNELLO
     public boolean created;
-
 
     public Metadata(String table_name, String table_key, String creation_query, String order_by) {
         this.table_name = table_name;
@@ -71,8 +64,11 @@ public class Metadata {
     }
 
     public Metadata(Map<String, Object> map) {
-        super();
         fromMap(map, this);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public EntityIdentity identity() {
@@ -84,15 +80,13 @@ public class Metadata {
                 table_key, table_key_type, table_key_addition,
                 select_fields, order_by,
                 alias_table, alias_condition, creation_query,
-                api_protected, username_field
-        );
+                api_protected, username_field);
     }
 
     public EntityUiFacet uiFacet() {
         return new EntityUiFacet(
                 icon, tab_groups, search_fields,
-                calendar_enabled, calendar_field, calendar_label
-        );
+                calendar_enabled, calendar_field, calendar_label);
     }
 
     public EntityAiFacet aiFacet() {
@@ -103,173 +97,156 @@ public class Metadata {
         return EntityModel.from(this);
     }
 
-    @Override
-    public String toString() {
-        return "Metadata{" +
-               "uuid='" + uuid + '\'' +
-               ", table_name='" + table_name + '\'' +
-               ", select_fields='" + select_fields + '\'' +
-               ", search_fields='" + search_fields + '\'' +
-               ", description='" + description + '\'' +
-               ", alias_table='" + alias_table + '\'' +
-               ", alias_condition='" + alias_condition + '\'' +
-               ", table_key='" + table_key + '\'' +
-               ", table_key_type='" + table_key_type + '\'' +
-               ", table_key_addition='" + table_key_addition + '\'' +
-               ", creation_query='" + creation_query + '\'' +
-               ", order_by='" + order_by + '\'' +
-               ", metadata_group='" + metadata_group + '\'' +
-               ", tab_groups='" + tab_groups + '\'' +
-               ", icon='" + icon + '\'' +
-               ", fields='" + fields + '\'' +
-               ", conditions='" + conditions + '\'' +
-               ", already_exist='" + already_exist + '\'' +
-               ", created='" + created + '\'' +
-               ", api_protected='" + api_protected + '\'' +
-               ", username_field='" + username_field + '\'' +
-               ", calendar_enabled='" + calendar_enabled + '\'' +
-               ", calendar_field='" + calendar_field + '\'' +
-               ", calendar_label='" + calendar_label + '\'' +
-               '}';
+    public void applyFacets(EntityIdentity identity, EntityQueryFacet query, EntityUiFacet ui, EntityAiFacet ai) {
+        if (identity != null) {
+            this.uuid = identity.uuid();
+            this.table_name = identity.table_name();
+            this.metadata_group = identity.metadata_group();
+            this.already_exist = identity.already_exist();
+            this.created = identity.created();
+        }
+        if (query != null) {
+            this.table_key = query.table_key();
+            this.table_key_type = query.table_key_type();
+            this.table_key_addition = query.table_key_addition();
+            this.select_fields = query.select_fields();
+            this.order_by = query.order_by();
+            this.alias_table = query.alias_table();
+            this.alias_condition = query.alias_condition();
+            this.creation_query = query.creation_query();
+            this.api_protected = query.api_protected();
+            this.username_field = query.username_field();
+        }
+        if (ui != null) {
+            this.icon = ui.icon();
+            this.tab_groups = ui.tab_groups();
+            this.search_fields = ui.search_fields();
+            this.calendar_enabled = ui.calendar_enabled();
+            this.calendar_field = ui.calendar_field();
+            this.calendar_label = ui.calendar_label();
+        }
+        if (ai != null) {
+            this.description = ai.description();
+            this.ai_profile = ai.toProfileJson();
+        }
     }
 
-
     public Metadata fromMap(Map<String, Object> map, Metadata metadata) {
-        if (map.get("uuid") instanceof String) {
-            metadata.uuid = (String) map.get("uuid");
+        if (map == null || metadata == null) {
+            return metadata;
         }
-        if (map.get("table_name") instanceof String) {
-            metadata.table_name = (String) map.get("table_name");
+        metadata.applyFacets(
+                new EntityIdentity(
+                        MapReads.str(map, "uuid"),
+                        MapReads.str(map, "table_name"),
+                        MapReads.str(map, "metadata_group"),
+                        MapReads.bool(map, "already_exist", false),
+                        MapReads.bool(map, "created", false)),
+                new EntityQueryFacet(
+                        MapReads.str(map, "table_key"),
+                        MapReads.str(map, "table_key_type"),
+                        MapReads.str(map, "table_key_addition"),
+                        MapReads.str(map, "select_fields"),
+                        MapReads.str(map, "order_by"),
+                        MapReads.str(map, "alias_table"),
+                        MapReads.str(map, "alias_condition"),
+                        MapReads.str(map, "creation_query"),
+                        MapReads.bool(map, "api_protected", false),
+                        MapReads.str(map, "username_field")),
+                new EntityUiFacet(
+                        MapReads.str(map, "icon"),
+                        MapReads.str(map, "tab_groups"),
+                        MapReads.str(map, "search_fields"),
+                        MapReads.bool(map, "calendar_enabled", false),
+                        MapReads.str(map, "calendar_field"),
+                        MapReads.str(map, "calendar_label")),
+                EntityAiFacet.of(MapReads.str(map, "description"), MapReads.str(map, "ai_profile")));
+        // keep raw ai_profile column when present (of() re-serializes; preserve DB text if set)
+        String rawProfile = MapReads.str(map, "ai_profile");
+        if (rawProfile != null) {
+            metadata.ai_profile = rawProfile;
         }
-
-        if (map.get("select_fields") instanceof String) {
-            metadata.select_fields = (String) map.get("select_fields");
-        }
-        if (map.get("search_fields") instanceof String) {
-            metadata.search_fields = (String) map.get("search_fields");
-        }
-        if (map.get("description") instanceof String) {
-            metadata.description = (String) map.get("description");
-        }
-        if (map.get("ai_profile") instanceof String) {
-            metadata.ai_profile = (String) map.get("ai_profile");
-        }
-        if (map.get("alias_table") instanceof String) {
-            metadata.alias_table = (String) map.get("alias_table");
-        }
-        if (map.get("alias_condition") instanceof String) {
-            metadata.alias_condition = (String) map.get("alias_condition");
-        }
-        if (map.get("table_key") instanceof String) {
-            metadata.table_key = (String) map.get("table_key");
-        }
-        if (map.get("table_key_type") instanceof String) {
-            metadata.table_key_type = (String) map.get("table_key_type");
-        }
-        if (map.get("table_key_addition") instanceof String) {
-            metadata.table_key_addition = (String) map.get("table_key_addition");
-        }
-        if (map.get("creation_query") instanceof String) {
-            metadata.creation_query = (String) map.get("creation_query");
-        }
-        if (map.get("order_by") instanceof String) {
-            metadata.order_by = (String) map.get("order_by");
-        }
-        if (map.get("metadata_group") instanceof String) {
-            metadata.metadata_group = (String) map.get("metadata_group");
-        }
-        if (map.get("tab_groups") instanceof String) {
-            metadata.tab_groups = (String) map.get("tab_groups");
-        }
-        if (map.get("icon") instanceof String) {
-            metadata.icon = (String) map.get("icon");
-        }
-        if (map.get("already_exist") instanceof Boolean) {
-            metadata.already_exist = (Boolean) map.get("already_exist");
-        }
-        if (map.get("created") instanceof Boolean) {
-            metadata.created = (Boolean) map.get("created");
-        }
-        if (map.get("api_protected") instanceof Boolean) {
-            metadata.api_protected = (Boolean) map.get("api_protected");
-        }
-        if (map.get("username_field") instanceof String) {
-            metadata.username_field = (String) map.get("username_field");
-        }
-        if (map.get("calendar_enabled") instanceof Boolean) {
-            metadata.calendar_enabled = (Boolean) map.get("calendar_enabled");
-        }
-        if (map.get("calendar_field") instanceof String) {
-            metadata.calendar_field = (String) map.get("calendar_field");
-        }
-        if (map.get("calendar_label") instanceof String) {
-            metadata.calendar_label = (String) map.get("calendar_label");
-        }
+        metadata.description = MapReads.str(map, "description");
         return metadata;
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        if (this.uuid != null) {
-            map.put("uuid", this.uuid);
-        }
-        if (this.table_name != null) {
-            map.put("table_name", this.table_name);
-        }
-        if (this.select_fields != null) {
-            map.put("select_fields", this.select_fields);
-        }
-        if (this.search_fields != null) {
-            map.put("search_fields", this.search_fields);
-        }
-
-        if (this.description != null) {
-            map.put("description", this.description);
-        }
-        if (this.ai_profile != null) {
-            map.put("ai_profile", this.ai_profile);
-        }
-        if (this.alias_table != null) {
-            map.put("alias_table", this.alias_table);
-        }
-        if (this.alias_condition != null) {
-            map.put("alias_condition", this.alias_condition);
-        }
-        if (this.table_key != null) {
-            map.put("table_key", this.table_key);
-        }
-        if (this.table_key_type != null) {
-            map.put("table_key_type", this.table_key_type);
-        }
-        if (this.table_key_addition != null) {
-            map.put("table_key_addition", this.table_key_addition);
-        }
-        if (this.creation_query != null) {
-            map.put("creation_query", this.creation_query);
-        }
-        if (this.order_by != null) {
-            map.put("order_by", this.order_by);
-        }
-        if (this.metadata_group != null) {
-            map.put("metadata_group", this.metadata_group);
-        }
-        if (this.tab_groups != null) {
-            map.put("tab_groups", this.tab_groups);
-        }
-        if (this.icon != null) {
-            map.put("icon", this.icon);
-        }
-        if (this.username_field != null) {
-            map.put("username_field", this.username_field);
-        }
-        map.put("calendar_field", this.calendar_field);
-        map.put("calendar_label", this.calendar_label);
-        map.put("calendar_enabled", this.calendar_enabled);
-        map.put("already_exist", this.already_exist);
-        map.put("created", this.created);
-        map.put("api_protected", this.api_protected);
-
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "table_name", table_name);
+        MapWrites.put(map, "select_fields", select_fields);
+        MapWrites.put(map, "search_fields", search_fields);
+        MapWrites.put(map, "description", description);
+        MapWrites.put(map, "ai_profile", ai_profile);
+        MapWrites.put(map, "alias_table", alias_table);
+        MapWrites.put(map, "alias_condition", alias_condition);
+        MapWrites.put(map, "table_key", table_key);
+        MapWrites.put(map, "table_key_type", table_key_type);
+        MapWrites.put(map, "table_key_addition", table_key_addition);
+        MapWrites.put(map, "creation_query", creation_query);
+        MapWrites.put(map, "order_by", order_by);
+        MapWrites.put(map, "metadata_group", metadata_group);
+        MapWrites.put(map, "tab_groups", tab_groups);
+        MapWrites.put(map, "icon", icon);
+        MapWrites.put(map, "username_field", username_field);
+        map.put("calendar_field", calendar_field);
+        map.put("calendar_label", calendar_label);
+        MapWrites.putBool(map, "calendar_enabled", calendar_enabled);
+        MapWrites.putBool(map, "already_exist", already_exist);
+        MapWrites.putBool(map, "created", created);
+        MapWrites.putBool(map, "api_protected", api_protected);
         return map;
     }
 
+    @Override
+    public String toString() {
+        return "Metadata{uuid='" + uuid + "', table_name='" + table_name + "'}";
+    }
+
+    public static final class Builder {
+        private EntityIdentity identity = EntityIdentity.empty();
+        private EntityQueryFacet query = EntityQueryFacet.empty();
+        private EntityUiFacet ui = EntityUiFacet.empty();
+        private EntityAiFacet ai = EntityAiFacet.empty();
+        private List<FieldDefinition> fields;
+        private List<Condition> conditions;
+
+        public Builder identity(EntityIdentity identity) {
+            this.identity = identity == null ? EntityIdentity.empty() : identity;
+            return this;
+        }
+
+        public Builder query(EntityQueryFacet query) {
+            this.query = query == null ? EntityQueryFacet.empty() : query;
+            return this;
+        }
+
+        public Builder ui(EntityUiFacet ui) {
+            this.ui = ui == null ? EntityUiFacet.empty() : ui;
+            return this;
+        }
+
+        public Builder ai(EntityAiFacet ai) {
+            this.ai = ai == null ? EntityAiFacet.empty() : ai;
+            return this;
+        }
+
+        public Builder fields(List<FieldDefinition> fields) {
+            this.fields = fields;
+            return this;
+        }
+
+        public Builder conditions(List<Condition> conditions) {
+            this.conditions = conditions;
+            return this;
+        }
+
+        public Metadata build() {
+            Metadata metadata = new Metadata();
+            metadata.applyFacets(identity, query, ui, ai);
+            metadata.fields = fields;
+            metadata.conditions = conditions;
+            return metadata;
+        }
+    }
 }

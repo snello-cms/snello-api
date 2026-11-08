@@ -22,7 +22,7 @@ public class FieldDefinitionUtils {
     }
 
     public static boolean isMultiJoin(FieldModel model) {
-        return model != null && model.ui != null && isMultiJoinType(model.ui.type);
+        return model != null && model.ui != null && isMultiJoinType(model.ui.type());
     }
 
     public static boolean isPassivation(FieldDefinition fd) {
@@ -30,7 +30,7 @@ public class FieldDefinitionUtils {
     }
 
     public static boolean isPassivation(FieldUiFacet ui) {
-        return ui != null && InputType.PASSIVATION == InputType.from(ui.input_type);
+        return ui != null && InputType.PASSIVATION == InputType.from(ui.input_type());
     }
 
     public static String multijoin(String table, String joinTable, String tableUuid, String joinTableUuid) {

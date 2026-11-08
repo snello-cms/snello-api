@@ -26,7 +26,9 @@ class RowMappingTest {
 
         FieldModel model = new FieldModel();
         model.name = "x";
-        model.ui.required = true;
+        var ui = io.snello.model.facet.FieldUiFacet.builder(model.ui);
+        ui.required = true;
+        model.ui = ui.build();
         assertFalse(model.toMap().containsKey("required"));
         assertEquals(true, model.toMap().get("mandatory"));
     }

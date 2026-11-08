@@ -1,7 +1,10 @@
 package io.snello.model.ai;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.*;
+import io.snello.model.MapReads;
+import io.snello.model.MapWrites;
+
+import java.util.Map;
 
 @RegisterForReflection
 public class AiUiCard {
@@ -12,26 +15,30 @@ public class AiUiCard {
     public String template;
     public boolean enabled = true;
 
-    public AiUiCard() {}
-    public AiUiCard(Map<String, Object> map) { fromMap(map); }
+    public AiUiCard() {
+    }
+
+    public AiUiCard(Map<String, Object> map) {
+        fromMap(map);
+    }
 
     public void fromMap(Map<String, Object> map) {
-        if (map.get("uuid") instanceof String s) uuid = s;
-        if (map.get("project_uuid") instanceof String s) project_uuid = s;
-        if (map.get("name") instanceof String s) name = s;
-        if (map.get("result_type") instanceof String s) result_type = s;
-        if (map.get("template") instanceof String s) template = s;
-        if (map.get("enabled") instanceof Boolean b) enabled = b;
+        uuid = MapReads.str(map, "uuid");
+        project_uuid = MapReads.str(map, "project_uuid");
+        name = MapReads.str(map, "name");
+        result_type = MapReads.str(map, "result_type");
+        template = MapReads.str(map, "template");
+        enabled = MapReads.bool(map, "enabled", true);
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new LinkedHashMap<>();
-        if (uuid != null) m.put("uuid", uuid);
-        if (project_uuid != null) m.put("project_uuid", project_uuid);
-        if (name != null) m.put("name", name);
-        if (result_type != null) m.put("result_type", result_type);
-        if (template != null) m.put("template", template);
-        m.put("enabled", enabled);
+        Map<String, Object> m = MapWrites.map();
+        MapWrites.put(m, "uuid", uuid);
+        MapWrites.put(m, "project_uuid", project_uuid);
+        MapWrites.put(m, "name", name);
+        MapWrites.put(m, "result_type", result_type);
+        MapWrites.put(m, "template", template);
+        MapWrites.putBool(m, "enabled", enabled);
         return m;
     }
 }

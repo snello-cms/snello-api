@@ -6,7 +6,6 @@ import io.snello.model.facet.FieldAiFacet;
 import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -25,18 +24,11 @@ public class FieldDefinition {
     public String description;
     /** JSON column: hint, semantic_type, examples (see {@link io.snello.model.pojo.FieldAiProfile}). */
     public String ai_profile;
-    // input|button|select|date|radiobutton|checkbox|join|lookup|multijoin|multilookup|multiselect
     public String type;
-    // html password, text, number, radio, checkbox, color, date, datetime-local,
-    // email, month, number, range, search, tel, time, url, week
     public String input_type;
-    // stringa seperata da ","
     public String options;
-    // SERVE X RAGGRUPPARE NELLA PAGINA DI EDITING
     public String group_name;
-    // SERVE X IL RAGGRUPPAMENTO A WIZARD
     public String tab_name;
-    // DOPO VEDREMO COME FARLO
     public String validations;
     public int view_index;
 
@@ -53,25 +45,10 @@ public class FieldDefinition {
     public String default_value;
     public String pattern;
 
-    // definisce se è il campo cercabile nella lista
     public boolean searchable;
-    // static final String EQU = "=";
-    // static final String NE = "_ne";
-    // static final String LT = "_lt";
-    // static final String GT = "_gt";
-    // static final String LTE = "_lte";
-    // static final String GTE = "_gte";
-    // static final String CNT = "_contains";
-    // static final String NCNT = "_ncontains";
     public String search_condition;
-    // composizione del name + la codiione scelta
-    // -> es: search on "name": (EQU) name, (LIKE) name_contains,(NOT LIKE)
-    // name_ncontains,
-    // -> es: search on "age": (EQU) age, (<) age_lt,(>) age_gt, (<=) age_lte, (>=)
-    // age_gte
     public String search_field_name;
 
-    // definisce se il campo deve essere visto nella lista
     public boolean show_in_list;
 
     public boolean mandatory;
@@ -82,43 +59,24 @@ public class FieldDefinition {
     }
 
     public FieldDefinition(Map<String, Object> map) {
-        super();
         fromMap(map, this);
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public FieldQueryFacet queryFacet() {
-        FieldQueryFacet facet = new FieldQueryFacet();
-        facet.sql_type = sql_type;
-        facet.sql_definition = sql_definition;
-        facet.default_value = default_value;
-        facet.table_key = table_key;
-        facet.join_table_name = join_table_name;
-        facet.join_table_key = join_table_key;
-        facet.join_table_select_fields = join_table_select_fields;
-        facet.searchable = searchable;
-        facet.search_condition = search_condition;
-        facet.search_field_name = search_field_name;
-        return facet;
+        return new FieldQueryFacet(
+                sql_type, sql_definition, default_value, table_key,
+                join_table_name, join_table_key, join_table_select_fields,
+                searchable, search_condition, search_field_name);
     }
 
     public FieldUiFacet uiFacet() {
-        FieldUiFacet facet = new FieldUiFacet();
-        facet.label = label;
-        facet.type = type;
-        facet.input_type = input_type;
-        facet.options = options;
-        facet.group_name = group_name;
-        facet.tab_name = tab_name;
-        facet.validations = validations;
-        facet.view_index = view_index;
-        facet.show_in_list = show_in_list;
-        facet.input_disabled = input_disabled;
-        facet.function_def = function_def;
-        facet.pattern = pattern;
-        facet.mandatory = mandatory;
-        facet.required = required;
-        facet.order_num = order_num;
-        return facet;
+        return new FieldUiFacet(
+                label, type, input_type, options, group_name, tab_name, validations, view_index,
+                show_in_list, input_disabled, function_def, pattern, mandatory, required, order_num);
     }
 
     public FieldAiFacet aiFacet() {
@@ -129,225 +87,180 @@ public class FieldDefinition {
         return FieldModel.from(this);
     }
 
+    public void applyFacets(String uuid, String metadataUuid, String metadataName, String name,
+            FieldQueryFacet query, FieldUiFacet ui, FieldAiFacet ai) {
+        this.uuid = uuid;
+        this.metadata_uuid = metadataUuid;
+        this.metadata_name = metadataName;
+        this.name = name;
+        if (query != null) {
+            this.sql_type = query.sql_type();
+            this.sql_definition = query.sql_definition();
+            this.default_value = query.default_value();
+            this.table_key = query.table_key();
+            this.join_table_name = query.join_table_name();
+            this.join_table_key = query.join_table_key();
+            this.join_table_select_fields = query.join_table_select_fields();
+            this.searchable = query.searchable();
+            this.search_condition = query.search_condition();
+            this.search_field_name = query.search_field_name();
+        }
+        if (ui != null) {
+            this.label = ui.label();
+            this.type = ui.type();
+            this.input_type = ui.input_type();
+            this.options = ui.options();
+            this.group_name = ui.group_name();
+            this.tab_name = ui.tab_name();
+            this.validations = ui.validations();
+            this.view_index = ui.view_index();
+            this.show_in_list = ui.show_in_list();
+            this.input_disabled = ui.input_disabled();
+            this.function_def = ui.function_def();
+            this.pattern = ui.pattern();
+            this.mandatory = ui.mandatory();
+            this.required = ui.required();
+            this.order_num = ui.order_num();
+        }
+        if (ai != null) {
+            this.description = ai.description();
+            this.ai_profile = ai.toProfileJson();
+        }
+    }
+
     public FieldDefinition fromMap(Map<String, Object> map, FieldDefinition fieldDefinition) {
-        if (map.get("uuid") instanceof String) {
-            fieldDefinition.uuid = (String) map.get("uuid");
+        if (map == null || fieldDefinition == null) {
+            return fieldDefinition;
         }
-        if (map.get("metadata_uuid") instanceof String) {
-            fieldDefinition.metadata_uuid = (String) map.get("metadata_uuid");
+        fieldDefinition.applyFacets(
+                MapReads.str(map, "uuid"),
+                MapReads.str(map, "metadata_uuid"),
+                MapReads.str(map, "metadata_name"),
+                MapReads.str(map, "name"),
+                new FieldQueryFacet(
+                        MapReads.str(map, "sql_type"),
+                        MapReads.str(map, "sql_definition"),
+                        MapReads.str(map, "default_value"),
+                        MapReads.bool(map, "table_key", false),
+                        MapReads.str(map, "join_table_name"),
+                        MapReads.str(map, "join_table_key"),
+                        MapReads.str(map, "join_table_select_fields"),
+                        MapReads.bool(map, "searchable", false),
+                        MapReads.str(map, "search_condition"),
+                        MapReads.str(map, "search_field_name")),
+                new FieldUiFacet(
+                        MapReads.str(map, "label"),
+                        MapReads.str(map, "type"),
+                        MapReads.str(map, "input_type"),
+                        MapReads.str(map, "options"),
+                        MapReads.str(map, "group_name"),
+                        MapReads.str(map, "tab_name"),
+                        MapReads.str(map, "validations"),
+                        MapReads.intVal(map, "view_index", 0),
+                        MapReads.bool(map, "show_in_list", false),
+                        MapReads.bool(map, "input_disabled", false),
+                        MapReads.str(map, "function_def"),
+                        MapReads.str(map, "pattern"),
+                        MapReads.bool(map, "mandatory", false),
+                        MapReads.bool(map, "required", false),
+                        MapReads.intVal(map, "order_num", 0)),
+                FieldAiFacet.of(MapReads.str(map, "description"), MapReads.str(map, "ai_profile")));
+        String rawProfile = MapReads.str(map, "ai_profile");
+        if (rawProfile != null) {
+            fieldDefinition.ai_profile = rawProfile;
         }
-        if (map.get("metadata_name") instanceof String) {
-            fieldDefinition.metadata_name = (String) map.get("metadata_name");
-        }
-
-        if (map.get("name") instanceof String) {
-            fieldDefinition.name = (String) map.get("name");
-        }
-        if (map.get("label") instanceof String) {
-            fieldDefinition.label = (String) map.get("label");
-        }
-        if (map.get("description") instanceof String) {
-            fieldDefinition.description = (String) map.get("description");
-        }
-        if (map.get("ai_profile") instanceof String) {
-            fieldDefinition.ai_profile = (String) map.get("ai_profile");
-        }
-        if (map.get("type") instanceof String) {
-            fieldDefinition.type = (String) map.get("type");
-        }
-        if (map.get("input_type") instanceof String) {
-            fieldDefinition.input_type = (String) map.get("input_type");
-        }
-        if (map.get("options") instanceof String) {
-            fieldDefinition.options = (String) map.get("options");
-        }
-        if (map.get("group_name") instanceof String) {
-            fieldDefinition.group_name = (String) map.get("group_name");
-        }
-        if (map.get("tab_name") instanceof String) {
-            fieldDefinition.tab_name = (String) map.get("tab_name");
-        }
-        if (map.get("validations") instanceof String) {
-            fieldDefinition.validations = (String) map.get("validations");
-        }
-        if (map.get("table_key") instanceof Boolean) {
-            fieldDefinition.table_key = (Boolean) map.get("table_key");
-        }
-        if (map.get("input_disabled") instanceof Boolean) {
-            fieldDefinition.input_disabled = (Boolean) map.get("input_disabled");
-        }
-        if (map.get("function_def") instanceof String) {
-            fieldDefinition.function_def = (String) map.get("function_def");
-        }
-
-        if (map.get("sql_type") instanceof String) {
-            fieldDefinition.sql_type = (String) map.get("sql_type");
-        }
-        if (map.get("sql_definition") instanceof String) {
-            fieldDefinition.sql_definition = (String) map.get("sql_definition");
-        }
-        if (map.get("default_value") instanceof String) {
-            fieldDefinition.default_value = (String) map.get("default_value");
-        }
-        if (map.get("pattern") instanceof String) {
-            fieldDefinition.pattern = (String) map.get("pattern");
-        }
-        if (map.get("join_table_name") instanceof String) {
-            fieldDefinition.join_table_name = (String) map.get("join_table_name");
-        }
-        if (map.get("join_table_key") instanceof String) {
-            fieldDefinition.join_table_key = (String) map.get("join_table_key");
-        }
-        if (map.get("join_table_select_fields") instanceof String) {
-            fieldDefinition.join_table_select_fields = (String) map.get("join_table_select_fields");
-        }
-
-        if (map.get("searchable") instanceof Boolean) {
-            fieldDefinition.searchable = (Boolean) map.get("searchable");
-        }
-        if (map.get("search_condition") instanceof String) {
-            fieldDefinition.search_condition = (String) map.get("search_condition");
-        }
-        if (map.get("search_field_name") instanceof String) {
-            fieldDefinition.search_field_name = (String) map.get("search_field_name");
-        }
-
-        if (map.get("show_in_list") instanceof Boolean) {
-            fieldDefinition.show_in_list = (Boolean) map.get("show_in_list");
-        }
-        if (map.get("view_index") instanceof Number) {
-            fieldDefinition.view_index = ((Number) map.get("view_index")).intValue();
-        }
-        if (map.get("mandatory") instanceof Boolean) {
-            fieldDefinition.mandatory = (Boolean) map.get("mandatory");
-        }
-        if (map.get("required") instanceof Boolean) {
-            fieldDefinition.required = (Boolean) map.get("required");
-        }
-        if (map.get("order_num") instanceof Number) {
-            fieldDefinition.order_num = ((Number) map.get("order_num")).intValue();
-        }
-
+        fieldDefinition.description = MapReads.str(map, "description");
         return fieldDefinition;
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        if (this.uuid != null) {
-            map.put("uuid", this.uuid);
-        }
-        if (this.metadata_uuid != null) {
-            map.put("metadata_uuid", this.metadata_uuid);
-        }
-        if (this.metadata_name != null) {
-            map.put("metadata_name", this.metadata_name);
-        }
-        if (this.name != null) {
-            map.put("name", this.name);
-        }
-
-        if (this.label != null) {
-            map.put("label", this.label);
-        }
-        if (this.description != null) {
-            map.put("description", this.description);
-        }
-        if (this.ai_profile != null) {
-            map.put("ai_profile", this.ai_profile);
-        }
-        if (this.type != null) {
-            map.put("type", this.type);
-        }
-        if (this.input_type != null) {
-            map.put("input_type", this.input_type);
-        }
-        if (this.options != null) {
-            map.put("options", this.options);
-        }
-        if (this.group_name != null) {
-            map.put("group_name", this.group_name);
-        }
-        if (this.tab_name != null) {
-            map.put("tab_name", this.tab_name);
-        }
-        if (this.validations != null) {
-            map.put("validations", this.validations);
-        }
-        map.put("table_key", this.table_key);
-        map.put("input_disabled", this.input_disabled);
-
-        if (this.function_def != null) {
-            map.put("function_def", this.function_def);
-        }
-        if (this.sql_type != null) {
-            map.put("sql_type", this.sql_type);
-        }
-        if (this.sql_definition != null) {
-            map.put("sql_definition", this.sql_definition);
-        }
-        if (this.default_value != null) {
-            map.put("default_value", this.default_value);
-        }
-        if (this.pattern != null) {
-            map.put("pattern", this.pattern);
-        }
-        if (this.join_table_name != null) {
-            map.put("join_table_name", this.join_table_name);
-        }
-        if (this.join_table_key != null) {
-            map.put("join_table_key", this.join_table_key);
-        }
-        if (this.join_table_select_fields != null) {
-            map.put("join_table_select_fields", this.join_table_select_fields);
-        }
-        map.put("searchable", this.searchable);
-        if (this.search_condition != null) {
-            map.put("search_condition", this.search_condition);
-        }
-        if (this.search_field_name != null) {
-            map.put("search_field_name", this.search_field_name);
-        }
-        map.put("show_in_list", this.show_in_list);
-        map.put("view_index", this.view_index);
-        // "required" is not a fielddefinitions column (inserting it fails): fold it into mandatory
-        map.put("mandatory", this.mandatory || this.required);
-        map.put("order_num", this.order_num);
-
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "metadata_uuid", metadata_uuid);
+        MapWrites.put(map, "metadata_name", metadata_name);
+        MapWrites.put(map, "name", name);
+        MapWrites.put(map, "label", label);
+        MapWrites.put(map, "description", description);
+        MapWrites.put(map, "ai_profile", ai_profile);
+        MapWrites.put(map, "type", type);
+        MapWrites.put(map, "input_type", input_type);
+        MapWrites.put(map, "options", options);
+        MapWrites.put(map, "group_name", group_name);
+        MapWrites.put(map, "tab_name", tab_name);
+        MapWrites.put(map, "validations", validations);
+        MapWrites.putBool(map, "table_key", table_key);
+        MapWrites.putBool(map, "input_disabled", input_disabled);
+        MapWrites.put(map, "function_def", function_def);
+        MapWrites.put(map, "sql_type", sql_type);
+        MapWrites.put(map, "sql_definition", sql_definition);
+        MapWrites.put(map, "default_value", default_value);
+        MapWrites.put(map, "pattern", pattern);
+        MapWrites.put(map, "join_table_name", join_table_name);
+        MapWrites.put(map, "join_table_key", join_table_key);
+        MapWrites.put(map, "join_table_select_fields", join_table_select_fields);
+        MapWrites.putBool(map, "searchable", searchable);
+        MapWrites.put(map, "search_condition", search_condition);
+        MapWrites.put(map, "search_field_name", search_field_name);
+        MapWrites.putBool(map, "show_in_list", show_in_list);
+        MapWrites.putInt(map, "view_index", view_index);
+        MapWrites.putBool(map, "mandatory", mandatory || required);
+        MapWrites.putInt(map, "order_num", order_num);
         return map;
     }
 
     @Override
     public String toString() {
-        return "FieldDefinition{" +
-                "uuid='" + uuid + '\'' +
-                ", metadata_uuid='" + metadata_uuid + '\'' +
-                ", name='" + name + '\'' +
-                ", label='" + label + '\'' +
-                ", description='" + description + '\'' +
-                ", type='" + type + '\'' +
-                ", input_type='" + input_type + '\'' +
-                ", options='" + options + '\'' +
-                ", group_name='" + group_name + '\'' +
-                ", tab_name='" + tab_name + '\'' +
-                ", validations='" + validations + '\'' +
-                ", table_key=" + table_key +
-                ", input_disabled=" + input_disabled +
-                ", function_def='" + function_def + '\'' +
-                ", sql_type='" + sql_type + '\'' +
-                ", sql_definition='" + sql_definition + '\'' +
-                ", default_value='" + default_value + '\'' +
-                ", join_table_name='" + join_table_name + '\'' +
-                ", join_table_key='" + join_table_key + '\'' +
-                ", join_table_select_fields='" + join_table_select_fields + '\'' +
-                ", pattern='" + pattern + '\'' +
-                ", searchable='" + searchable + '\'' +
-                ", search_condition='" + search_condition + '\'' +
-                ", search_field_name='" + search_field_name + '\'' +
-                ", show_in_list='" + show_in_list + '\'' +
-                ", view_index='" + view_index + '\'' +
-                ", mandatory='" + mandatory + '\'' +
-                ", required='" + required + '\'' +
-                ", order_num='" + order_num + '\'' +
-                '}';
+        return "FieldDefinition{uuid='" + uuid + "', name='" + name + "'}";
+    }
+
+    public static final class Builder {
+        private String uuid;
+        private String metadata_uuid;
+        private String metadata_name;
+        private String name;
+        private FieldQueryFacet query = FieldQueryFacet.empty();
+        private FieldUiFacet ui = FieldUiFacet.empty();
+        private FieldAiFacet ai = FieldAiFacet.empty();
+
+        public Builder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public Builder metadataUuid(String metadataUuid) {
+            this.metadata_uuid = metadataUuid;
+            return this;
+        }
+
+        public Builder metadataName(String metadataName) {
+            this.metadata_name = metadataName;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder query(FieldQueryFacet query) {
+            this.query = query == null ? FieldQueryFacet.empty() : query;
+            return this;
+        }
+
+        public Builder ui(FieldUiFacet ui) {
+            this.ui = ui == null ? FieldUiFacet.empty() : ui;
+            return this;
+        }
+
+        public Builder ai(FieldAiFacet ai) {
+            this.ai = ai == null ? FieldAiFacet.empty() : ai;
+            return this;
+        }
+
+        public FieldDefinition build() {
+            FieldDefinition field = new FieldDefinition();
+            field.applyFacets(uuid, metadata_uuid, metadata_name, name, query, ui, ai);
+            return field;
+        }
     }
 }

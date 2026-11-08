@@ -1,7 +1,12 @@
 package io.snello.model.ai;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.*;
+import io.snello.model.MapReads;
+import io.snello.model.MapWrites;
+
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 @RegisterForReflection
 public class AiSkill {
@@ -10,51 +15,65 @@ public class AiSkill {
     public String name;
     public String description;
     public String instructions;
-    public String allowed_roles; // comma-separated
+    public String allowed_roles;
     public boolean enabled = true;
 
-    public AiSkill() {}
-    public AiSkill(Map<String, Object> map) { fromMap(map); }
+    public AiSkill() {
+    }
+
+    public AiSkill(Map<String, Object> map) {
+        fromMap(map);
+    }
 
     public void fromMap(Map<String, Object> map) {
-        if (map.get("uuid") instanceof String s) uuid = s;
-        if (map.get("project_uuid") instanceof String s) project_uuid = s;
-        if (map.get("name") instanceof String s) name = s;
-        if (map.get("description") instanceof String s) description = s;
-        if (map.get("instructions") instanceof String s) instructions = s;
-        if (map.get("allowed_roles") instanceof String s) allowed_roles = s;
-        if (map.get("enabled") instanceof Boolean b) enabled = b;
+        uuid = MapReads.str(map, "uuid");
+        project_uuid = MapReads.str(map, "project_uuid");
+        name = MapReads.str(map, "name");
+        description = MapReads.str(map, "description");
+        instructions = MapReads.str(map, "instructions");
+        allowed_roles = MapReads.str(map, "allowed_roles");
+        enabled = MapReads.bool(map, "enabled", true);
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> m = new LinkedHashMap<>();
-        if (uuid != null) m.put("uuid", uuid);
-        if (project_uuid != null) m.put("project_uuid", project_uuid);
-        if (name != null) m.put("name", name);
-        if (description != null) m.put("description", description);
-        if (instructions != null) m.put("instructions", instructions);
+        Map<String, Object> m = MapWrites.map();
+        MapWrites.put(m, "uuid", uuid);
+        MapWrites.put(m, "project_uuid", project_uuid);
+        MapWrites.put(m, "name", name);
+        MapWrites.put(m, "description", description);
+        MapWrites.put(m, "instructions", instructions);
         m.put("allowed_roles", allowed_roles == null ? "" : allowed_roles);
-        m.put("enabled", enabled);
+        MapWrites.putBool(m, "enabled", enabled);
         return m;
     }
 
     public Set<String> allowedRoleSet() {
-        if (allowed_roles == null || allowed_roles.isBlank()) return Set.of();
+        if (allowed_roles == null || allowed_roles.isBlank()) {
+            return Set.of();
+        }
         Set<String> out = new LinkedHashSet<>();
         for (String part : allowed_roles.split(",")) {
             String t = part.trim();
-            if (!t.isEmpty()) out.add(t);
+            if (!t.isEmpty()) {
+                out.add(t);
+            }
         }
         return out;
     }
 
     public boolean allowedFor(Set<String> callerRoles) {
         Set<String> allowed = allowedRoleSet();
-        if (allowed.isEmpty()) return true;
-        if (callerRoles == null || callerRoles.isEmpty()) return false;
+        if (allowed.isEmpty()) {
+            return true;
+        }
+        if (callerRoles == null || callerRoles.isEmpty()) {
+            return false;
+        }
         for (String r : allowed) {
             for (String c : callerRoles) {
-                if (r.equalsIgnoreCase(c)) return true;
+                if (r.equalsIgnoreCase(c)) {
+                    return true;
+                }
             }
         }
         return false;

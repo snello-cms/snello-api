@@ -159,9 +159,9 @@ public interface JdbcRepository {
      */
     default String createTableSql(EntityIdentity identity, EntityQueryFacet query, List<ColumnSpec> columns,
                                   List<String> joinQueries, List<Condition> conditions) {
-        String table = identity.table_name;
-        Log.infof("createTableSql table=%s key=%s key_type=%s columns=%d", table, query.table_key,
-                query.table_key_type, columns == null ? 0 : columns.size());
+        String table = identity.table_name();
+        Log.infof("createTableSql table=%s key=%s key_type=%s columns=%d", table, query.table_key(),
+                query.table_key_type(), columns == null ? 0 : columns.size());
         List<String> parts = new ArrayList<>();
         int keyVarchar = ColumnSpecs.resolveKeyVarcharLength(query, columns);
         String keyColumn = keyColumnSql(query, keyVarchar);
@@ -187,12 +187,12 @@ public interface JdbcRepository {
                             column.joinTableName() + "_id"));
                 }
                 if (conditions != null) {
-                    conditions.add(ColumnSpecs.multiJoinCondition(table, identity.uuid, column));
+                    conditions.add(ColumnSpecs.multiJoinCondition(table, identity.uuid(), column));
                 }
             }
         }
         String sql = " CREATE TABLE " + escape(table) + " (" + String.join(",", parts)
-                + ", PRIMARY KEY (" + escape(query.table_key) + ")" + createTableTail();
+                + ", PRIMARY KEY (" + escape(query.table_key()) + ")" + createTableTail();
         Log.info("QUERY CREATION TABLE: " + sql);
         return sql;
     }

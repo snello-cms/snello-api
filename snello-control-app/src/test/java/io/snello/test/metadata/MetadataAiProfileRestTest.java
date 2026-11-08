@@ -35,18 +35,18 @@ class MetadataAiProfileRestTest {
                     .extract().jsonPath().getMap("");
             assertInstanceOf(String.class, stored.get("ai_profile"), "ai_profile must be persisted as JSON text");
             Metadata metadata = new Metadata(stored);
-            assertEquals(List.of("demo thing"), metadata.aiFacet().synonyms);
-            assertTrue(metadata.aiFacet().tool_visible);
+            assertEquals(List.of("demo thing"), metadata.aiFacet().synonyms());
+            assertTrue(metadata.aiFacet().tool_visible());
 
             Map<String, Object> hiddenStored = given().accept(ContentType.JSON)
                     .when().get("/api/metadatas/{uuid}", hiddenUuid)
                     .then().statusCode(200)
                     .extract().jsonPath().getMap("");
-            assertFalse(new Metadata(hiddenStored).aiFacet().tool_visible);
+            assertFalse(new Metadata(hiddenStored).aiFacet().tool_visible());
 
             metadataService.refreshIfChanged();
-            assertTrue(metadataService.metadataMap().get(visible).aiFacet().tool_visible);
-            assertFalse(metadataService.metadataMap().get(hidden).aiFacet().tool_visible);
+            assertTrue(metadataService.metadataMap().get(visible).aiFacet().tool_visible());
+            assertFalse(metadataService.metadataMap().get(hidden).aiFacet().tool_visible());
         } finally {
             delete(visibleUuid);
             delete(hiddenUuid);

@@ -35,7 +35,7 @@ public class AiProfileValidator {
         normalize(row, EntityAiProfile.class);
         EntityAiFacet ai = new Metadata(row).aiFacet();
         Object tableName = row.get(TABLE_NAME);
-        if (ai.tool_visible && !ai.hasDescription()) {
+        if (ai.tool_visible() && !ai.hasDescription()) {
             if (requireDescription) {
                 Log.infof("metadata %s rejected: tool-visible without description (snello.ai.require-description=true)", tableName);
                 throw new BadRequestException("description is required for tool-visible entity '" + tableName
@@ -44,7 +44,7 @@ public class AiProfileValidator {
             Log.warnf("metadata %s is tool-visible without description: AI tools will see only its name", tableName);
         }
         Log.debugf("metadata %s ai facet tool_visible=%s summary=%s synonyms=%s examples=%d",
-                tableName, ai.tool_visible, ai.summary, ai.synonyms, ai.examples == null ? 0 : ai.examples.size());
+                tableName, ai.tool_visible(), ai.summary(), ai.synonyms(), ai.examples() == null ? 0 : ai.examples().size());
     }
 
     public void prepareFieldRow(Map<String, Object> row) {
