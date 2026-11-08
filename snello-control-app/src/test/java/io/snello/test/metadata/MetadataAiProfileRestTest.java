@@ -23,7 +23,7 @@ class MetadataAiProfileRestTest {
     MetadataService metadataService;
 
     @Test
-    void aiProfileIsStoredAndToolVisibleIsHonoured() {
+    void aiProfileIsStoredAndToolVisibleIsHonoured() throws Exception {
         String visible = "ai_visible_" + System.nanoTime();
         String hidden = "ai_hidden_" + System.nanoTime();
         String visibleUuid = create(visible, Map.of("summary", "test entity", "synonyms", List.of("demo thing")));
