@@ -1,6 +1,8 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 
 import java.util.Map;
 
@@ -41,31 +43,35 @@ public class Link {
     }
 
     public Link(Map<String, Object> map) {
-        super();
         fromMap(map, this);
     }
 
     public Link fromMap(Map<String, Object> map, Link link) {
-        if (map.get("name") instanceof String) {
-            link.name = (String) map.get("name");
+        if (map == null || link == null) {
+            return link;
         }
-        if (map.get("labels") instanceof String) {
-            link.labels = (String) map.get("labels");
-        }
-        if (map.get("metadata_name") instanceof String) {
-            link.metadata_name = (String) map.get("metadata_name");
-        }
-        if (map.get("metadata_key") instanceof String) {
-            link.metadata_key = (String) map.get("metadata_key");
-        }
-
-        if (map.get("metadata_searchable_field") instanceof String) {
-            link.metadata_searchable_field = (String) map.get("metadata_searchable_field");
-        }
-        if (map.get("created") instanceof Boolean) {
-            link.created = (Boolean) map.get("created");
-        }
+        link.name = MapReads.str(map, "name");
+        link.labels = MapReads.str(map, "labels");
+        link.metadata_name = MapReads.str(map, "metadata_name");
+        link.metadata_key = MapReads.str(map, "metadata_key");
+        link.metadata_searchable_field = MapReads.str(map, "metadata_searchable_field");
+        link.metadata_lock_field = MapReads.str(map, "metadata_lock_field");
+        link.metadata_generated_uuid = MapReads.str(map, "metadata_generated_uuid");
+        link.created = MapReads.bool(map, "created", false);
         return link;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "name", name);
+        MapWrites.put(map, "labels", labels);
+        MapWrites.put(map, "metadata_name", metadata_name);
+        MapWrites.put(map, "metadata_key", metadata_key);
+        MapWrites.put(map, "metadata_searchable_field", metadata_searchable_field);
+        MapWrites.put(map, "metadata_lock_field", metadata_lock_field);
+        MapWrites.put(map, "metadata_generated_uuid", metadata_generated_uuid);
+        MapWrites.putBool(map, "created", created);
+        return map;
     }
 
     @Override

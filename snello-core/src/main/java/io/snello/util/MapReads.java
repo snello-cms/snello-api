@@ -1,5 +1,7 @@
-package io.snello.model;
+package io.snello.util;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -8,6 +10,27 @@ import java.util.Map;
 public final class MapReads {
 
     private MapReads() {
+    }
+
+    /** JDBC {@code Timestamp}/{@code Date}, {@link LocalDateTime}, or {@link LocalDate}. */
+    public static LocalDateTime localDateTime(Map<String, Object> map, String key) {
+        if (map == null) {
+            return null;
+        }
+        Object value = map.get(key);
+        if (value instanceof LocalDateTime ldt) {
+            return ldt;
+        }
+        if (value instanceof LocalDate ld) {
+            return ld.atStartOfDay();
+        }
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime();
+        }
+        if (value instanceof java.sql.Date d) {
+            return d.toLocalDate().atStartOfDay();
+        }
+        return null;
     }
 
     public static String str(Map<String, Object> map, String key) {

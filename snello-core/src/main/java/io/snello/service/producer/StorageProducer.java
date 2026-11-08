@@ -7,10 +7,10 @@ import io.snello.service.storage.FsStorageService;
 import io.snello.service.storage.S3StorageService;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-@Singleton
+@ApplicationScoped
 public class StorageProducer {
     
     @ConfigProperty(name = "snello.storagetype", defaultValue = "")
@@ -33,6 +33,7 @@ public class StorageProducer {
     }
 
     @Produces
+    @ApplicationScoped
     public StorageService storage() throws Exception {
         Log.info("storagetype: " + storagetype);
         switch (storagetype) {

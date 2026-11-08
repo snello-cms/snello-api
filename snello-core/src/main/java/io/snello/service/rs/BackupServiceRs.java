@@ -8,7 +8,7 @@ import io.snello.model.pojo.ZipFormData;
 import io.snello.service.BackupService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -31,7 +31,7 @@ import static jakarta.ws.rs.core.Response.ok;
 @Path(BACKUP_PATH)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Singleton
+@ApplicationScoped
 @RunOnVirtualThread
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class BackupServiceRs {

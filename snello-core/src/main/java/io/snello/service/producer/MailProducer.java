@@ -6,10 +6,10 @@ import io.snello.api.service.MailService;
 import io.snello.service.mail.SmtpMailService;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-@Singleton
+@ApplicationScoped
 public class MailProducer {
 
 
@@ -24,6 +24,7 @@ public class MailProducer {
     }
 
     @Produces
+    @ApplicationScoped
     public MailService db() throws Exception {
         Log.info("mailtype: " + mailtype);
         if (mailtype.equals("smtp")) {

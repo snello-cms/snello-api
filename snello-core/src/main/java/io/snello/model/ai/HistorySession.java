@@ -1,8 +1,8 @@
 package io.snello.model.ai;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import io.snello.model.MapReads;
-import io.snello.model.MapWrites;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 
 import java.util.Map;
 

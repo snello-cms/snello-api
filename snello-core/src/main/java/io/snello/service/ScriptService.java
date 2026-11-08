@@ -6,7 +6,7 @@ import io.snello.api.service.MailService;
 import io.snello.api.service.StorageService;
 import io.snello.model.Action;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -14,7 +14,7 @@ import javax.script.ScriptEngineManager;
 import java.util.HashMap;
 import java.util.Map;
 
-@Singleton
+@ApplicationScoped
 public class ScriptService {
 
     @Inject

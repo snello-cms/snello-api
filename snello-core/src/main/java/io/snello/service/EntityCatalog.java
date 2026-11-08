@@ -9,7 +9,7 @@ import io.snello.model.pojo.EntityAiView;
 import io.snello.model.pojo.EntityQueryView;
 import io.snello.model.pojo.EntityUiView;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +27,7 @@ import java.util.TreeMap;
  * cache is keyed on the identity of {@code MetadataService}'s maps, which are replaced (never mutated) on every
  * reload, so a new snapshot — from CDI events on control or the checksum poll on query — rebuilds the views.
  */
-@Singleton
+@ApplicationScoped
 public class EntityCatalog {
 
     @Inject

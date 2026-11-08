@@ -1,8 +1,9 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -18,63 +19,45 @@ public class Document {
     public LocalDateTime creation_date;
     public int size;
 
-
     public String table_name;
     public String table_key;
-
 
     public Document() {
     }
 
     public Document(Map<String, Object> map) {
-        super();
         fromMap(map, this);
     }
 
     public Document fromMap(Map<String, Object> map, Document document) {
-        if (map.get("uuid") instanceof String) {
-            document.uuid = (String) map.get("uuid");
+        if (map == null || document == null) {
+            return document;
         }
-        if (map.get("name") instanceof String) {
-            document.name = (String) map.get("name");
-        }
-        if (map.get("original_name") instanceof String) {
-            document.original_name = (String) map.get("original_name");
-        }
-        if (map.get("size") instanceof String) {
-            document.size = (Integer) map.get("size");
-        }
-        if (map.get("path") instanceof String) {
-            document.path = (String) map.get("path");
-        }
-        if (map.get("mimetype") instanceof String) {
-            document.mimetype = (String) map.get("mimetype");
-        }
-        if (map.get("creation_date") instanceof java.sql.Date) {
-            document.creation_date = ((java.sql.Date) map.get("creation_date")).toLocalDate().atStartOfDay();
-        }
-        if (map.get("creation_date") instanceof LocalDateTime) {
-            document.creation_date = (LocalDateTime) map.get("creation_date");
-        }
-        if (map.get("creation_date") instanceof LocalDate) {
-            document.creation_date = ((LocalDate) map.get("creation_date")).atStartOfDay();
-        }
-        if (map.get("creation_date") instanceof java.sql.Timestamp) {
-            document.creation_date = ((java.sql.Timestamp) map.get("creation_date")).toLocalDateTime();
-        }
-        if (map.get("mimetype") instanceof String) {
-            document.mimetype = (String) map.get("mimetype");
-        }
-        if (map.get("table_name") instanceof String) {
-            document.table_name = (String) map.get("table_name");
-        }
-        if (map.get("table_key") instanceof String) {
-            document.table_key = (String) map.get("table_key");
-        }
-        if (map.get("formats") instanceof String) {
-            document.formats = (String) map.get("formats");
-        }
-
+        document.uuid = MapReads.str(map, "uuid");
+        document.name = MapReads.str(map, "name");
+        document.original_name = MapReads.str(map, "original_name");
+        document.path = MapReads.str(map, "path");
+        document.formats = MapReads.str(map, "formats");
+        document.mimetype = MapReads.str(map, "mimetype");
+        document.creation_date = MapReads.localDateTime(map, "creation_date");
+        document.size = MapReads.intVal(map, "size", 0);
+        document.table_name = MapReads.str(map, "table_name");
+        document.table_key = MapReads.str(map, "table_key");
         return document;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "name", name);
+        MapWrites.put(map, "original_name", original_name);
+        MapWrites.put(map, "path", path);
+        MapWrites.put(map, "formats", formats);
+        MapWrites.put(map, "mimetype", mimetype);
+        MapWrites.put(map, "creation_date", creation_date);
+        MapWrites.putInt(map, "size", size);
+        MapWrites.put(map, "table_name", table_name);
+        MapWrites.put(map, "table_key", table_key);
+        return map;
     }
 }

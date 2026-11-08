@@ -1,8 +1,9 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RegisterForReflection
@@ -24,28 +25,29 @@ public class AiTool {
     }
 
     public AiTool fromMap(Map<String, Object> map, AiTool aiTool) {
-        if (map.get("uuid") instanceof String) {
-            aiTool.uuid = (String) map.get("uuid");
+        if (map == null || aiTool == null) {
+            return aiTool;
         }
-        if (map.get("name") instanceof String) {
-            aiTool.name = (String) map.get("name");
-        }
-        if (map.get("method_name") instanceof String) {
-            aiTool.method_name = (String) map.get("method_name");
-        }
-        if (map.get("description") instanceof String) {
-            aiTool.description = (String) map.get("description");
-        }
-        if (map.get("sql_query") instanceof String) {
-            aiTool.sql_query = (String) map.get("sql_query");
-        }
-        if (map.get("parameters_schema") instanceof String) {
-            aiTool.parameters_schema = (String) map.get("parameters_schema");
-        }
-        if (map.get("active") instanceof Boolean) {
-            aiTool.active = (Boolean) map.get("active");
-        }
+        aiTool.uuid = MapReads.str(map, "uuid");
+        aiTool.name = MapReads.str(map, "name");
+        aiTool.method_name = MapReads.str(map, "method_name");
+        aiTool.description = MapReads.str(map, "description");
+        aiTool.sql_query = MapReads.str(map, "sql_query");
+        aiTool.parameters_schema = MapReads.str(map, "parameters_schema");
+        aiTool.active = MapReads.bool(map, "active", false);
         return aiTool;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "name", name);
+        MapWrites.put(map, "method_name", method_name);
+        MapWrites.put(map, "description", description);
+        MapWrites.put(map, "sql_query", sql_query);
+        MapWrites.put(map, "parameters_schema", parameters_schema);
+        MapWrites.putBool(map, "active", active);
+        return map;
     }
 
     @Override
@@ -56,29 +58,5 @@ public class AiTool {
                 ", method_name='" + method_name + '\'' +
                 ", active=" + active +
                 '}';
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        if (this.uuid != null) {
-            map.put("uuid", this.uuid);
-        }
-        if (this.name != null) {
-            map.put("name", this.name);
-        }
-        if (this.method_name != null) {
-            map.put("method_name", this.method_name);
-        }
-        if (this.description != null) {
-            map.put("description", this.description);
-        }
-        if (this.sql_query != null) {
-            map.put("sql_query", this.sql_query);
-        }
-        if (this.parameters_schema != null) {
-            map.put("parameters_schema", this.parameters_schema);
-        }
-        map.put("active", this.active);
-        return map;
     }
 }

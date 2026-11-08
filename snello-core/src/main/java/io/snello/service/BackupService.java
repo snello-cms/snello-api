@@ -6,7 +6,7 @@ import io.snello.model.pojo.BackupDataImportResult;
 import io.snello.util.MetadataUtils;
 import io.snello.util.ZipUtils;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -33,7 +33,7 @@ import static io.snello.management.AppConstants.UUID;
 /**
  * Business-data backup: chunked JSON pages packed into a ZIP (no metadata schema, no DDL on import).
  */
-@Singleton
+@ApplicationScoped
 public class BackupService {
 
     public static final String KIND = "snello-backup-data";

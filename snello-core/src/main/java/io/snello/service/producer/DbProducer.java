@@ -8,7 +8,7 @@ import io.snello.service.repository.mysql.MysqlJdbcRepository;
 import io.snello.service.repository.postgresql.PostgresqlJdbcRepository;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -18,7 +18,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * specialized via mutable-jar re-augmentation (Keycloak-style). {@code snello.dbtype} must match that
  * build-time kind so the correct {@link JdbcRepository} dialect is used.
  */
-@Singleton
+@ApplicationScoped
 public class DbProducer {
 
     @ConfigProperty(name = "snello.dbtype", defaultValue = "postgresql")
@@ -32,6 +32,7 @@ public class DbProducer {
     }
 
     @Produces
+    @ApplicationScoped
     public JdbcRepository db() throws Exception {
         Log.info("dbtype: " + dbtype);
         return switch (dbtype) {

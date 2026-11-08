@@ -1,5 +1,8 @@
 package io.snello.model;
 
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.snello.model.entity.EntityModel;
 import io.snello.model.facet.EntityAiFacet;

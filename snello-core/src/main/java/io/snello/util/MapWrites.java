@@ -1,4 +1,4 @@
-package io.snello.model;
+package io.snello.util;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

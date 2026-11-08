@@ -14,7 +14,7 @@ import io.snello.model.pojo.DocumentFormData;
 import io.snello.service.ApiService;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -36,7 +36,7 @@ import static jakarta.ws.rs.core.Response.serverError;
 
 @Path(DOCUMENTS_PATH)
 @Produces(MediaType.APPLICATION_JSON)
-@Singleton
+@ApplicationScoped
 @RunOnVirtualThread
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class DocumentServiceRs {

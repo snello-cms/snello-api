@@ -28,7 +28,7 @@ import io.snello.util.FieldUiDerivation;
 import io.snello.util.MetadataUtils;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -41,7 +41,7 @@ import static io.snello.management.AppConstants.*;
  * <p>
  * Exposed by {@code DraftServiceRs} ({@code /api/drafts}). Control plane only.
  */
-@Singleton
+@ApplicationScoped
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class DraftService {
 

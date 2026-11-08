@@ -13,7 +13,7 @@ import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
 
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -26,7 +26,7 @@ import static io.snello.management.AppConstants.*;
 import static io.snello.service.repository.mysql.MysqlConstants.DROP_TABLE;
 import static io.snello.service.repository.mysql.MysqlConstants.TRUNCATE_TABLE;
 
-@Singleton
+@ApplicationScoped
 public class ApiService {
 
     @Inject

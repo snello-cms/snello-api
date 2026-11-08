@@ -6,7 +6,7 @@ import io.snello.model.facet.EntityAiFacet;
 import io.snello.model.pojo.EntityAiProfile;
 import io.snello.model.pojo.FieldAiProfile;
 import io.snello.util.AiProfileUtils;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.BadRequestException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -25,7 +25,7 @@ import static io.snello.management.AppConstants.TABLE_NAME;
  *     when off, a missing description is only logged.</li>
  * </ul>
  */
-@Singleton
+@ApplicationScoped
 public class AiProfileValidator {
 
     @ConfigProperty(name = "snello.ai.require-description", defaultValue = "false")

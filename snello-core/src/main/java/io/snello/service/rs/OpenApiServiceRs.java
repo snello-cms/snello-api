@@ -5,7 +5,7 @@ import io.quarkus.smallrye.openapi.runtime.OpenApiDocumentService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.openapi.runtime.io.Format;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -20,7 +20,7 @@ import static io.snello.management.AppConstants.OPENAPI_PATH;
  * (all discovered JAX-RS endpoints of the running plane).
  */
 @Path(OPENAPI_PATH)
-@Singleton
+@ApplicationScoped
 @RunOnVirtualThread
 public class OpenApiServiceRs {
 

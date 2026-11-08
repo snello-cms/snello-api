@@ -10,7 +10,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Creates / upgrades the system tables at startup. Control plane only: query nodes never run DDL.
@@ -18,7 +18,7 @@ import jakarta.inject.Singleton;
  * Runs with a low {@link Priority} so the schema exists before {@link EventService} preloads the caches
  * (previously both were un-ordered {@code StartupEvent} observers).
  */
-@Singleton
+@ApplicationScoped
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class SchemaBootstrapService {
 

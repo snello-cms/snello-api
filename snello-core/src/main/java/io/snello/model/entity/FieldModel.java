@@ -2,8 +2,8 @@ package io.snello.model.entity;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.snello.model.FieldDefinition;
-import io.snello.model.MapReads;
-import io.snello.model.MapWrites;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 import io.snello.model.facet.FieldAiFacet;
 import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;

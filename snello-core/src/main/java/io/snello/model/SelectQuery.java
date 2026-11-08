@@ -1,8 +1,9 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RegisterForReflection
@@ -25,10 +26,30 @@ public class SelectQuery {
     }
 
     public SelectQuery(Map<String, Object> map) {
-        super();
         fromMap(map, this);
     }
 
+    public SelectQuery fromMap(Map<String, Object> map, SelectQuery selectQuery) {
+        if (map == null || selectQuery == null) {
+            return selectQuery;
+        }
+        selectQuery.uuid = MapReads.str(map, "uuid");
+        selectQuery.query_name = MapReads.str(map, "query_name");
+        selectQuery.select_query = MapReads.str(map, "select_query");
+        selectQuery.select_query_count = MapReads.str(map, "select_query_count");
+        selectQuery.with_params = MapReads.bool(map, "with_params", false);
+        return selectQuery;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "query_name", query_name);
+        MapWrites.put(map, "select_query", select_query);
+        MapWrites.put(map, "select_query_count", select_query_count);
+        MapWrites.putBool(map, "with_params", with_params);
+        return map;
+    }
 
     @Override
     public String toString() {
@@ -40,33 +61,4 @@ public class SelectQuery {
                 ", select_query_count='" + select_query_count + '\'' +
                 '}';
     }
-
-
-    public SelectQuery fromMap(Map<String, Object> map, SelectQuery selectQuery) {
-        if (map.get("uuid") instanceof String) {
-            selectQuery.uuid = (String) map.get("uuid");
-        }
-        if (map.get("query_name") instanceof String) {
-            selectQuery.query_name = (String) map.get("query_name");
-        }
-        if (map.get("with_params") instanceof Boolean) {
-            selectQuery.with_params = (Boolean) map.get("with_params");
-        }
-
-        if (map.get("select_query") instanceof String) {
-            selectQuery.select_query = (String) map.get("select_query");
-        }
-        if (map.get("select_query_count") instanceof String) {
-            selectQuery.select_query_count = (String) map.get("select_query_count");
-        }
-        return selectQuery;
-    }
-
-    public Map<String, Object> toMap() {
-        Map<String, Object> metadata = new HashMap<>();
-
-
-        return metadata;
-    }
-
 }

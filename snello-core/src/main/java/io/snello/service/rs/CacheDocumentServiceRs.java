@@ -7,7 +7,7 @@ import io.quarkus.cache.CacheResult;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -17,7 +17,7 @@ import static io.snello.management.AppConstants.*;
 @Path(CACHE_DOCUMENTS_PATH)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Singleton
+@ApplicationScoped
 @RunOnVirtualThread
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class CacheDocumentServiceRs {

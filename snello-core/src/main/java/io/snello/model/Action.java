@@ -1,8 +1,10 @@
 package io.snello.model;
 
+import io.snello.util.MapReads;
+import io.snello.util.MapWrites;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RegisterForReflection
@@ -16,67 +18,36 @@ public class Action {
     public String phase; // PRE, POST
     public String body;
 
-
     public Action() {
     }
 
     public Action(Map<String, Object> map) {
-        super();
         fromMap(map, this);
     }
 
     public Action fromMap(Map<String, Object> map, Action template) {
-        if (map.get("uuid") instanceof String) {
-            template.uuid = (String) map.get("uuid");
+        if (map == null || template == null) {
+            return template;
         }
-        if (map.get("name") instanceof String) {
-            template.name = (String) map.get("name");
-        }
-        if (map.get("description") instanceof String) {
-            template.description = (String) map.get("description");
-        }
-
-        if (map.get("metadata_name") instanceof String) {
-            template.metadata_name = (String) map.get("metadata_name");
-        }
-
-        if (map.get("condition") instanceof String) {
-            template.condition = (String) map.get("condition");
-        }
-        if (map.get("phase") instanceof String) {
-            template.phase = (String) map.get("phase");
-        }
-        if (map.get("body") instanceof String) {
-            template.body = (String) map.get("body");
-        }
+        template.uuid = MapReads.str(map, "uuid");
+        template.name = MapReads.str(map, "name");
+        template.description = MapReads.str(map, "description");
+        template.metadata_name = MapReads.str(map, "metadata_name");
+        template.condition = MapReads.str(map, "condition");
+        template.phase = MapReads.str(map, "phase");
+        template.body = MapReads.str(map, "body");
         return template;
     }
 
-
     public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        if (this.uuid != null) {
-            map.put("uuid", this.uuid);
-        }
-        if (this.name != null) {
-            map.put("name", this.name);
-        }
-        if (this.description != null) {
-            map.put("description", this.description);
-        }
-        if (this.metadata_name != null) {
-            map.put("metadata_name", this.metadata_name);
-        }
-        if (this.condition != null) {
-            map.put("condition", this.condition);
-        }
-        if (this.phase != null) {
-            map.put("phase", this.phase);
-        }
-        if (this.body != null) {
-            map.put("body", this.body);
-        }
-
+        Map<String, Object> map = MapWrites.map();
+        MapWrites.put(map, "uuid", uuid);
+        MapWrites.put(map, "name", name);
+        MapWrites.put(map, "description", description);
+        MapWrites.put(map, "metadata_name", metadata_name);
+        MapWrites.put(map, "condition", condition);
+        MapWrites.put(map, "phase", phase);
+        MapWrites.put(map, "body", body);
         return map;
     }
 

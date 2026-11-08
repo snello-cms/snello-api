@@ -4,7 +4,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import io.snello.management.SnelloPlane;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Keeps a query node's metadata cache in sync with the control plane.
@@ -13,7 +13,7 @@ import jakarta.inject.Singleton;
  * {@value SnelloPlane#METADATA_REFRESH_INTERVAL_PROPERTY} the system tables are reloaded and the snapshot is
  * swapped only when its checksum moved. Set the property to {@code off} (control default) to disable.
  */
-@Singleton
+@ApplicationScoped
 public class MetadataRefreshJob {
 
     @Inject

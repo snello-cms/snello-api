@@ -11,12 +11,12 @@ import io.snello.util.ActionUtils;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.ObservesAsync;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Singleton
+@ApplicationScoped
 public class EventService {
     
     @Inject
@@ -33,12 +33,7 @@ public class EventService {
     }
 
     public void resetAll() throws Exception {
-        // null to maps
-        metadataService.conditionsMap = null;
-        metadataService.selectqueryMap = null;
-        metadataService.aiToolsMap = null;
-        metadataService.actionsMap = null;
-        // reset
+        metadataService.invalidateSecondaryCaches();
         metadataService.conditionsMap();
         metadataService.selectqueryMap();
         metadataService.aiToolsMap();
@@ -46,8 +41,7 @@ public class EventService {
     }
 
     public void resetMetadata() throws Exception {
-        metadataService.metadataMap = null;
-        metadataService.fielddefinitionsMap = null;
+        metadataService.invalidateMetadataCaches();
         metadataService.metadataMap();
         metadataService.fielddefinitionsMap();
     }

@@ -8,7 +8,7 @@ import io.snello.model.pojo.ColumnSpec;
 import io.snello.util.ColumnSpecs;
 import io.snello.util.FieldDefinitionUtils;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ import static io.snello.management.AppConstants.*;
  *     <li>every hook is idempotent, so retrying after a partial failure is safe.</li>
  * </ul>
  */
-@Singleton
+@ApplicationScoped
 public class TableSchemaService {
 
     /** Same character set the admin allows for table/column names; anything else is refused before reaching SQL. */

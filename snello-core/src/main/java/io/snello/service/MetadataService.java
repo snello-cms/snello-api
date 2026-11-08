@@ -6,7 +6,7 @@ import io.snello.management.SnelloPlane;
 import io.snello.model.*;
 import io.snello.util.ActionUtils;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
@@ -30,17 +30,37 @@ import static io.snello.management.AppConstants.*;
  * {@link #QUERY_FIELD_COLUMNS}) and skips {@code actions} / {@code ai_tools}, which only the write path and the AI
  * runtime use. UI / AI fields of the cached objects are therefore {@code null} on query nodes.
  */
-@Singleton
+@ApplicationScoped
 public class MetadataService {
 
-    volatile Map<String, Metadata> metadataMap;
-    volatile Map<String, SelectQuery> selectqueryMap;
-    volatile Map<String, AiTool> aiToolsMap;
-    volatile Map<String, Action> actionsMap;
-    volatile Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
-    volatile Map<String, List<Condition>> conditionsMap;
+    private volatile Map<String, Metadata> metadataMap;
+    private volatile Map<String, SelectQuery> selectqueryMap;
+    private volatile Map<String, AiTool> aiToolsMap;
+    private volatile Map<String, Action> actionsMap;
+    private volatile Map<String, Map<String, FieldDefinition>> fielddefinitionsMap;
+    private volatile Map<String, List<Condition>> conditionsMap;
 
     private volatile String version;
+
+    /**
+     * Must be called via the CDI bean (never by writing fields through a client proxy).
+     * Nulls metadata + fielddefinition caches so the next accessor reloads from DB.
+     */
+    public void invalidateMetadataCaches() {
+        this.metadataMap = null;
+        this.fielddefinitionsMap = null;
+    }
+
+    /**
+     * Must be called via the CDI bean (never by writing fields through a client proxy).
+     * Nulls conditions / selectqueries / actions / ai_tools caches.
+     */
+    public void invalidateSecondaryCaches() {
+        this.conditionsMap = null;
+        this.selectqueryMap = null;
+        this.aiToolsMap = null;
+        this.actionsMap = null;
+    }
 
     /** Query-facet columns of {@code metadatas}: everything {@link io.snello.model.pojo.EntityQueryView} needs. */
     public static final String QUERY_METADATA_COLUMNS = "uuid, table_name, table_key, table_key_type, table_key_addition, "

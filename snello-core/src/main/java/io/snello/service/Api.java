@@ -2,14 +2,14 @@ package io.snello.service;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-@Singleton
+@ApplicationScoped
 @Named("api")
 public class Api {
 
