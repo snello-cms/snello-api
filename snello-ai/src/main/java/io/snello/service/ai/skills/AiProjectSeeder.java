@@ -39,7 +39,8 @@ public class AiProjectSeeder {
     @Inject
     ApiService apiService;
 
-    void seed(@Observes @Priority(10) StartupEvent ignored) {
+    /** After {@code SchemaBootstrapService} (@Priority 100) so {@code ai_*} tables exist. */
+    void seed(@Observes @Priority(200) StartupEvent ignored) {
         try {
             AiProject project = ensureDefaultProject();
             backfillProjectUuid(project.uuid);
