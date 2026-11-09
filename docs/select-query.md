@@ -138,3 +138,17 @@ there could read rows the owner filter hides:
 
 Request parameter names are validated as plain identifiers (`[A-Za-z_][A-Za-z0-9_.]*`, optionally followed by an
 operator suffix such as `_ne`); anything else returns `400`.
+
+## Disabled users
+
+A JWT has no "enabled" claim, so a user disabled or deleted in Keycloak would keep access until the token expires.
+`UserEnabledAugmentor` closes that gap: for every authenticated request whose token comes from the realm configured in
+`snello.keycloak.admin.target-realm`, the API asks Keycloak (through the admin client) whether the user (`sub`) is
+still enabled and answers **401** if not. Anonymous requests and tokens of other realms are not checked.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `snello.security.check-user-enabled` | `true` | Turn the check off (e.g. no Keycloak admin client available). |
+| `snello.security.user-enabled-cache-seconds` | `60` | How long an answer is cached, i.e. the maximum delay before a disabled user is locked out. |
+
+If Keycloak cannot be reached the check fails open (the request goes through, with a warning in the log).
