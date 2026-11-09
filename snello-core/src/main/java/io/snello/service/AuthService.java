@@ -350,6 +350,23 @@ public class AuthService {
         }
     }
 
+    /**
+     * Whether the Keycloak user with this id (the JWT {@code sub}) exists and is enabled. A deleted user counts as
+     * not enabled. Used by {@link io.snello.security.UserEnabledService}.
+     *
+     * @throws RuntimeException when Keycloak cannot be reached or answers with an error other than 404
+     */
+    public boolean isUserEnabled(String userId) {
+        Log.debugf("keycloak enabled check userId=%s realm=%s", userId, targetRealm);
+        try (Keycloak keycloak = buildClient()) {
+            UserRepresentation user = keycloak.realm(targetRealm).users().get(userId).toRepresentation();
+            return user != null && Boolean.TRUE.equals(user.isEnabled());
+        } catch (NotFoundException ex) {
+            Log.infof("keycloak user %s not found in realm %s: treated as disabled", userId, targetRealm);
+            return false;
+        }
+    }
+
     private Keycloak buildClient() {
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)

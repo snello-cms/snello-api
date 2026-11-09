@@ -1,8 +1,6 @@
 package io.snello.filter;
 
 import io.quarkus.logging.Log;
-import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.container.*;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -14,20 +12,13 @@ import java.io.IOException;
 @PreMatching
 public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
-    @Inject
-    SecurityIdentity securityIdentity;
-
     @Override
     public void filter(ContainerRequestContext requestCtx, ContainerResponseContext responseCtx) throws IOException {
-        try {
-            Log.info(requestCtx.getMethod() + " - " + requestCtx.getUriInfo().getPath()
-                    + " - mediaType: " + requestCtx.getMediaType()
-                    + ", (" + securityIdentity.getPrincipal().getName() + ")"
-                    + ", [" + securityIdentity.getRoles() + "]"
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // No SecurityIdentity here: with lazy authentication it cannot be read on the event-loop thread (responses
+        // such as a 404 are produced there) and threw BlockingOperationNotAllowedException on every such request.
+        // The authenticated user is logged by the resources (ApiRequestUtils.logRequest).
+        Log.debugf("%s - %s - status=%s - mediaType: %s", requestCtx.getMethod(), requestCtx.getUriInfo().getPath(),
+                responseCtx.getStatus(), requestCtx.getMediaType());
         responseCtx.getHeaders().add("Access-Control-Allow-Origin", "*");
         responseCtx.getHeaders().add("Access-Control-Allow-Credentials", "true");
         responseCtx.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
