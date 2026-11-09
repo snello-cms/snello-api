@@ -23,6 +23,70 @@ public class ConditionUtils {
     }
 
 
+    /**
+     * WHERE for a metadata list/count: matched conditions <em>and</em> the generic request filters.
+     * <p>
+     * It used to be either/or: a matched condition replaced the generic filters, which also carry the row-level
+     * security owner value set by {@code ApiServiceRs}, so a matching condition returned other owners' rows. Now the
+     * conditions go in parentheses (an OR inside a sub_query cannot escape the owner predicate), and the generic
+     * filters always follow, minus the parameter names the conditions consume (they are not columns).
+     */
+    public static void whereWithParams(Map<String, List<String>> httpParameters, List<Condition> conditions,
+                                       StringBuffer where, List<Object> in) {
+        StringBuffer conditionWhere = new StringBuffer();
+        List<Object> conditionIn = new java.util.ArrayList<>();
+        try {
+            where(httpParameters, conditions, conditionWhere, conditionIn);
+        } catch (Exception e) {
+            Log.warnf(e, "conditions ignored: %s", e.getMessage());
+            conditionWhere.setLength(0);
+            conditionIn.clear();
+        }
+        if (!conditionWhere.isEmpty()) {
+            if (!where.isEmpty()) {
+                where.append(AND);
+            }
+            where.append("( ").append(conditionWhere).append(" )");
+            in.addAll(conditionIn);
+        }
+        ParamUtils.where(withoutConditionKeys(httpParameters, conditions), where, in);
+    }
+
+    /** {@code httpParameters} without the trigger and bound parameter names declared by {@code conditions}. */
+    static Map<String, List<String>> withoutConditionKeys(Map<String, List<String>> httpParameters, List<Condition> conditions) {
+        if (httpParameters == null || conditions == null || conditions.isEmpty()) {
+            return httpParameters;
+        }
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        for (Condition condition : conditions) {
+            if (condition.condition != null) {
+                for (String piece : condition.condition.split("&&|\\|\\|")) {
+                    keys.add(stripOperatorSuffix(piece.trim()));
+                }
+            }
+            if (condition.query_params != null) {
+                for (String param : condition.query_params.split(",|;")) {
+                    keys.add(param.trim());
+                }
+            }
+        }
+        Map<String, List<String>> rest = new java.util.LinkedHashMap<>(httpParameters);
+        rest.keySet().removeAll(keys);
+        if (rest.size() != httpParameters.size()) {
+            Log.debugf("generic filters without condition keys %s", keys);
+        }
+        return rest;
+    }
+
+    private static String stripOperatorSuffix(String piece) {
+        for (String suffix : new String[]{NIE, NN, GTE, LTE, GT, LT}) {
+            if (piece.endsWith(suffix)) {
+                return piece.substring(0, piece.length() - suffix.length());
+            }
+        }
+        return piece;
+    }
+
     public static boolean where(Map<String, List<String>> httpParameters, List<Condition> conditions, StringBuffer where, List<Object> in) throws Exception {
         if (httpParameters == null || httpParameters.isEmpty()) {
             Log.info("no parameters");
@@ -44,8 +108,9 @@ public class ConditionUtils {
                 conditions_array = condition.condition.split(_OR_);
                 conditionType = "OR";
             } else {
-                // basta che sia vera
-                conditions_array[0] = condition.condition;
+                // basta che sia vera (a single trigger: the array was still null here, so every simple condition
+                // threw, was swallowed, and the request fell back to treating its parameters as columns)
+                conditions_array = new String[]{condition.condition};
                 conditionType = "OR";
             }
             if (conditions_array.length < 1) {

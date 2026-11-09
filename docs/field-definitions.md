@@ -59,6 +59,12 @@ Search and list:
 - `search_field_name`: actual search parameter name
 - `show_in_list`
 
+## Schema sync on created tables
+
+On a table that already exists, adding a field adds the column and renaming a field renames the column (data kept).
+Deleting a field definition does **not** drop its column: the data stays in the table, unused. Drop it by hand if
+it is really gone.
+
 ## Endpoint API
 
 Admin CRUD (flat rows → `fielddefinitions` table):

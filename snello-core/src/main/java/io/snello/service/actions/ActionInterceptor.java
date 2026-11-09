@@ -133,9 +133,12 @@ public class ActionInterceptor {
         }
 
         Map<String, Object> map = ActionUtils.extractPayloadMap(params, ret);
-        scriptService.execute(action.body, action, table, tableKey, map);
-        Log.info(String.format("ACTION [%s:%s -> %s.%s] completed", action.name,
-                ActionUtils.normalizePhase(action.phase), table, tableKey));
+        Object rowKey = ActionUtils.rowKey(condition, params, map, tableKey);
+        Log.infof("ACTION [%s:%s -> %s] running for %s=%s, payload keys=%s", action.name,
+                ActionUtils.normalizePhase(action.phase), table, tableKey, rowKey, map == null ? null : map.keySet());
+        scriptService.execute(action.body, action, table, tableKey, rowKey, map);
+        Log.info(String.format("ACTION [%s:%s -> %s.%s=%s] completed", action.name,
+                ActionUtils.normalizePhase(action.phase), table, tableKey, rowKey));
 
     }
 }

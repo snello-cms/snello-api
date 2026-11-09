@@ -41,7 +41,8 @@ public class TableKeyUtils {
             if (toSlug != null)
                 map.put(key, makeUniqueSlug(toSlug, metadata.table_name, metadata.table_key, apiService));
             else {
-                throw new Exception("table_key_addition is empty!");
+                throw new jakarta.ws.rs.BadRequestException(metadata.table_key_addition
+                        + " is required: the key of " + metadata.table_name + " is built from it");
             }
         } else {
             //deve essere inserito liberamente

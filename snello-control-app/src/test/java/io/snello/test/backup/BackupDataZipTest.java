@@ -1,6 +1,7 @@
 package io.snello.test.backup;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -21,6 +22,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
+// configuration writes (metadatas, fielddefinitions, import, table DDL) are Admin only
+@TestSecurity(user = "test-admin", roles = {"Admin"})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BackupDataZipTest {
 
@@ -70,7 +73,7 @@ class BackupDataZipTest {
                 "view_index", 1
         )).when().post("/api/fielddefinitions").then().statusCode(200);
 
-        given().when().get("/api/metadatas/{uuid}/create", metadataUuid).then().statusCode(200);
+        given().when().post("/api/metadatas/{uuid}/create", metadataUuid).then().statusCode(200);
 
         given().contentType(ContentType.JSON)
                 .body(Map.of("uuid", "row-1", "title", "Alpha"))
@@ -123,7 +126,7 @@ class BackupDataZipTest {
         assertNotNull(exportedZip);
         assertNotNull(metadataUuid);
 
-        given().when().get("/api/metadatas/{uuid}/truncate", metadataUuid).then().statusCode(200);
+        given().when().post("/api/metadatas/{uuid}/truncate", metadataUuid).then().statusCode(200);
 
         given().queryParam("_limit", 10)
                 .when().get("/api/" + TABLE)

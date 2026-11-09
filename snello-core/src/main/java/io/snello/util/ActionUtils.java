@@ -41,14 +41,36 @@ public class ActionUtils {
         return null;
     }
 
+    /**
+     * The row payload of an intercepted {@code ApiService} call: the map argument ({@code create(table, map, key)},
+     * {@code merge(table, map, id, key)}), else the returned map. It used to look at {@code params[2]} only, which is
+     * never the map, so PRE actions (no return value yet) always got {@code map = null}. A PRE script may modify the
+     * map: it is the same instance that is then saved.
+     */
     @SuppressWarnings("unchecked")
     public static Map<String, Object> extractPayloadMap(Object[] params, Object ret) {
-        if (params.length > 2 && params[2] instanceof Map<?, ?>) {
-            return (Map<String, Object>) params[2];
+        for (Object param : params) {
+            if (param instanceof Map<?, ?>) {
+                return (Map<String, Object>) param;
+            }
         }
         if (ret instanceof Map<?, ?>) {
             return (Map<String, Object>) ret;
         }
         return null;
+    }
+
+    /**
+     * Key value of the row an intercepted call works on: {@code merge(table, map, id, keyColumn)} -> id,
+     * {@code delete(table, id, keyColumn)} -> id, {@code create(table, map, keyColumn)} -> map[keyColumn].
+     */
+    public static Object rowKey(String condition, Object[] params, Map<String, Object> map, String keyColumn) {
+        if (MERGE.equals(condition) && params.length > 2 && params[2] instanceof String id) {
+            return id;
+        }
+        if (DELETE.equals(condition) && params.length > 1 && params[1] instanceof String id) {
+            return id;
+        }
+        return map == null || keyColumn == null ? null : map.get(keyColumn);
     }
 }

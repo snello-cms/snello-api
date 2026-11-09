@@ -23,6 +23,8 @@ services:
       QUARKUS_SMALLRYE_JWT_ENABLED: "false"
       QUARKUS_HTTP_AUTH_PERMISSION_ROLES1_POLICY: permit
       QUARKUS_HTTP_AUTH_PERMISSION_AUTH_ADMIN_POLICY: permit
+      # config writes (metadatas, conditions, actions, ...) are Admin/Manager only; no identities without OIDC
+      SNELLO_SECURITY_CONFIG_WRITES_ADMIN_ONLY: "false"
       # Dummy issuer unused when OIDC is disabled
       QUARKUS_OIDC_AUTH_SERVER_URL: http://127.0.0.1:9/realms/unused
     # No persistent volume: mem H2 + clean import each IT run

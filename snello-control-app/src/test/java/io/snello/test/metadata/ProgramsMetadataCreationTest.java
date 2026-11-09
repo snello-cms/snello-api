@@ -1,6 +1,7 @@
 package io.snello.test.metadata;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
+// configuration writes (metadatas, fielddefinitions, import, table DDL) are Admin only
+@TestSecurity(user = "test-admin", roles = {"Admin"})
 class ProgramsMetadataCreationTest {
 
     @Test

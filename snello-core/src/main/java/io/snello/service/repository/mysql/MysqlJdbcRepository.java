@@ -47,7 +47,10 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE fielddefinitions ADD COLUMN ai_profile TEXT",
                 // row-level security columns existed only in the PostgreSQL schema
                 "ALTER TABLE metadatas ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",
-                "ALTER TABLE metadatas ADD COLUMN username_field varchar(255) DEFAULT NULL"
+                "ALTER TABLE metadatas ADD COLUMN username_field varchar(255) DEFAULT NULL",
+                // row-level security for select queries (same contract as metadatas)
+                "ALTER TABLE selectqueries ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE selectqueries ADD COLUMN username_field varchar(255) DEFAULT NULL"
         };
     }
 
@@ -85,15 +88,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
         select.append(COUNT_QUERY);
         if (alias_condition != null)
             where.append(alias_condition);
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         try (
                 Connection connection = dataSource.getConnection()) {
 
@@ -120,15 +116,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
         StringBuffer where = new StringBuffer();
         StringBuffer select = new StringBuffer(select_query);
         List<Object> in = new LinkedList<>();
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         try (
                 Connection connection = dataSource.getConnection()) {
 
@@ -227,15 +216,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
         }
 
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         if (start == 0 && limit == 0) {
             Log.info("no limits");
         } else {
@@ -284,15 +266,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         if (start == 0 && limit == 0) {
             Log.info("no limits");
         } else {
@@ -312,10 +287,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
             }
         }
         try (Connection connection = dataSource.getConnection()) {
-            if (where.length() > 0 && !select.toString().contains(_WHERE_)) {
-                where = new StringBuffer(_WHERE_).append(where);
-            } else {
-                where = new StringBuffer(where);
+            if (where.length() > 0) {
+                where = new StringBuffer(io.snello.util.SqlWhere.joiner(select.toString())).append(where);
             }
             Log.info("LIST query: " + select.toString() + where + order_limit);
             return MysqlSqlUtils.executeQueryList(connection, select.toString() + where.toString() + order_limit.toString(), in);

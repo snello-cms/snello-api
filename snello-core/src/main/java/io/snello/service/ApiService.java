@@ -11,9 +11,12 @@ import io.snello.api.service.JdbcRepository;
 import io.snello.service.actions.ActionEvent;
 import io.snello.util.FieldDefinitionUtils;
 import io.snello.util.ParamUtils;
+import io.snello.util.SqlSafety;
+import io.snello.util.SqlWhere;
 
 import jakarta.inject.Inject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -103,6 +106,103 @@ public class ApiService {
         return metadata.table_key;
     }
 
+    private static final String SELECT_QUERY_OWNER_WRAP_PREFIX = "SELECT * FROM (";
+    private static final String SELECT_QUERY_OWNER_WRAP_SUFFIX = ") snello_owner_scope";
+
+    /** True when a protected SelectQuery was given its owner value (non-admin callers always are). */
+    private static boolean ownerScoped(SelectQuery selectQuery, MultivaluedMap<String, String> httpParameters) {
+        return selectQuery.api_protected
+                && selectQuery.username_field != null && !selectQuery.username_field.isBlank()
+                && httpParameters != null
+                && httpParameters.getFirst(selectQuery.username_field) != null;
+    }
+
+    /** Request parameters for an owner-scoped query: the owner value, plus the caller's filters only if with_params. */
+    private static MultivaluedMap<String, String> ownerScopedParameters(SelectQuery selectQuery,
+            MultivaluedMap<String, String> httpParameters) {
+        String column = selectQuery.username_field;
+        MultivaluedMap<String, String> scoped = new MultivaluedHashMap<>();
+        if (selectQuery.with_params) {
+            scoped.putAll(httpParameters);
+        }
+        scoped.put(column, List.of(httpParameters.getFirst(column)));
+        return scoped;
+    }
+
+    /**
+     * Count of an owner-scoped SelectQuery, computed over the same wrap as the list. The stored select_query_count
+     * is not used: nothing guarantees it exposes the owner column, and run unfiltered it would reveal how many rows
+     * all users have (MySQL executes it; H2/PostgreSQL return 0).
+     */
+    private long ownerScopedCount(String table, SelectQuery selectQuery, MultivaluedMap<String, String> httpParameters)
+            throws Exception {
+        String countSql = "SELECT COUNT(*) AS " + SIZE_OF_COLUMN + " FROM ("
+                + stripTrailingSemicolons(selectQuery.select_query) + SELECT_QUERY_OWNER_WRAP_SUFFIX;
+        long count = readCount(jdbcRepository.list(countSql, ownerScopedParameters(selectQuery, httpParameters),
+                null, null, 0, 0));
+        Log.infof("selectquery %s: owner-scoped count on column=%s -> %d", table, selectQuery.username_field, count);
+        return count;
+    }
+
+    private static long readCount(List<Map<String, Object>> rows) {
+        if (rows != null && !rows.isEmpty()) {
+            for (Map.Entry<String, Object> e : rows.get(0).entrySet()) {
+                if (SIZE_OF_COLUMN.equalsIgnoreCase(e.getKey()) && e.getValue() instanceof Number n) {
+                    return n.longValue();
+                }
+            }
+        }
+        return 0;
+    }
+
+    private static final java.util.Set<String> NON_FILTER_PARAMS =
+            java.util.Set.of(ParamUtils._LIMIT, ParamUtils._START, ParamUtils._SORT, ParamUtils._SELECT_FIELDS);
+
+    private static boolean hasFilters(MultivaluedMap<String, String> params) {
+        return params != null && params.keySet().stream().anyMatch(k -> !NON_FILTER_PARAMS.contains(k));
+    }
+
+    /** Request parameters a SelectQuery is filtered by: all of them when with_params, none otherwise. */
+    private static MultivaluedMap<String, String> selectQueryFilters(SelectQuery selectQuery,
+            MultivaluedMap<String, String> httpParameters) {
+        return selectQuery.with_params && httpParameters != null ? httpParameters : new MultivaluedHashMap<>();
+    }
+
+    /**
+     * Total of a (not owner-scoped) SelectQuery on every database. The repositories' count(select_query, ...) is a
+     * stub returning 0 on H2 and PostgreSQL, so paging never worked there. The stored select_query_count is used
+     * when no filters apply; with filters the total is counted over the query itself, so it matches the list.
+     */
+    private long selectQueryCount(String table, SelectQuery selectQuery, MultivaluedMap<String, String> httpParameters) {
+        MultivaluedMap<String, String> filters = selectQueryFilters(selectQuery, httpParameters);
+        boolean filtered = hasFilters(filters);
+        String storedCount = selectQuery.select_query_count;
+        String countSql = !filtered && storedCount != null && !storedCount.isBlank()
+                ? stripTrailingSemicolons(storedCount)
+                : "SELECT COUNT(*) AS " + SIZE_OF_COLUMN + " FROM (" + stripTrailingSemicolons(selectQuery.select_query)
+                  + ") snello_count";
+        try {
+            long count = readCount(jdbcRepository.list(countSql, filtered ? filters : new MultivaluedHashMap<>(),
+                    null, null, 0, 0));
+            Log.infof("selectquery %s: count filtered=%s -> %d", table, filtered, count);
+            return count;
+        } catch (Exception e) {
+            // e.g. a filter on a column the query does not expose: keep the list usable, report no total
+            Log.warnf("selectquery %s: count failed (%s), x-total-count=0 | sql=%s", table, e.getMessage(), countSql);
+            return 0;
+        }
+    }
+
+    private static final String SIZE_OF_COLUMN = "size_of";
+
+    private static String stripTrailingSemicolons(String sql) {
+        String trimmed = sql.trim();
+        while (trimmed.endsWith(";")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1).trim();
+        }
+        return trimmed;
+    }
+
     public long count(String table, UriInfo uriInfo) throws Exception {
         MultivaluedMap<String, String> queryParameters = uriInfo != null
                 ? uriInfo.getQueryParameters()
@@ -113,19 +213,12 @@ public class ApiService {
     public long count(String table, MultivaluedMap<String, String> queryParameters) throws Exception {
         String alias_condition = null;
         List<Condition> conditions = null;
-        String scq = null;
-        var exist = metadataService.selectqueryMap().containsKey(table);
         SelectQuery selectQuery = metadataService.selectqueryMap().get(table);
+        if (selectQuery != null && ownerScoped(selectQuery, queryParameters)) {
+            return ownerScopedCount(table, selectQuery, queryParameters);
+        }
         if (selectQuery != null) {
-            scq = selectQuery.select_query_count;
-            Log.info("the table: " + table + " is selectquery? " + exist + ", is count? " + scq);
-            if (exist && scq != null && !scq.isBlank()) {
-                if (selectQuery.with_params)
-                    return jdbcRepository.count(scq, queryParameters,
-                            conditions);
-                else
-                    return jdbcRepository.count(scq);
-            }
+            return selectQueryCount(table, selectQuery, queryParameters);
         }
 
         Optional<EntityQueryView> view = catalog.queryView(table);
@@ -141,6 +234,10 @@ public class ApiService {
         return jdbcRepository.count(table, alias_condition, queryParameters, conditions);
     }
 
+    public boolean tableExists(String table) throws Exception {
+        return table != null && !table.isBlank() && jdbcRepository.verifyTable(table);
+    }
+
     public boolean exist(String table, String table_key, Object uuid) throws Exception {
         return jdbcRepository.exist(table, table_key, uuid);
     }
@@ -148,17 +245,35 @@ public class ApiService {
     public List<Map<String, Object>> list(String table, MultivaluedMap<String, String> httpParameters, String sort,
             int limit,
             int start) throws Exception {
+        SqlSafety.requireSafeSort(sort);
         // select fields:
         String select_fields = ParamUtils.select_fields(httpParameters);
         String alias_condition = null;
         List<Condition> conditions = null;
         if (metadataService.selectqueryMap().containsKey(table)) {
             SelectQuery selectQuery = metadataService.selectqueryMap().get(table);
-            if (selectQuery.with_params) {
-                return jdbcRepository.list(selectQuery.select_query, httpParameters, conditions, sort, limit, start);
-            } else {
-                return jdbcRepository.list(selectQuery.select_query);
+            if (ownerScoped(selectQuery, httpParameters)) {
+                // Row-level security: the owner value was bound by ApiServiceRs. Wrap the stored SQL so the filter
+                // applies to the query result whatever its own WHERE / JOIN / GROUP BY look like, and ignore every
+                // other request parameter when the query is not with_params.
+                String wrapped = SELECT_QUERY_OWNER_WRAP_PREFIX + stripTrailingSemicolons(selectQuery.select_query)
+                        + SELECT_QUERY_OWNER_WRAP_SUFFIX;
+                Log.infof("selectquery %s: owner-scoped list on column=%s with_params=%s", table,
+                        selectQuery.username_field, selectQuery.with_params);
+                return jdbcRepository.list(wrapped, ownerScopedParameters(selectQuery, httpParameters), conditions, sort,
+                        limit, start);
             }
+            // Filters (with_params only), sort and paging are appended to the stored SQL. When it already ends with
+            // GROUP BY / ORDER BY / LIMIT / ... appending is a syntax error, so it is wrapped as a subquery first.
+            // Non-with_params queries used to ignore sort and paging and return every row.
+            MultivaluedMap<String, String> filters = selectQueryFilters(selectQuery, httpParameters);
+            String sql = stripTrailingSemicolons(selectQuery.select_query);
+            boolean appends = hasFilters(filters) || (sort != null && !sort.isBlank()) || limit > 0 || start > 0;
+            if (appends && SqlWhere.needsWrap(sql)) {
+                sql = "SELECT * FROM (" + sql + ") snello_q";
+                Log.infof("selectquery %s: wrapped as subquery for filters/sort/paging", table);
+            }
+            return jdbcRepository.list(sql, filters, null, sort, limit, start);
         }
         Optional<EntityQueryView> resolved = catalog.queryView(table);
         if (resolved.isPresent()) {

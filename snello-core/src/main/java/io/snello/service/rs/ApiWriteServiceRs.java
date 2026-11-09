@@ -6,6 +6,7 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.Metadata;
 import io.snello.service.ApiService;
+import io.snello.util.RowValidator;
 import io.snello.util.TableKeyUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -70,6 +71,7 @@ public class ApiWriteServiceRs {
         } else {
             Log.info("api NOT protected");
         }
+        RowValidator.validate(metadata, map, true);
         TableKeyUtils.generateUUid(map, metadata, apiService);
         map = apiService.create(table, map, key);
         Log.infof("post table=%s key=%s id=%s: created", table, key, map == null ? null : map.get(key));
@@ -86,33 +88,60 @@ public class ApiWriteServiceRs {
             Log.infof("put table=%s uuid=%s: no metadata -> 404", table, uuid);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        boolean renewSlug = TableKeyUtils.isSlug(metadata);
         String key = apiService.table_key(table);
-        if (renewSlug) {
-            String fieldSluggable = apiService.slugField(table);
-            String toSlugValue = (String) map.get(fieldSluggable);
-            String slugged = TableKeyUtils.createSlug(toSlugValue);
-            Log.info("toSlugValue: " + toSlugValue + ", old slug: " + uuid);
-            if (!uuid.equals(slugged)) {
-                Log.info("renew slug");
-                TableKeyUtils.generateUUid(map, metadata, apiService);
-            } else {
-                Log.info(" slug is the same!!");
-            }
-        }
+        // Ownership first: the owner value must be fixed before the slug is derived (lovers slugs on username).
         if (metadata.api_protected) {
             if (!isAuthenticated(securityContext)) {
                 Log.infof("put table=%s uuid=%s: anonymous on protected table -> 401", table, uuid);
                 return Response.status(Response.Status.UNAUTHORIZED).build();
             }
             if (!isAdminOrManager(securityContext)) {
+                Response denied = requireOwner(metadata, table, uuid, key);
+                if (denied != null) {
+                    return denied;
+                }
                 map.put(metadata.username_field, username(securityContext));
             } else {
-                Log.info("admin or manager");
+                Log.infof("put table=%s uuid=%s: admin or manager, no owner check", table, uuid);
             }
         }
+        // An update never changes the key: the row stays at the URL it was read from (links, joins, documents and
+        // the admin's reload all point at it). Slug keys are generated once, on create; a key sent in the body is
+        // ignored. Previously the slug was re-derived on every save and the row moved, e.g. mario-1 -> mario-2.
+        Object bodyKey = map.get(key);
+        if (bodyKey != null && !uuid.equals(String.valueOf(bodyKey))) {
+            Log.warnf("put table=%s uuid=%s: body %s=%s ignored, the key cannot change on update", table, uuid, key, bodyKey);
+        }
+        map.put(key, uuid);
+        RowValidator.validate(metadata, map, false);
         map = apiService.merge(table, map, uuid, key);
         return ok(map).build();
+    }
+
+    /**
+     * Non-admin write on a protected table: the target row must exist and belong to the caller. Without this a user
+     * could PUT another user's row (it was only re-stamped with the caller's username, i.e. taken over).
+     *
+     * @return an error response, or {@code null} when the caller owns the row
+     */
+    private Response requireOwner(Metadata metadata, String table, String uuid, String key) throws Exception {
+        String user = username(securityContext);
+        if (user == null || user.isBlank()) {
+            Log.warnf("write table=%s uuid=%s: authenticated caller without a username -> 403", table, uuid);
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+        Map<String, Object> existing = apiService.fetch(null, table, uuid, key);
+        if (existing == null) {
+            Log.infof("write table=%s uuid=%s: not found -> 404", table, uuid);
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        Object owner = existing.get(metadata.username_field);
+        if (!Objects.equals(owner, user)) {
+            Log.infof("write table=%s uuid=%s: owner=%s caller=%s -> 403", table, uuid, owner, user);
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+        Log.infof("write table=%s uuid=%s: caller %s owns the row", table, uuid, user);
+        return null;
     }
 
     @DELETE

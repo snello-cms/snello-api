@@ -14,6 +14,10 @@ public class SelectQuery {
     public String select_query;
     public String select_query_count;
     public boolean with_params;
+    /** Row-level security, same contract as {@code metadatas.api_protected}. */
+    public boolean api_protected;
+    /** Column of the query result holding the owner username; bound to the JWT username for non-admin callers. */
+    public String username_field;
 
     public SelectQuery(String query_name, String select_query, String select_query_count, boolean with_params) {
         this.query_name = query_name;
@@ -38,6 +42,8 @@ public class SelectQuery {
         selectQuery.select_query = MapReads.str(map, "select_query");
         selectQuery.select_query_count = MapReads.str(map, "select_query_count");
         selectQuery.with_params = MapReads.bool(map, "with_params", false);
+        selectQuery.api_protected = MapReads.bool(map, "api_protected", false);
+        selectQuery.username_field = MapReads.str(map, "username_field");
         return selectQuery;
     }
 
@@ -48,6 +54,8 @@ public class SelectQuery {
         MapWrites.put(map, "select_query", select_query);
         MapWrites.put(map, "select_query_count", select_query_count);
         MapWrites.putBool(map, "with_params", with_params);
+        MapWrites.putBool(map, "api_protected", api_protected);
+        MapWrites.put(map, "username_field", username_field);
         return map;
     }
 
@@ -57,6 +65,8 @@ public class SelectQuery {
                 "uuid='" + uuid + '\'' +
                 ", query_name='" + query_name + '\'' +
                 ", with_params='" + with_params + '\'' +
+                ", api_protected=" + api_protected +
+                ", username_field='" + username_field + '\'' +
                 ", select_query='" + select_query + '\'' +
                 ", select_query_count='" + select_query_count + '\'' +
                 '}';
