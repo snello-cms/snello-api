@@ -1,6 +1,7 @@
 package io.snello.test.metadata;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import io.snello.model.Metadata;
 import io.snello.service.MetadataService;
@@ -17,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * ai_profile end to end: REST write (object form) → JSON column → Metadata.aiFacet.
  */
 @QuarkusTest
+// configuration writes (metadatas, fielddefinitions, import, table DDL) are Admin only
+@TestSecurity(user = "test-admin", roles = {"Admin"})
 class MetadataAiProfileRestTest {
 
     @Inject

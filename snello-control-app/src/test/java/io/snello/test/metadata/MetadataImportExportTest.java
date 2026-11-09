@@ -1,6 +1,7 @@
 package io.snello.test.metadata;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import tools.jackson.databind.json.JsonMapper;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.MethodOrderer;
@@ -16,6 +17,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
+// configuration writes (metadatas, fielddefinitions, import, table DDL) are Admin only
+@TestSecurity(user = "test-admin", roles = {"Admin"})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class MetadataImportExportTest {
 

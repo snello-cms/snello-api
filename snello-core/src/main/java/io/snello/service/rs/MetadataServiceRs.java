@@ -1,5 +1,6 @@
 package io.snello.service.rs;
 
+import io.quarkus.logging.Log;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.snello.management.SnelloPlane;
 
@@ -18,6 +19,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -134,8 +136,11 @@ public class MetadataServiceRs extends AbstractServiceRs {
         eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(map));
     }
 
-    @GET
+    // Table DDL changes data, so it is POST (every GET on /api/* is public by HTTP policy) and Admin only.
+    @POST
     @Path("/{uuid}/create")
+    @RolesAllowed({"Admin", "admin"})
+    @Consumes(MediaType.WILDCARD) // no body; the class-level JSON @Consumes would answer 415
     public Response createTable(@PathParam("uuid") @NotNull String uuid) throws Exception {
         getApiService().createMetadataTable(uuid);
         Map<String, Object> updateMetadataMap = new HashMap<>();
@@ -144,8 +149,10 @@ public class MetadataServiceRs extends AbstractServiceRs {
         return ok(getApiService().fetch(null, table, uuid, UUID)).build();
     }
 
-    @GET
+    @POST
     @Path("/{uuid}/delete")
+    @RolesAllowed({"Admin", "admin"})
+    @Consumes(MediaType.WILDCARD) // no body; the class-level JSON @Consumes would answer 415
     public Response deleteTable(@PathParam("uuid") @NotNull String uuid) throws Exception {
         boolean result = getApiService().deleteTable(uuid);
         if (result) {
@@ -156,8 +163,10 @@ public class MetadataServiceRs extends AbstractServiceRs {
         return ok(getApiService().fetch(null, table, uuid, UUID)).build();
     }
 
-    @GET
+    @POST
     @Path("/{uuid}/truncate")
+    @RolesAllowed({"Admin", "admin"})
+    @Consumes(MediaType.WILDCARD) // no body; the class-level JSON @Consumes would answer 415
     public Response truncateTable(@PathParam("uuid") @NotNull String uuid) throws Exception {
         getApiService().truncateTable(uuid);
         return ok(getApiService().fetch(null, table, uuid, UUID)).build();
@@ -335,6 +344,11 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 metadataToPersist.put(UUID, java.util.UUID.randomUUID().toString());
             }
             String metaUuid = metadataToPersist.get(UUID).toString();
+            // the exported flag says whether the table existed at the source; here it must say whether it exists now
+            String importedTable = (String) metadataToPersist.get(TABLE_NAME);
+            boolean tableExists = getApiService().tableExists(importedTable);
+            metadataToPersist.put(CREATED, tableExists);
+            Log.infof("import metadata %s: table exists=%s -> created=%s", importedTable, tableExists, tableExists);
             // Salva il metadata
             Map<String, Object> savedMeta = getApiService().createIfNotExists(METADATAS, metadataToPersist, UUID);
             // Salva le field definitions

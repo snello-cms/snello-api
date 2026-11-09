@@ -113,6 +113,8 @@ public class MysqlConstants {
             "  `with_params` boolean DEFAULT false,\n" +
             "  `select_query` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `select_query_count` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `api_protected` boolean NOT NULL DEFAULT false,\n" +
+            "  `username_field` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 

@@ -4,8 +4,10 @@ import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.pojo.EntityQueryView;
+import io.snello.model.pojo.RowProtection;
 import io.snello.service.ApiService;
 import io.snello.service.EntityCatalog;
+import io.snello.util.SqlSafety;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
@@ -166,8 +168,8 @@ public class ApiServiceRs {
      * @return an error response, or {@code null} when the request may proceed
      */
     private Response applyRowFilter(String table, MultivaluedMap<String, String> parameters) throws Exception {
-        Optional<EntityQueryView> view = catalog.queryView(table);
-        if (view.isEmpty() || !view.get().apiProtected()) {
+        Optional<RowProtection> protection = catalog.rowProtection(table);
+        if (protection.isEmpty() || !protection.get().apiProtected()) {
             return null;
         }
         if (isAdminOrManager(securityContext)) {
@@ -178,10 +180,20 @@ public class ApiServiceRs {
             Log.infof("row filter table=%s: anonymous on protected table -> 401", table);
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
-        if (view.get().rowLevelSecured()) {
+        if (protection.get().rowLevelSecured()) {
             String user = username(securityContext);
-            parameters.put(view.get().usernameField(), List.of(user));
-            Log.infof("row filter table=%s: %s=%s", table, view.get().usernameField(), user);
+            if (user == null || user.isBlank()) {
+                // an empty value is skipped by ParamUtils.where, which would drop the owner filter entirely
+                Log.warnf("row filter table=%s: authenticated caller without a username -> 403", table);
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+            if (SqlSafety.isUnsafeOwnerColumn(protection.get().usernameField())) {
+                Log.errorf("row filter table=%s: username_field=%s is not a plain column name (operator suffix?) -> 500",
+                        table, protection.get().usernameField());
+                return Response.serverError().build();
+            }
+            parameters.put(protection.get().usernameField(), List.of(user));
+            Log.infof("row filter table=%s: %s=%s", table, protection.get().usernameField(), user);
         } else {
             Log.warnf("row filter table=%s: api_protected without username_field, authenticated users see all rows", table);
         }

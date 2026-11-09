@@ -113,6 +113,8 @@ public class H2Constants {
                         "  with_params boolean DEFAULT false,\n" +
                         "  select_query varchar(255) DEFAULT NULL,\n" +
                         "  select_query_count varchar(255) DEFAULT NULL,\n" +
+                        "  api_protected boolean DEFAULT false NOT NULL,\n" +
+                        "  username_field varchar(255) DEFAULT NULL,\n" +
                         "  PRIMARY KEY (uuid)\n" +
                         ") ;";
 

@@ -17,6 +17,7 @@ import io.snello.util.MetadataUtils;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
@@ -77,10 +78,12 @@ public class LinksServiceRs extends AbstractServiceRs {
         return ok(map).build();
     }
 
-    @GET
+    // creates a table: POST + Admin (was a public GET whose uuid was read from the empty body)
+    @POST
     @Path(UUID_PATH_PARAM_CREATE)
-    
-    public Response create(@NotNull String uuid) throws Exception {
+    @RolesAllowed({"Admin", "admin"})
+    @Consumes(MediaType.WILDCARD) // no body
+    public Response create(@NotNull @PathParam("uuid") String uuid) throws Exception {
         Map<String, Object> map = apiService.fetch(null, LINKS, uuid, NAME);
         map.put(CREATED, true);
         apiService.merge(LINKS, map, uuid, NAME);

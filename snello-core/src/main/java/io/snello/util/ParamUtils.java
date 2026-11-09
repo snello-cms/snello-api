@@ -1,5 +1,6 @@
 package io.snello.util;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.sql.Array;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public class ParamUtils {
+
 
     public static final String AND = " AND ";
     public static final String _AND_ = "&&";
@@ -76,7 +78,7 @@ public class ParamUtils {
         }
         if (httpParameters.containsKey("select_fields") && httpParameters.get("select_fields") != null
                 && !httpParameters.get("select_fields").isEmpty()) {
-            return httpParameters.get("select_fields").get(0);
+            return SqlSafety.requireSafeSelectFields(httpParameters.get("select_fields").get(0));
         }
         return null;
     }
@@ -100,6 +102,12 @@ public class ParamUtils {
             String value;
             if (key.equals(_LIMIT) || key.equals(_START) || key.equals(_SORT) || key.equals(_SELECT_FIELDS)) {
                 continue;
+            }
+            // Parameter names become column names in the WHERE clause (values are always bound), so a name must be a
+            // plain, optionally table-qualified identifier: "1=1 OR username" would step around the owner filter.
+            if (!SqlSafety.isIdentifier(key)) {
+                io.quarkus.logging.Log.warnf("rejected query parameter name (not a plain identifier): %s", key);
+                throw new BadRequestException("invalid query parameter name: " + key);
             }
             if (key_value.getValue() != null && key_value.getValue().size() > 0 && key_value.getValue().get(0) != null
                     && !key_value.getValue().get(0).trim().isEmpty()) {

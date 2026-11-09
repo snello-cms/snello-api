@@ -45,6 +45,30 @@ public class ConditionsServiceRs extends AbstractServiceRs {
     }
 
     @Override
+    protected void prePersist(Map<String, Object> object) throws Exception {
+        super.prePersist(object);
+        defaultOptionalColumns(object);
+    }
+
+    @Override
+    protected void preUpdate(Map<String, Object> object) throws Exception {
+        defaultOptionalColumns(object);
+    }
+
+    /**
+     * {@code metadata_multijoin_uuid} (multijoin conditions only) and {@code query_params} are NOT NULL in the schema
+     * but optional in the admin editor, which leaves them out: saving a condition from the UI failed with
+     * "null value in column metadata_multijoin_uuid".
+     */
+    private static void defaultOptionalColumns(Map<String, Object> object) {
+        for (String column : new String[]{"metadata_multijoin_uuid", "query_params"}) {
+            if (object.get(column) == null) {
+                object.put(column, "");
+            }
+        }
+    }
+
+    @Override
     protected void postPersist(Map<String, Object> object) {
         eventCreateUpdatePublisher.fireAsync(new ConditionCreateUpdateEvent(object));
     }

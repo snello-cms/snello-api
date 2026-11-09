@@ -184,6 +184,8 @@ public class PostgresqlConstants {
                                                       "  with_params boolean DEFAULT false,\n" +
                                                       "  select_query varchar(255) DEFAULT NULL,\n" +
                                                       "  select_query_count varchar(255) DEFAULT NULL,\n" +
+                                                      "  api_protected BOOLEAN NOT NULL DEFAULT FALSE,\n" +
+                                                      "  username_field varchar(255) DEFAULT NULL,\n" +
                                                       "  PRIMARY KEY (uuid)\n" +
                                                       ") ";
 

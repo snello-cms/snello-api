@@ -35,6 +35,22 @@ public class RsExceptionMapper implements ExceptionMapper<Exception> {
         if (exception instanceof WebApplicationException webApplicationException) {
             return webApplicationException.getResponse().getStatus();
         }
+        Throwable root = getRootCause(exception);
+        // Bad client input surfacing from the database or from a PRE action was answered 500 with raw SQL.
+        if (root instanceof SQLException sql && sql.getSQLState() != null) {
+            String state = sql.getSQLState();
+            if ("23505".equals(state)) {
+                return Response.Status.CONFLICT.getStatusCode();              // unique violation
+            }
+            // 22xxx data exception, 23xxx constraint, 42703 unknown column (filter), 42804 value of the wrong type
+            // (e.g. "not-a-date" for a date column: values are bound as strings)
+            if (state.startsWith("22") || state.startsWith("23") || "42703".equals(state) || "42804".equals(state)) {
+                return Response.Status.BAD_REQUEST.getStatusCode();
+            }
+        }
+        if (root instanceof javax.script.ScriptException || exception instanceof javax.script.ScriptException) {
+            return Response.Status.BAD_REQUEST.getStatusCode();               // a PRE action rejected the write
+        }
         return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
     }
 

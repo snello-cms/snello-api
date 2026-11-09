@@ -10,7 +10,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,9 +28,20 @@ public class ScriptService {
     @Inject
     JdbcRepository jdbcRepository;
 
-    ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+    // Created from the factory directly: ScriptEngineManager discovers engines through the thread context
+    // classloader's META-INF/services, which finds nothing under Quarkus ("nashorn engine is not available"), so no
+    // action ever ran and every PRE action turned its table's writes into 500s.
+    ScriptEngine engine = new org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
 
     public void execute(String js, Action action, String table, String table_key, Map<String, Object> map) throws Exception {
+        execute(js, action, table, table_key, null, map);
+    }
+
+    /**
+     * @param table_key key column name (e.g. {@code uuid}); kept for existing scripts
+     * @param key       key value of the row the action fires for (bound as {@code key})
+     */
+    public void execute(String js, Action action, String table, String table_key, Object key, Map<String, Object> map) throws Exception {
         if (js == null || js.trim().isEmpty()) {
             throw new Exception("javascript source is null or empty");
         }
@@ -47,6 +57,7 @@ public class ScriptService {
         bindings.put("mail", mailService);
         bindings.put("table", table);
         bindings.put("table_key", table_key);
+        bindings.put("key", key);
         bindings.put("map", map);
         engine.eval(js, bindings);
     }

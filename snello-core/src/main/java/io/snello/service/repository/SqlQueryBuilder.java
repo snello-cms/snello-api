@@ -176,12 +176,14 @@ public final class SqlQueryBuilder {
             throws Exception {
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             SqlHelper.fillStatement(preparedStatement, in);
+            // errors propagate: they used to be logged at INFO and answered as an empty list (HTTP 200), so a broken
+            // query, condition or filter looked exactly like "no data"
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 return list(resultSet);
             } catch (SQLException e) {
-                Log.info(e.getMessage());
+                Log.warnf("list query failed: %s | sql=%s", e.getMessage(), query);
+                throw e;
             }
         }
-        return new ArrayList<>();
     }
 }

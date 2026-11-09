@@ -8,6 +8,8 @@ import io.snello.model.entity.FieldModel;
 import io.snello.model.pojo.EntityAiView;
 import io.snello.model.pojo.EntityQueryView;
 import io.snello.model.pojo.EntityUiView;
+import io.snello.model.pojo.RowProtection;
+import io.snello.model.SelectQuery;
 import jakarta.inject.Inject;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -49,6 +51,27 @@ public class EntityCatalog {
             Log.debugf("catalog queryView: no metadata for name=%s", name);
         }
         return Optional.ofNullable(view);
+    }
+
+    /**
+     * Row-level security of a readable resource: the metadata entity if {@code name} is one, otherwise the named
+     * SelectQuery. Empty when {@code name} is neither.
+     */
+    public Optional<RowProtection> rowProtection(String name) throws Exception {
+        if (name == null) {
+            return Optional.empty();
+        }
+        Optional<EntityQueryView> view = queryView(name);
+        if (view.isPresent()) {
+            return Optional.of(new RowProtection(view.get().apiProtected(), view.get().usernameField()));
+        }
+        SelectQuery selectQuery = metadataService.selectqueryMap().get(name);
+        if (selectQuery == null) {
+            return Optional.empty();
+        }
+        Log.debugf("catalog rowProtection: selectquery=%s api_protected=%s username_field=%s", name,
+                selectQuery.api_protected, selectQuery.username_field);
+        return Optional.of(new RowProtection(selectQuery.api_protected, selectQuery.username_field));
     }
 
     /** UI facet + per-field UI views (control/SPA). Empty on the query plane when UI columns were not loaded. */

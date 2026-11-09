@@ -12,6 +12,14 @@
       },
       {
         "name": "User"
+      },
+      {
+        "name": "contents_edit",
+        "description": "snello-admin UI: Modify/Clone/Add buttons on content lists"
+      },
+      {
+        "name": "contents_view",
+        "description": "snello-admin UI: View button on content lists"
       }
     ],
     "client": {
@@ -61,6 +69,34 @@
           "Admin"
         ]
       }
+    },
+    {
+      "username": "mario",
+      "enabled": true,
+      "firstName": "Mario",
+      "lastName": "Rossi",
+      "email": "mario@snello.local",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "mario",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "snello-api": [
+          "User"
+        ]
+      },
+      "realmRoles": [
+        "User",
+        "contents_edit"
+      ],
+      "groups": [
+        "/lovers"
+      ]
     }
   ],
   "clients": [
@@ -79,6 +115,52 @@
       "webOrigins": [
         "*"
       ]
+    },
+    {
+      "clientId": "snello-admin",
+      "name": "Snello Admin SPA",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "lovers",
+      "path": "/lovers",
+      "subGroups": []
     }
   ]
 }

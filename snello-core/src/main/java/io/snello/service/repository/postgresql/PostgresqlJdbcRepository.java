@@ -45,7 +45,10 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     public String[] upgradeQueries() {
         return new String[]{
                 "ALTER TABLE IF EXISTS metadatas ADD COLUMN IF NOT EXISTS ai_profile TEXT",
-                "ALTER TABLE IF EXISTS fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile TEXT"
+                "ALTER TABLE IF EXISTS fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile TEXT",
+                // row-level security for select queries (same contract as metadatas)
+                "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS api_protected BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS username_field varchar(255) DEFAULT NULL"
         };
     }
 
@@ -89,15 +92,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
         select.append(COUNT_QUERY);
         if (alias_condition != null)
             where.append(alias_condition);
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         try (Connection connection = dataSource.getConnection()) {
 
             if (!where.isEmpty()) {
@@ -182,15 +178,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         if (start == 0 && limit == 0) {
             Log.info("no limits");
         } else {
@@ -239,15 +228,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             }
         }
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         if (start == 0 && limit == 0) {
             Log.info("no limits");
         } else {
@@ -267,10 +249,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             }
         }
         try (Connection connection = dataSource.getConnection()) {
-            if (!where.isEmpty() && !select.toString().contains(_WHERE_)) {
-                where = new StringBuffer(_WHERE_).append(where);
-            } else {
-                where = new StringBuffer(where);
+            if (!where.isEmpty()) {
+                where = new StringBuffer(io.snello.util.SqlWhere.joiner(select.toString())).append(where);
             }
             Log.info("LIST query: " + select.toString() + where + order_limit);
             return PostgresqlSqlUtils.executeQueryList(connection, select.toString() + where.toString() + order_limit.toString(), in);

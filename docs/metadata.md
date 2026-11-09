@@ -117,11 +117,24 @@ Metadata base path:
 - `PUT /api/metadatas/{uuid}`
 - `DELETE /api/metadatas/{uuid}`
 
-Additional table actions:
+Additional table actions (DDL: `POST`, role **Admin** only — every `GET` on `/api/*` is public, so these used to
+let anyone create, drop or empty tables):
 
-- `GET /api/metadatas/{uuid}/create`
-- `GET /api/metadatas/{uuid}/delete`
-- `GET /api/metadatas/{uuid}/truncate`
+- `POST /api/metadatas/{uuid}/create`
+- `POST /api/metadatas/{uuid}/delete` (drops the table)
+- `POST /api/metadatas/{uuid}/truncate`
+
+Writes to the configuration resources (`metadatas`, `fielddefinitions`, `conditions`, `actions`, `selectqueries`,
+`links`, AI projects / skills / tools / cards / service accounts) require **Admin** or **Manager**; reading them is
+open. Data rows (`/api/{table}`) keep the `User` role and row-level security.
+
+Import sets `created` from whether the table exists in the target database (not from the exported value).
+
+## Row validation
+
+`POST` / `PUT /api/{table}` check the row against its field definitions: `mandatory` fields must be present and not
+blank on create (on update they may be omitted, not blanked), and a `select` value must be one of its `options`.
+Violations, values of the wrong type (e.g. an invalid date) and constraint errors answer `400`; a duplicate key `409`.
 
 Related datalist endpoints:
 

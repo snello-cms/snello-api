@@ -47,6 +47,9 @@ public class H2JdbcRepository implements JdbcRepository {
                 // row-level security columns existed only in the PostgreSQL schema
                 "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS api_protected BOOLEAN DEFAULT FALSE NOT NULL",
                 "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS username_field VARCHAR(255) DEFAULT NULL",
+                // row-level security for select queries (same contract as metadatas)
+                "ALTER TABLE selectqueries ADD COLUMN IF NOT EXISTS api_protected BOOLEAN DEFAULT FALSE NOT NULL",
+                "ALTER TABLE selectqueries ADD COLUMN IF NOT EXISTS username_field VARCHAR(255) DEFAULT NULL",
                 // Widen legacy varchar(255) so dump metadata import (long options lists) fits
                 "ALTER TABLE fielddefinitions ALTER COLUMN options SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE fielddefinitions ALTER COLUMN label SET DATA TYPE VARCHAR(1000000)",
@@ -104,15 +107,8 @@ public class H2JdbcRepository implements JdbcRepository {
         if (alias_condition != null)
             where.append(alias_condition);
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
 
         try (
                 Connection connection = dataSource.getConnection()) {
@@ -200,15 +196,8 @@ public class H2JdbcRepository implements JdbcRepository {
 //        ParamUtils.where(httpParameters, where, in);
 //        ConditionUtils.where(httpParameters, conditions, where, in);
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
 
 
         if (start == 0 && limit == 0) {
@@ -258,15 +247,8 @@ public class H2JdbcRepository implements JdbcRepository {
             }
         }
 
-        boolean withCondition = false;
-        try {
-            withCondition = ConditionUtils.where(httpParameters, conditions, where, in);
-        } catch (Exception e) {
-            Log.info(e.getMessage());
-        }
-        if (!withCondition) {
-            ParamUtils.where(httpParameters, where, in);
-        }
+        // conditions AND generic filters (owner filter included): see ConditionUtils.whereWithParams
+        ConditionUtils.whereWithParams(httpParameters, conditions, where, in);
         if (start == 0 && limit == 0) {
             Log.info("no limits");
         } else {
@@ -286,10 +268,8 @@ public class H2JdbcRepository implements JdbcRepository {
             }
         }
         try (Connection connection = dataSource.getConnection()) {
-            if (where.length() > 0 && !select.toString().contains(_WHERE_)) {
-                where = new StringBuffer(_WHERE_).append(where);
-            } else {
-                where = new StringBuffer(where);
+            if (where.length() > 0) {
+                where = new StringBuffer(io.snello.util.SqlWhere.joiner(select.toString())).append(where);
             }
             Log.info("LIST query: " + select.toString() + where + order_limit);
             return H2SqlUtils.executeQueryList(connection, select.toString() + where.toString() + order_limit.toString(), in);
