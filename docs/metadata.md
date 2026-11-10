@@ -138,8 +138,10 @@ Violations, values of the wrong type (e.g. an invalid date) and constraint error
 
 Related datalist endpoints:
 
-- `GET /api/datalist/metadata/{name}` → `EntityModel` (`identity` / `query` / `ui` / `ai`)
-- `GET /api/datalist/metadata/{name}/fielddefinitions` → `FieldModel[]` (nested facets)
+- `GET /api/datalist/metadata/{name}` → flat `Metadata` (Snello 5 / SPA contract)
+- `GET /api/datalist/metadata/{name}/fielddefinitions` → flat `FieldDefinition[]`
+- `GET /api/datalist/metadata/{name}/model` → `EntityModel` facets (`identity` / `query` / `ui` / `ai`)
+- `GET /api/datalist/metadata/{name}/fieldmodels` → `FieldModel[]` (nested facets)
 - `GET /api/datalist/metadata/{name}/fields/ui`
 - `GET /api/datalist/metadata/{name}/fields/query`
 - `GET /api/datalist/metadata/{name}/fields/ai`

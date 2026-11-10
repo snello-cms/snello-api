@@ -75,9 +75,10 @@ Admin CRUD (flat rows → `fielddefinitions` table):
 - `PUT /api/fielddefinitions/{uuid}`
 - `DELETE /api/fielddefinitions/{uuid}`
 
-SPA / datalist (facet composition — preferred for UI):
+SPA / datalist:
 
-- `GET /api/datalist/metadata/{name}/fielddefinitions` → `FieldModel[]` with nested `query` / `ui` / `ai`
+- `GET /api/datalist/metadata/{name}/fielddefinitions` → flat `FieldDefinition[]` (Snello 5 / SPA)
+- `GET /api/datalist/metadata/{name}/fieldmodels` → `FieldModel[]` with nested `query` / `ui` / `ai`
 - `GET /api/datalist/metadata/{name}/fields/ui` → identity + UI facet only
 - `GET /api/datalist/metadata/{name}/fields/query` → query-plane projection only
 

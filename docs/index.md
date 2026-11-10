@@ -1,6 +1,6 @@
 # Snello API Docs
 
-Functional and technical documentation for Snello **6.x** (`6.0.10-alpha`).
+Functional and technical documentation for Snello **6.x** (`6.0.11-alpha`).
 
 Architecture (repo root):
 
@@ -60,8 +60,10 @@ OpenAPI (any plane — public):
 Control / all-in-one — admin + facets:
 
 - `GET /api/metadatas` / `GET /api/fielddefinitions` (flat CRUD rows)
-- `GET /api/datalist/metadata/{name}` (facet: identity/query/ui/ai)
-- `GET /api/datalist/metadata/{name}/fielddefinitions` (FieldModel facets)
+- `GET /api/datalist/metadata/{name}` (legacy flat `Metadata` for SPA)
+- `GET /api/datalist/metadata/{name}/fielddefinitions` (legacy flat `FieldDefinition[]`)
+- `GET /api/datalist/metadata/{name}/model` (6.x facets: identity/query/ui/ai)
+- `GET /api/datalist/metadata/{name}/fieldmodels` (6.x `FieldModel` facets)
 - `GET /api/datalist/metadata/{name}/fields/ui|query|ai`
 - `GET /api/datalist/metadata/{name}/ui` (`EntityUiView`)
 - `GET /api/datalist/metadata/{name}/ai` (`EntityAiView`)

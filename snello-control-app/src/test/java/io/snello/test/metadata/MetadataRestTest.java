@@ -60,7 +60,7 @@ class MetadataRestTest {
                         .statusCode(200)
                         .extract()
                         .jsonPath()
-                        .getString("identity.table_name");
+                        .getString("table_name");
 
         assertNotNull(tableName);
         assertTrue(!tableName.isBlank());

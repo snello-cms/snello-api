@@ -19,13 +19,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class FieldFacetDatalistTest {
 
     @Test
-    void fielddefinitionsShouldReturnFacetComposition() {
+    void fielddefinitionsShouldReturnFlatLegacyRows() {
         String name = firstMetadataName();
 
         given()
                 .accept(ContentType.JSON)
                 .when()
                 .get("/api/datalist/metadata/{name}/fielddefinitions", name)
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("[0].name", notNullValue())
+                .body("[0]", hasKey("label"))
+                .body("[0]", hasKey("type"))
+                .body("[0]", hasKey("show_in_list"));
+    }
+
+    @Test
+    void fieldmodelsShouldReturnFacetComposition() {
+        String name = firstMetadataName();
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/fieldmodels", name)
                 .then()
                 .statusCode(200)
                 .body("size()", greaterThan(0))
@@ -87,13 +104,27 @@ class FieldFacetDatalistTest {
     }
 
     @Test
-    void metadataDatalistShouldReturnEntityFacets() {
+    void metadataDatalistShouldReturnFlatLegacyMetadata() {
         String name = firstMetadataName();
 
         given()
                 .accept(ContentType.JSON)
                 .when()
                 .get("/api/datalist/metadata/{name}", name)
+                .then()
+                .statusCode(200)
+                .body("table_name", notNullValue())
+                .body("icon", notNullValue());
+    }
+
+    @Test
+    void metadataModelShouldReturnEntityFacets() {
+        String name = firstMetadataName();
+
+        given()
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/datalist/metadata/{name}/model", name)
                 .then()
                 .statusCode(200)
                 .body("identity.table_name", notNullValue())

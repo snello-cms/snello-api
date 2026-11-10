@@ -37,7 +37,7 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
 | `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
-| `6.0.0-alpha` | `6.0.10-alpha` | 4.0.0.Beta3 | `:6.0.10-alpha`, `:alpha` (no `:latest`) |
+| `6.0.0-alpha` | `6.0.11-alpha` | 4.0.0.Beta3 | `:6.0.11-alpha`, `:alpha` (no `:latest`) |
 
 Alpha patch bumps (`6.0.x-alpha`) advance the Maven / Docker app tag on each meaningful drop while the git branch stays `6.0.0-alpha`. Target after feature freeze: `6.1.0-alpha` (or beta).
 
@@ -248,8 +248,10 @@ Only GET variants of `/api/{table…}` for **declared** metadata / select querie
 | `/api/selectqueries` | CRUD select queries |
 | `/api/actions` | CRUD actions |
 | `/api/datalist/names` | entity names for the SPA |
-| `/api/datalist/metadata/{name}` | metadata as **facets** (`identity` / `query` / `ui` / `ai`) |
-| `/api/datalist/metadata/{name}/fielddefinitions` | fields as **FieldModel** (nested facets) |
+| `/api/datalist/metadata/{name}` | flat `Metadata` (SPA / Snello 5 contract) |
+| `/api/datalist/metadata/{name}/fielddefinitions` | flat `FieldDefinition[]` (SPA) |
+| `/api/datalist/metadata/{name}/model` | metadata as **facets** (`identity` / `query` / `ui` / `ai`) |
+| `/api/datalist/metadata/{name}/fieldmodels` | fields as **FieldModel** (nested facets) |
 | `/api/datalist/metadata/{name}/fields/ui` | UI facet only |
 | `/api/datalist/metadata/{name}/fields/query` | query facet only |
 | `/api/datalist/metadata/{name}/fields/ai` | AI facet only |

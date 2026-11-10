@@ -3,6 +3,8 @@ package io.snello.service.rs;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
+import io.snello.model.FieldDefinition;
+import io.snello.model.Metadata;
 import io.snello.model.entity.EntityModel;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.pojo.EntityAiView;
@@ -49,12 +51,31 @@ public class DataListServiceRs {
     }
 
     /**
-     * Metadata for the SPA as facet composition ({@code identity}/{@code query}/{@code ui}/{@code ai}).
-     * {@code query.table_key} is omitted (legacy SPA contract). Fields are not embedded — use the field endpoints.
+     * Legacy SPA contract: flat {@link Metadata} (same shape as Snello 5 / kayak.love).
+     * {@code table_key} is omitted; fields/conditions are not embedded — use the field endpoints.
+     * For 6.x facet composition see {@code /metadata/{name}/model}.
      */
     @GET
     @Path("/metadata/{name}")
     public Response metadata(@PathParam("name") @NotNull String name) throws Exception {
+        Metadata src = metadataService.metadata(name);
+        if (src == null) {
+            return ok((Metadata) null).build();
+        }
+        // Copy so we do not mutate the in-memory catalog entry.
+        Metadata view = new Metadata(src.toMap());
+        view.table_key = null;
+        view.fields = null;
+        view.conditions = null;
+        return ok(view).build();
+    }
+
+    /**
+     * 6.x facet composition ({@code identity}/{@code query}/{@code ui}/{@code ai}) for AI / new clients.
+     */
+    @GET
+    @Path("/metadata/{name}/model")
+    public Response metadataModel(@PathParam("name") @NotNull String name) throws Exception {
         return catalog.entity(name)
                 .map(model -> {
                     model.fields = null;
@@ -70,11 +91,20 @@ public class DataListServiceRs {
     }
 
     /**
-     * Full field models for a metadata: identity + nested {@code query}/{@code ui}/{@code ai} facets.
+     * Legacy SPA contract: flat {@link FieldDefinition} rows (same shape as Snello 5).
+     * For nested facet models see {@code /metadata/{name}/fieldmodels}.
      */
     @GET
     @Path("/metadata/{name}/fielddefinitions")
     public Response fielddefinitions(@PathParam("name") @NotNull String name) throws Exception {
+        List<FieldDefinition> fields = metadataService.fielddefinitions(name);
+        return ok(fields).build();
+    }
+
+    /** Full field models with nested {@code query}/{@code ui}/{@code ai} facets. */
+    @GET
+    @Path("/metadata/{name}/fieldmodels")
+    public Response fieldModels(@PathParam("name") @NotNull String name) throws Exception {
         return ok(catalog.fieldModels(name)).build();
     }
 
