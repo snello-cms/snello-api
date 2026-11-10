@@ -3,6 +3,10 @@
 This folder contains the functional and technical documentation for the project.
 
 
+## Release 5.1.2 highlights
+
+- Backup data ZIP writes **ISO date/time strings** (aligned with REST), not Jackson epoch millis — see [README — Release 5.1.2](../README.md#release-512)
+
 ## Release 5.1.1 highlights
 
 - Business-data backup ZIP: `GET/POST /api/backup/data`, `GET /api/backup/data/{metadata_name}` — see [README — Release 5.1.1](../README.md#release-511)

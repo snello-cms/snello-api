@@ -36,7 +36,8 @@ public class MysqlSqlUtils {
     private static Map<String, Object> row(ResultSet rs, ResultSetMetaData rsmd, int columnCount) throws Exception {
         final Map<String, Object> map = new HashMap<>();
         for (int i = 1; i <= columnCount; i++) {
-            map.put(rsmd.getColumnLabel(i), rs.getObject(i));
+            // ISO strings for DATE/TIME/TIMESTAMP so backup ZIP matches REST (not Jackson epoch millis).
+            map.put(rsmd.getColumnLabel(i), SqlHelper.convertSqlValue(rs.getObject(i)));
         }
         return map;
     }
