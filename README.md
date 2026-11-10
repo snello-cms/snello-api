@@ -37,7 +37,7 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
 | `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
-| `6.0.0-alpha` | `6.0.5-alpha` | 4.0.0.Beta3 | `:6.0.5-alpha`, `:alpha` (no `:latest`) |
+| `6.0.0-alpha` | `6.0.6-alpha` | 4.0.0.Beta3 | `:6.0.6-alpha`, `:alpha` (no `:latest`) |
 
 Alpha patch bumps (`6.0.x-alpha`) advance the Maven / Docker app tag on each meaningful drop while the git branch stays `6.0.0-alpha`. Target after feature freeze: `6.1.0-alpha` (or beta).
 

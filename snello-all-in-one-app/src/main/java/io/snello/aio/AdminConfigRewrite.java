@@ -59,11 +59,8 @@ public class AdminConfigRewrite {
             }
         });
 
-        // SPA often probes config.local.json first; 404 is noisy — return empty object.
-        router.get("/assets/config.local.json").order(ORDER).handler(ctx -> ctx.response()
-                .putHeader("Content-Type", "application/json; charset=UTF-8")
-                .putHeader("Cache-Control", "no-store")
-                .end("{}"));
+        // Do NOT serve config.local.json: the SPA treats any JSON 200 (even {}) as the full config
+        // and skips config.json — that left keycloakConfig undefined and a blank page.
 
         Log.info("admin SPA config rewrite enabled (/assets/config.json → same-origin /api)");
     }
