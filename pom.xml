@@ -6,7 +6,7 @@
 
     <groupId>io.snello</groupId>
     <artifactId>snello-parent</artifactId>
-    <version>6.0.6-alpha</version>
+    <version>6.0.7-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
     <description>Snello multi-module parent: core + ai + control / query / mcp / all-in-one apps</description>

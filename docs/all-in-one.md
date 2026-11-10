@@ -74,7 +74,7 @@ Useful env vars:
 | `SNELLO_AI_MCP_BASE_URL` | base URL for DB-defined MCP HTTP tools (default `http://127.0.0.1:8080`) |
 | `SNELLO_ADMIN_UI_PATH` | admin SPA root (image default `/deployments/admin-ui`) |
 | `SNELLO_ADMIN_REWRITE_CONFIG` | `true` — rewrite `assets/config.json` API hosts to same-origin `/api` (admin image ships kayak.love URLs) |
-| `SNELLO_ADMIN_KEYCLOAK_URL` / `_REALM` / `_CLIENT_ID` | optional SPA Keycloak overrides |
+| `SNELLO_ADMIN_KEYCLOAK_CLIENT_ID` | SPA Keycloak `clientId` (default `snello-admin`); `url`/`realm` from `QUARKUS_OIDC_AUTH_SERVER_URL` |
 
 Check:
 

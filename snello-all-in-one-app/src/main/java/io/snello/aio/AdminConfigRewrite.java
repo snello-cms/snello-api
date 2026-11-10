@@ -17,6 +17,10 @@ import java.util.Optional;
  * snello-admin assets talk same-origin {@code /api} instead of whatever host was baked into
  * the admin image (e.g. kayak.love). Leaves {@code config.local.json} as 404 — the SPA treats
  * any JSON 200 there as the full config and would skip {@code config.json}.
+ * <p>
+ * {@code keycloakConfig.url} / {@code realm} come from the API OIDC issuer
+ * ({@code quarkus.oidc.auth-server-url}); {@code clientId} from
+ * {@code SNELLO_ADMIN_KEYCLOAK_CLIENT_ID}.
  */
 @ApplicationScoped
 public class AdminConfigRewrite {
@@ -29,14 +33,11 @@ public class AdminConfigRewrite {
     @ConfigProperty(name = "snello.admin-ui.rewrite-config", defaultValue = "true")
     boolean rewriteConfig;
 
-    @ConfigProperty(name = "snello.admin-ui.keycloak.url")
-    Optional<String> keycloakUrl;
+    @ConfigProperty(name = "quarkus.oidc.auth-server-url")
+    Optional<String> oidcAuthServerUrl;
 
-    @ConfigProperty(name = "snello.admin-ui.keycloak.realm")
-    Optional<String> keycloakRealm;
-
-    @ConfigProperty(name = "snello.admin-ui.keycloak.client-id")
-    Optional<String> keycloakClientId;
+    @ConfigProperty(name = "snello.admin-ui.keycloak.client-id", defaultValue = "snello-admin")
+    String keycloakClientId;
 
     void register(@Observes Router router) {
         if (!rewriteConfig) {
@@ -78,11 +79,45 @@ public class AdminConfigRewrite {
             }
         }
         JsonObject kc = cfg.getJsonObject("keycloakConfig", new JsonObject());
-        keycloakUrl.filter(v -> v != null && !v.isBlank()).ifPresent(v -> kc.put("url", v));
-        keycloakRealm.filter(v -> v != null && !v.isBlank()).ifPresent(v -> kc.put("realm", v));
-        keycloakClientId.filter(v -> v != null && !v.isBlank()).ifPresent(v -> kc.put("clientId", v));
+        oidcAuthServerUrl
+                .filter(v -> v != null && !v.isBlank())
+                .map(AdminConfigRewrite::parseOidcIssuer)
+                .ifPresent(issuer -> {
+                    kc.put("url", issuer.url());
+                    kc.put("realm", issuer.realm());
+                });
+        if (keycloakClientId != null && !keycloakClientId.isBlank()) {
+            kc.put("clientId", keycloakClientId);
+        }
         cfg.put("keycloakConfig", kc);
         return cfg;
+    }
+
+    /**
+     * Parses {@code https://host/realms/myrealm} into Keycloak SPA url + realm.
+     * Trailing slash on url matches baked admin config style.
+     */
+    static OidcIssuer parseOidcIssuer(String authServerUrl) {
+        String trimmed = authServerUrl.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        String marker = "/realms/";
+        int idx = trimmed.indexOf(marker);
+        if (idx < 0) {
+            return new OidcIssuer(ensureTrailingSlash(trimmed), "");
+        }
+        String base = trimmed.substring(0, idx);
+        String realm = trimmed.substring(idx + marker.length());
+        int slash = realm.indexOf('/');
+        if (slash >= 0) {
+            realm = realm.substring(0, slash);
+        }
+        return new OidcIssuer(ensureTrailingSlash(base), realm);
+    }
+
+    private static String ensureTrailingSlash(String url) {
+        return url.endsWith("/") ? url : url + "/";
     }
 
     static String stripOrigin(String url) {
@@ -92,5 +127,8 @@ public class AdminConfigRewrite {
         }
         int pathStart = url.indexOf('/', scheme + 3);
         return pathStart < 0 ? "/" : url.substring(pathStart);
+    }
+
+    record OidcIssuer(String url, String realm) {
     }
 }
