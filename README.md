@@ -21,6 +21,24 @@ It lets you model entities, fields, and query behavior through metadata, then ex
 - Built-in support for derived media generation (formats and webp)
 
 
+## Release 5.1.2
+
+Patch on Quarkus **3.40.1.1**. Fixes portable **backup data ZIP** date serialization.
+
+### Backup dates as ISO (not epoch millis)
+
+`GET /api/backup/data` previously wrote `java.sql.Date` / `Timestamp` as Jackson **epoch millis**, while `GET /api/{table}` returned ISO strings. Import into H2 (and any strict DATE bind) failed.
+
+Fix:
+
+- JDBC row maps use `SqlHelper.convertSqlValue` (MySQL / H2 / PostgreSQL)
+- Backup `ObjectMapper` disables `WRITE_DATES_AS_TIMESTAMPS`
+
+### Docker tags
+
+- `snellocms/snello-api:5.1.2` / `:latest`
+- `ghcr.io/snello-cms/snello-api:5.1.2` / `:latest`
+
 ## Release 5.1.1
 
 Patch release on Quarkus **3.40.1.1** (same platform as 5.1.0).
@@ -95,13 +113,13 @@ docker compose -f compose-devservices.yml down
 
 Published images (JVM workflow):
 
-- `snellocms/snello-api:5.1.1` (also `:latest`)
-- `ghcr.io/snello-cms/snello-api:5.1.1` (also `:latest`)
+- `snellocms/snello-api:5.1.2` (also `:latest`)
+- `ghcr.io/snello-cms/snello-api:5.1.2` (also `:latest`)
 
 Example commands:
 
 ```bash
-docker pull snellocms/snello-api:5.1.1
+docker pull snellocms/snello-api:5.1.2
 
 # Build locally from this repository
 docker build -f src/main/docker/Dockerfile.jvm -t snellocms/snello-api:local .

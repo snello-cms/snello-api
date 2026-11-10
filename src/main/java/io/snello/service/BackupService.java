@@ -1,6 +1,8 @@
 package io.snello.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.quarkus.logging.Log;
 import io.snello.model.Metadata;
 import io.snello.model.pojo.BackupDataImportResult;
@@ -48,7 +50,18 @@ public class BackupService {
     @ConfigProperty(name = "snello.backup.data.page-size", defaultValue = "" + DEFAULT_PAGE_SIZE)
     int pageSize;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    /**
+     * Portable backup JSON: dates as ISO strings (same as REST), never Jackson default epoch millis.
+     * JDBC rows should already be converted via {@link io.snello.util.SqlHelper#convertSqlValue}; this is defense in depth.
+     */
+    private final ObjectMapper mapper = backupObjectMapper();
+
+    public static ObjectMapper backupObjectMapper() {
+        ObjectMapper om = new ObjectMapper();
+        om.registerModule(new JavaTimeModule());
+        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return om;
+    }
 
     /** Legacy stub API kept for /files callers — not used for data backup. */
     public java.util.zip.ZipFile exportData() {
