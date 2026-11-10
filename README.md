@@ -37,7 +37,7 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
 | `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
-| `6.0.0-alpha` | `6.0.3-alpha` | 4.0.0.Beta3 | `:6.0.3-alpha`, `:alpha` (no `:latest`) |
+| `6.0.0-alpha` | `6.0.4-alpha` | 4.0.0.Beta3 | `:6.0.4-alpha`, `:alpha` (no `:latest`) |
 
 Alpha patch bumps (`6.0.x-alpha`) advance the Maven / Docker app tag on each meaningful drop while the git branch stays `6.0.0-alpha`. Target after feature freeze: `6.1.0-alpha` (or beta).
 
@@ -52,13 +52,13 @@ Same flat DB tables (`metadatas` / `fielddefinitions`); concerns split in Java a
 | **Control** | `snello-control` (`:8080`) | Full API: data CRUD, metadata/DDL, documents, auth, AI, drafts |
 | **Query** | `snello-query` (`:8081`) | Read-only GETs on declared metadata / select queries; no admin RS, no writes, no AI |
 | **MCP** | `snello-mcp` | AI / tools plane (shell module; protocol TBD) |
-| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs; **no SPA**; **external SSO** (OIDC) |
+| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs + **snello-admin** SPA; **external SSO** (OIDC) |
 
 **Query plane JDBC:** connections are forced read-only (`quarkus.datasource.jdbc.additional-jdbc-properties.readOnly=true` + `ReadOnlyConnectionInterceptor`). Point `QUARKUS_DATASOURCE_JDBC_URL` at a replica when you have one. Metadata snapshots refresh on an interval (`SNELLO_METADATA_REFRESH_INTERVAL`, default `30s` / compose `10s`).
 
 **Catalog / facets:** `EntityCatalog` exposes `queryView` / `uiView` / `aiView`. List/fetch use the query view; the SPA should prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`. Typed enums (`WidgetType`, `InputType`, `KeyType`, `SearchOp`, `SemanticType`) back widget/SQL mapping. SQL list/count/CRUD fragments go through a shared `SqlQueryBuilder` (thin H2/MySQL/PostgreSQL facades).
 
-Open follow-ups: optional embedded SPA in all-in-one, full MCP protocol, SPA facet consumers, optional PG identifier quoting.
+Open follow-ups: full MCP protocol, SPA facet consumers, optional PG identifier quoting.
 
 ## Documentation
 
@@ -94,7 +94,7 @@ docker compose -f compose-devservices.yml down
 | `snellocms/snello-control` | control plane (also aliased as `snello-api` during alpha) |
 | `snellocms/snello-query` | query plane |
 | `snellocms/snello-mcp` | MCP / AI tools plane |
-| `snellocms/snello-all-in-one` | single container: H2 + full API, no SPA, external OIDC |
+| `snellocms/snello-all-in-one` | single container: H2 + full API + snello-admin SPA, external OIDC |
 
 ```bash
 # Build all modules
@@ -110,9 +110,9 @@ docker run --rm -p 8080:8080 -e SNELLO_DB_KIND=postgresql snellocms/snello-contr
   snello-control-app/target/quarkus-app/quarkus-run.jar
 ```
 
-### All-in-one (H2, no SPA, external SSO)
+### All-in-one (H2 + admin SPA, external SSO)
 
-Single JVM image with the full control API, embedded **H2** (file under `/data` by default), and **filesystem** document storage. No Postgres, MinIO, or Keycloak in the container — point OIDC at your issuer.
+Single JVM image with the full control API, embedded **H2** (file under `/data` by default), **filesystem** document storage, and the **snello-admin** SPA on `/`. No Postgres, MinIO, or Keycloak in the container — point OIDC at your issuer.
 
 ```bash
 ./mvnw -pl snello-all-in-one-app -am package -DskipTests

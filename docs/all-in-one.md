@@ -1,13 +1,14 @@
 # All-in-one runtime
 
-`snello-all-in-one` is a **single JVM image** with the full **control-plane** API, embedded **H2**, and **filesystem** document storage.
+`snello-all-in-one` is a **single JVM image** with the full **control-plane** API, embedded **H2**, **filesystem** document storage, and the **snello-admin** SPA (same origin as `/api`).
 
 | Included | Not included |
 |---|---|
-| Full REST API (CRUD, metadata/DDL, documents, auth admin, AI `/api/ai/*`, drafts, backup, OpenAPI) | Embedded SPA / admin UI |
-| AG-UI WebSocket `WS /agui` (`snello-ai`) | Separate history/NATS services |
-| H2 database (file under `/data` by default) | PostgreSQL / MySQL |
-| Filesystem docs (`SNELLO_FS_BASE_PATH`) | MinIO / S3 (optional; unused when `snello.storagetype=fs`) |
+| Full REST API (CRUD, metadata/DDL, documents, auth admin, AI `/api/ai/*`, drafts, backup, OpenAPI) | Separate history/NATS services |
+| Embedded **snello-admin** UI (`GET /`, client routes → `index.html`) | PostgreSQL / MySQL |
+| AG-UI WebSocket `WS /agui` (`snello-ai`) | MinIO / S3 (optional; unused when `snello.storagetype=fs`) |
+| H2 database (file under `/data` by default) | — |
+| Filesystem docs (`SNELLO_FS_BASE_PATH`) | — |
 | OIDC (external or bundled Keycloak) | — |
 
 Image: `snellocms/snello-all-in-one:alpha` (or `:local` after a local build).
@@ -36,6 +37,8 @@ docker run --rm -p 8080:8080 \
   -e QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH=resource_access/snello-api/roles \
   snellocms/snello-all-in-one:local
 ```
+
+The Dockerfile multi-stage-copies `snellocms/snello-admin:latest` into `/deployments/admin-ui` (override with `--build-arg SNELLO_ADMIN_IMAGE=…`). Quarkus serves that directory at runtime; API paths (`/api`, `/openapi`, `/q`, `/agui`) stay untouched.
 
 What lives under `/data`:
 
@@ -69,10 +72,12 @@ Useful env vars:
 | `GEMINI_API_KEY` | optional; AG-UI quick/pro Gemini models |
 | `GEMINI_MODEL_QUICK` / `GEMINI_MODEL_PRO` | optional model ids |
 | `SNELLO_AI_MCP_BASE_URL` | base URL for DB-defined MCP HTTP tools (default `http://127.0.0.1:8080`) |
+| `SNELLO_ADMIN_UI_PATH` | admin SPA root (image default `/deployments/admin-ui`) |
 
 Check:
 
 ```bash
+curl -sI http://127.0.0.1:8080/ | head -n 5
 curl -s http://127.0.0.1:8080/api/datalist/names
 curl -s http://127.0.0.1:8080/openapi | head -c 200
 ```

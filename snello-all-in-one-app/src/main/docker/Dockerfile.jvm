@@ -1,11 +1,19 @@
 ####
+<<<<<<< Updated upstream
 # Snello all-in-one — JVM mutable-jar (H2 by default, admin SPA bundled into the app jar).
+=======
+# Snello all-in-one — JVM mutable-jar (H2 + embedded snello-admin SPA).
+>>>>>>> Stashed changes
 #
-# Full control API surface + local H2 + filesystem docs. Point OIDC at an external SSO.
+# Full control API surface + local H2 + filesystem docs + admin UI from snello-admin.
+# Point OIDC at an external SSO.
 #
 # Build (bundles snello-admin into META-INF/resources BEFORE packaging, then docker build):
 #   dev/build-aio-image.sh [--skip-admin-build] [tag]
 # Plain `mvn package` + `docker build` still works but ships WITHOUT the admin unless dev/bundle-admin.sh ran first.
+#
+# Optional: pin/override admin image (Docker Hub public; GHCR may require login)
+#   --build-arg SNELLO_ADMIN_IMAGE=snellocms/snello-admin:alpha
 #
 # Run (SSO required; AG-UI optional keys):
 #   docker run --rm -p 8080:8080 -v snello-aio:/data \
@@ -14,23 +22,32 @@
 #     -e SNELLO_AITYPE=ai-gemini -e GEMINI_API_KEY=... \
 #     snellocms/snello-all-in-one:alpha
 ###
+
+# Admin SPA assets (nginx html root). Not copied into quarkus-app/: Quarkus indexes
+# META-INF/resources at build time, so Docker-only jars would not be served. Files go to
+# /deployments/admin-ui and AdminSpaStatic serves them at runtime.
+ARG SNELLO_ADMIN_IMAGE=snellocms/snello-admin:latest
+FROM ${SNELLO_ADMIN_IMAGE} AS snello-admin
+
 FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
 
 ENV LANGUAGE='en_US:en'
 ENV SNELLO_DB_KIND=h2
 ENV JAVA_APP_JAR=/deployments/quarkus-app/quarkus-run.jar
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV SNELLO_ADMIN_UI_PATH=/deployments/admin-ui
 
 # Keep the quarkus-app/ folder name: mutable-jar re-augmentation (snello-optimize.sh) resolves its
 # inputs as <parent>/quarkus-app/..., so flattening into /deployments breaks the rebuild at startup.
 COPY --chown=185 target/quarkus-app/ /deployments/quarkus-app/
 COPY --chown=185 src/main/scripts/snello-optimize.sh /deployments/snello-optimize.sh
 COPY --chown=185 src/main/scripts/snello-entrypoint.sh /deployments/snello-entrypoint.sh
+COPY --from=snello-admin --chown=185 /usr/share/nginx/html/ /deployments/admin-ui/
 
 USER root
 RUN chmod +x /deployments/snello-optimize.sh /deployments/snello-entrypoint.sh \
  && mkdir -p /data/files \
- && chown -R 185:0 /data
+ && chown -R 185:0 /data /deployments/admin-ui
 
 USER 185
 EXPOSE 8080

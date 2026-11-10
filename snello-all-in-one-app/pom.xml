@@ -7,13 +7,22 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.3-alpha</version>
+        <version>6.0.4-alpha</version>
     </parent>
 
     <artifactId>snello-all-in-one-app</artifactId>
     <packaging>quarkus</packaging>
     <name>snello-all-in-one-app</name>
+<<<<<<< Updated upstream
     <description>Snello all-in-one API (H2 + full control surface + bundled admin SPA from dev/bundle-admin.sh; external SSO)</description>
+=======
+    <description>Snello all-in-one API (H2 + full control surface + embedded snello-admin SPA; external SSO)</description>
+
+    <properties>
+        <!-- false locally when running AdminSpaStaticTest; Docker black-box remains *IT via failsafe -->
+        <aio.skipUnitTests>false</aio.skipUnitTests>
+    </properties>
+>>>>>>> Stashed changes
 
     <dependencies>
         <dependency>
@@ -59,8 +68,8 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- Unit/Quarkus tests live in control-app; this module is Docker black-box IT only -->
-                    <skipTests>true</skipTests>
+                    <!-- Quarkus ITs live elsewhere; enable lightweight unit tests (e.g. AdminSpaStaticTest). -->
+                    <skipTests>${aio.skipUnitTests}</skipTests>
                 </configuration>
             </plugin>
             <plugin>

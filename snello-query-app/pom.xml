@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.3-alpha</version>
+        <version>6.0.4-alpha</version>
     </parent>
 
     <artifactId>snello-query-app</artifactId>

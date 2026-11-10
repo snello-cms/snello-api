@@ -1,6 +1,6 @@
 # Snello API Docs
 
-Functional and technical documentation for Snello **6.x** (`6.0.3-alpha`).
+Functional and technical documentation for Snello **6.x** (`6.0.4-alpha`).
 
 Architecture (repo root):
 
@@ -45,7 +45,7 @@ Architecture (repo root):
 |---|---|---|
 | **Control** | `snello-control` (`:8080`) | Full API: data CRUD, metadata/DDL, documents, auth, AI, drafts, backup |
 | **Query** | `snello-query` (`:8081`) | Read-only GETs on declared metadata / select queries |
-| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs; **no SPA**; OIDC |
+| **All-in-one** | `snello-all-in-one` (`:8080`) | Full control API + **H2** + filesystem docs + **snello-admin** SPA; OIDC |
 | **MCP** | `snello-mcp` | AI / tools shell (protocol TBD) |
 
 Same flat DB tables (`metadatas` / `fielddefinitions`); concerns split in Java facets (`identity` / `query` / `ui` / `ai`) and in REST contracts.
