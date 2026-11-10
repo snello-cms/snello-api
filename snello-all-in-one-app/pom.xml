@@ -13,16 +13,12 @@
     <artifactId>snello-all-in-one-app</artifactId>
     <packaging>quarkus</packaging>
     <name>snello-all-in-one-app</name>
-<<<<<<< Updated upstream
-    <description>Snello all-in-one API (H2 + full control surface + bundled admin SPA from dev/bundle-admin.sh; external SSO)</description>
-=======
-    <description>Snello all-in-one API (H2 + full control surface + embedded snello-admin SPA; external SSO)</description>
+    <description>Snello all-in-one API (H2 + full control surface + snello-admin SPA via Docker COPY or dev/bundle-admin.sh; external SSO)</description>
 
     <properties>
         <!-- false locally when running AdminSpaStaticTest; Docker black-box remains *IT via failsafe -->
         <aio.skipUnitTests>false</aio.skipUnitTests>
     </properties>
->>>>>>> Stashed changes
 
     <dependencies>
         <dependency>

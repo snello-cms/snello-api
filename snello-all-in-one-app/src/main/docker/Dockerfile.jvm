@@ -1,18 +1,22 @@
 ####
-<<<<<<< Updated upstream
-# Snello all-in-one — JVM mutable-jar (H2 by default, admin SPA bundled into the app jar).
-=======
-# Snello all-in-one — JVM mutable-jar (H2 + embedded snello-admin SPA).
->>>>>>> Stashed changes
+# Snello all-in-one — JVM mutable-jar (H2 + snello-admin SPA).
 #
-# Full control API surface + local H2 + filesystem docs + admin UI from snello-admin.
+# Full control API + local H2 + filesystem docs + admin UI.
 # Point OIDC at an external SSO.
 #
-# Build (bundles snello-admin into META-INF/resources BEFORE packaging, then docker build):
-#   dev/build-aio-image.sh [--skip-admin-build] [tag]
-# Plain `mvn package` + `docker build` still works but ships WITHOUT the admin unless dev/bundle-admin.sh ran first.
+# Two ways to ship the admin:
+#   1) CI / Docker-only (this file): multi-stage COPY from snellocms/snello-admin into
+#      /deployments/admin-ui; AdminSpaStatic serves it at runtime (SPA fallback included).
+#   2) Local sibling repo: dev/build-aio-image.sh → bundle-admin.sh copies dist into
+#      META-INF/resources before mvn package (Quarkus classpath static).
 #
-# Optional: pin/override admin image (Docker Hub public; GHCR may require login)
+# Build:
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#   docker build -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm \
+#     -t snellocms/snello-all-in-one:alpha snello-all-in-one-app
+# Or:  dev/build-aio-image.sh [--skip-admin-build] [tag]
+#
+# Optional admin image override:
 #   --build-arg SNELLO_ADMIN_IMAGE=snellocms/snello-admin:alpha
 #
 # Run (SSO required; AG-UI optional keys):
@@ -22,10 +26,6 @@
 #     -e SNELLO_AITYPE=ai-gemini -e GEMINI_API_KEY=... \
 #     snellocms/snello-all-in-one:alpha
 ###
-
-# Admin SPA assets (nginx html root). Not copied into quarkus-app/: Quarkus indexes
-# META-INF/resources at build time, so Docker-only jars would not be served. Files go to
-# /deployments/admin-ui and AdminSpaStatic serves them at runtime.
 ARG SNELLO_ADMIN_IMAGE=snellocms/snello-admin:latest
 FROM ${SNELLO_ADMIN_IMAGE} AS snello-admin
 
