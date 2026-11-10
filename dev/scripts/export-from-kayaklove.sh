@@ -102,9 +102,91 @@ PY
   echo "[kayak-export] per-table zips in ${TABLES_DIR} ($(ls "$TABLES_DIR" | wc -l | tr -d ' ') files)"
 fi
 
+echo "[kayak-export] normalize epoch dates + drop unknown columns for H2 import"
+python3 - "$META_OUT" "$DATA_OUT" "$TABLES_DIR" "$PER_TABLE" <<'PY'
+import io, json, re, sys, zipfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+meta_path, data_path, tables_dir, per_table = sys.argv[1:5]
+meta = json.load(open(meta_path))
+types, allowed = {}, {}
+for e in meta["metadatas"]:
+    m = e["metadata"]
+    t = m["table_name"]
+    key = m.get("table_key") or "uuid"
+    fmap, names = {}, {key}
+    for f in e.get("fields") or []:
+        name = f.get("name")
+        if not name:
+            continue
+        names.add(name)
+        ft = (f.get("type") or "").lower()
+        if ft == "date":
+            fmap[name] = "date"
+        elif ft in ("datetime", "timestamp"):
+            fmap[name] = "datetime"
+    types[t], allowed[t] = fmap, names
+
+def convert(val, kind):
+    if val is None or val == "":
+        return val
+    ms = None
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        iv = int(val)
+        if abs(iv) >= 10_000_000_000 or iv < 0:
+            ms = iv
+        elif abs(iv) >= 1_000_000_000:
+            ms = iv * 1000
+    elif isinstance(val, str) and re.match(r"^-?\d{9,14}$", val.strip()):
+        return convert(int(val.strip()), kind)
+    if ms is None:
+        return val
+    try:
+        dt = datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return val
+    return dt.date().isoformat() if kind == "date" else dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+def scrub_rows(table, rows):
+    keep = allowed.get(table) or set()
+    fmap = types.get(table) or {}
+    out = []
+    for row in rows:
+        nr = {k: v for k, v in row.items() if not keep or k in keep}
+        for f, kind in fmap.items():
+            if f in nr:
+                nr[f] = convert(nr[f], kind)
+        out.append(nr)
+    return out
+
+def rewrite_zip(path: Path):
+    if not path.is_file():
+        return
+    zin = zipfile.ZipFile(path)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            m = re.match(r"^data/([^/]+)/.+\.json$", info.filename)
+            if m:
+                rows = json.loads(data)
+                if isinstance(rows, list):
+                    data = json.dumps(scrub_rows(m.group(1), rows), ensure_ascii=False, separators=(",", ":")).encode()
+            zout.writestr(info, data)
+    zin.close()
+    path.write_bytes(buf.getvalue())
+    print("  normalized", path)
+
+rewrite_zip(Path(data_path))
+if per_table == "1":
+    for z in sorted(Path(tables_dir).glob("*.zip")):
+        rewrite_zip(z)
+PY
+
 echo "[kayak-export] done"
 echo "Next:"
 echo "  # wipe + import into api.sne.lol (destructive):"
-echo "  ./dev/scripts/wipe-and-import-sne.sh"
+echo "  CONFIRM=YES ./dev/scripts/wipe-and-import-sne.sh"
 echo "  # or local AIO:"
 echo "  ./dev/scripts/aio-import-from-exports.sh"

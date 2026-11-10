@@ -1,6 +1,7 @@
 package io.snello.service;
 
 import io.quarkus.logging.Log;
+import io.snello.api.service.JdbcRepository;
 import io.snello.model.Metadata;
 import io.snello.model.pojo.BackupDataImportResult;
 import io.snello.model.pojo.TableExport;
@@ -25,6 +26,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -45,6 +47,9 @@ public class BackupService {
 
     @Inject
     MetadataService metadataService;
+
+    @Inject
+    JdbcRepository jdbcRepository;
 
     @ConfigProperty(name = "snello.backup.data.page-size", defaultValue = "" + DEFAULT_PAGE_SIZE)
     int pageSize;
@@ -146,6 +151,13 @@ public class BackupService {
             return;
         }
 
+        Set<String> physicalColumns = null;
+        try {
+            physicalColumns = jdbcRepository.columns(tableName);
+        } catch (Exception e) {
+            Log.warnf(e, "data import table=%s: cannot list columns, inserting raw rows", tableName);
+        }
+
         for (Path chunk : chunks) {
             try {
                 @SuppressWarnings("unchecked")
@@ -155,7 +167,7 @@ public class BackupService {
                 }
                 Log.infof("backup import table=%s chunk=%s rows=%d", tableName, chunk.getFileName(), rows.size());
                 for (Map<String, Object> row : rows) {
-                    importRow(tableName, tableKey, row, result);
+                    importRow(tableName, tableKey, row, physicalColumns, result);
                 }
             } catch (Exception e) {
                 Log.errorf(e, "backup import failed table=%s chunk=%s", tableName, chunk.getFileName());
@@ -174,9 +186,16 @@ public class BackupService {
         if (tableKey == null || rows == null) {
             return;
         }
-        Log.infof("data import table=%s key=%s rows=%d", tableName, tableKey, rows.size());
+        Set<String> physicalColumns = null;
+        try {
+            physicalColumns = jdbcRepository.columns(tableName);
+        } catch (Exception e) {
+            Log.warnf(e, "data import table=%s: cannot list columns, inserting raw rows", tableName);
+        }
+        Log.infof("data import table=%s key=%s rows=%d columns=%s", tableName, tableKey, rows.size(),
+                physicalColumns == null ? "?" : physicalColumns.size());
         for (Map<String, Object> row : rows) {
-            importRow(tableName, tableKey, row, result);
+            importRow(tableName, tableKey, row, physicalColumns, result);
         }
     }
 
@@ -200,7 +219,8 @@ public class BackupService {
         return (meta.table_key != null && !meta.table_key.isBlank()) ? meta.table_key : UUID;
     }
 
-    private void importRow(String tableName, String tableKey, Map<String, Object> row, BackupDataImportResult result) {
+    private void importRow(String tableName, String tableKey, Map<String, Object> row, Set<String> physicalColumns,
+                           BackupDataImportResult result) {
         Object keyVal = row.get(tableKey);
         if (keyVal == null || keyVal.toString().isBlank()) {
             result.errors.add(tableName + ": row missing key '" + tableKey + "'");
@@ -212,7 +232,16 @@ public class BackupService {
                 result.skipped++;
                 return;
             }
-            apiService.create(tableName, row, tableKey);
+            Map<String, Object> payload = row;
+            if (physicalColumns != null && !physicalColumns.isEmpty()) {
+                payload = new LinkedHashMap<>();
+                for (Map.Entry<String, Object> e : row.entrySet()) {
+                    if (e.getKey() != null && physicalColumns.contains(e.getKey().toLowerCase())) {
+                        payload.put(e.getKey(), e.getValue());
+                    }
+                }
+            }
+            apiService.create(tableName, payload, tableKey);
             result.imported++;
         } catch (Exception e) {
             // Missing physical table or other JDBC failure — collect and continue other tables when possible

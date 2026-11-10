@@ -446,8 +446,9 @@ public class H2JdbcRepository implements JdbcRepository {
             return null;
         }
         return escape(column.name()) + switch (column.kind()) {
-            case SHORT_TEXT -> " varchar(200) default null";
-            case MEDIUM_TEXT -> " varchar(2048) default null";
+            // AIO imports from MySQL/PG often exceed 200 (notes, ranking text); keep room without CLOB.
+            case SHORT_TEXT -> " varchar(2048) default null";
+            case MEDIUM_TEXT -> " varchar(8192) default null";
             case LONG_TEXT -> " VARCHAR default null";
             case INTEGER -> " INTEGER";
             case DECIMAL -> " DOUBLE";
