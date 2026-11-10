@@ -6,7 +6,7 @@
 
     <groupId>io.snello</groupId>
     <artifactId>snello-parent</artifactId>
-    <version>6.0.9-alpha</version>
+    <version>6.0.10-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
     <description>Snello multi-module parent: core + ai + control / query / mcp / all-in-one apps</description>
@@ -141,17 +141,28 @@
                 </plugin>
                 <!--
                   Quarkus reads module names from module-info.class or JAR Automatic-Module-Name.
-                  Workspace apps resolve as target/classes (DirectoryPathTree), which ignores MANIFEST.MF,
-                  so generate a stub module-info.class before augmentation.
+                  Workspace apps resolve as target/classes (DirectoryPathTree), which ignores MANIFEST.MF.
+                  Generate the stub only at prepare-package — earlier breaks test-compile (modular javac).
                 -->
                 <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>3.1.0</version>
                     <executions>
                         <execution>
-                            <id>generate-jpms-module-info</id>
-                            <!-- After compile: a pre-existing module-info.class would force modular javac. -->
+                            <id>clear-jpms-module-info</id>
                             <phase>process-classes</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <delete file="${project.build.outputDirectory}/module-info.class" quiet="true"/>
+                                </target>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>generate-jpms-module-info</id>
+                            <phase>prepare-package</phase>
                             <goals>
                                 <goal>run</goal>
                             </goals>

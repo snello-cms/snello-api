@@ -76,6 +76,18 @@ Useful env vars:
 | `SNELLO_ADMIN_REWRITE_CONFIG` | `true` — rewrite `assets/config.json` and `assets/config.local.json` to same-origin `/api` + OIDC keycloak (admin image ships kayak.love URLs) |
 | `SNELLO_ADMIN_KEYCLOAK_CLIENT_ID` | SPA Keycloak `clientId` (default `snello-admin`); `url`/`realm` from `QUARKUS_OIDC_AUTH_SERVER_URL` |
 
+### Keycloak client for the embedded SPA
+
+After login the SPA exchanges the auth `code` with a browser `POST` to Keycloak `/token`. That call needs CORS on the **SPA client** (not on snello-api).
+
+In the realm from `QUARKUS_OIDC_AUTH_SERVER_URL`, client `SNELLO_ADMIN_KEYCLOAK_CLIENT_ID`:
+
+- **Client authentication**: Off (public)
+- **Valid redirect URIs**: `https://<your-aio-host>/*` (e.g. `https://api.sne.lol/*`)
+- **Web origins**: `https://<your-aio-host>` or `+` (exact origin, no path/trailing slash)
+
+Without Web origins the Network tab shows `token` as **CORS error** and the app loops on `/#state=…&code=…`.
+
 Check:
 
 ```bash
