@@ -7,10 +7,10 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 
-/** H2 dialect facade over {@link SqlQueryBuilder#PLAIN}. */
+/** H2 dialect facade over {@link SqlQueryBuilder#H2} (double-quote identifiers). */
 public class H2SqlUtils {
 
-    private static final SqlQueryBuilder SQL = SqlQueryBuilder.PLAIN;
+    private static final SqlQueryBuilder SQL = SqlQueryBuilder.H2;
 
     public static List<Map<String, Object>> list(ResultSet rs) throws Exception {
         return SQL.list(rs);

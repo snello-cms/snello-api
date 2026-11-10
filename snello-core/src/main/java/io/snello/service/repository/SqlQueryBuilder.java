@@ -30,12 +30,14 @@ import static io.snello.management.DbConstants._WHERE_;
 
 /**
  * Shared SQL DML builder + ResultSet helpers for all JDBC dialects.
- * Dialects differ only by identifier quote ({@code `} for MySQL, empty for PG/H2 today).
+ * Dialects differ only by identifier quote ({@code `} for MySQL, {@code "} for H2, empty for PG).
  */
 public final class SqlQueryBuilder {
 
     public static final SqlQueryBuilder PLAIN = new SqlQueryBuilder("");
     public static final SqlQueryBuilder MYSQL = new SqlQueryBuilder("`");
+    /** H2: quote identifiers so reserved names like {@code YEAR} are valid column names. */
+    public static final SqlQueryBuilder H2 = new SqlQueryBuilder("\"");
 
     private static final String INSERT_INTO = "INSERT INTO ";
     private static final String SELECT_FROM = " SELECT * FROM ";
