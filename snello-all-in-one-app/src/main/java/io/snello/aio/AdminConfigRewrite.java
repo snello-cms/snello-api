@@ -13,9 +13,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Serves rewritten admin SPA config from {@code /assets/config.json} (and a stub
- * {@code /assets/config.local.json}) so Docker-copied snello-admin assets talk same-origin
- * {@code /api} instead of whatever host was baked into the admin image (e.g. kayak.love).
+ * Serves rewritten admin SPA config from {@code /assets/config.json} so Docker-copied
+ * snello-admin assets talk same-origin {@code /api} instead of whatever host was baked into
+ * the admin image (e.g. kayak.love). Leaves {@code config.local.json} as 404 — the SPA treats
+ * any JSON 200 there as the full config and would skip {@code config.json}.
  */
 @ApplicationScoped
 public class AdminConfigRewrite {
