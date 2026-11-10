@@ -83,7 +83,8 @@ public class BackupServiceRs {
                 .entity("backup files import not implemented").build();
     }
 
-    private static Response zipDownload(java.nio.file.Path zip, String filename) {
+    /** Streams a temp zip and deletes it afterwards. Also used by the metadata export. */
+    static Response zipDownload(java.nio.file.Path zip, String filename) {
         StreamingOutput stream = (OutputStream out) -> {
             try (InputStream in = Files.newInputStream(zip)) {
                 in.transferTo(out);
