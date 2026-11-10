@@ -3,6 +3,7 @@ package io.snello.service;
 import io.quarkus.logging.Log;
 import io.snello.model.Metadata;
 import io.snello.model.pojo.BackupDataImportResult;
+import io.snello.model.pojo.TableExport;
 import io.snello.util.MetadataUtils;
 import io.snello.util.ZipUtils;
 import jakarta.inject.Inject;
@@ -119,7 +120,7 @@ public class BackupService {
                         .toList();
                 for (Path tableDir : dirs) {
                     String tableName = tableDir.getFileName().toString();
-                    importTableChunks(tableName, tableDir, result);
+                    importTableDir(tableName, tableDir, result);
                 }
             }
             return result;
@@ -128,23 +129,12 @@ public class BackupService {
         }
     }
 
-    private void importTableChunks(String tableName, Path tableDir, BackupDataImportResult result) {
-        if (MetadataUtils.isReserved(tableName)) {
-            result.errors.add(tableName + ": reserved name, skipped");
+    /** Imports the {@code NNNN.json} chunks of one table directory (backup zip layout {@code data/<table>/}). */
+    public void importTableDir(String tableName, Path tableDir, BackupDataImportResult result) {
+        String tableKey = resolveImportTableKey(tableName, result);
+        if (tableKey == null) {
             return;
         }
-        Metadata meta = null;
-        try {
-            meta = metadataService.metadataMap().get(tableName);
-        } catch (Exception e) {
-            result.errors.add(tableName + ": cannot resolve metadata (" + e.getMessage() + ")");
-            return;
-        }
-        if (meta == null) {
-            result.errors.add(tableName + ": metadata not registered");
-            return;
-        }
-        String tableKey = (meta.table_key != null && !meta.table_key.isBlank()) ? meta.table_key : UUID;
 
         List<Path> chunks;
         try (Stream<Path> files = Files.list(tableDir)) {
@@ -163,6 +153,7 @@ public class BackupService {
                 if (rows == null) {
                     continue;
                 }
+                Log.infof("backup import table=%s chunk=%s rows=%d", tableName, chunk.getFileName(), rows.size());
                 for (Map<String, Object> row : rows) {
                     importRow(tableName, tableKey, row, result);
                 }
@@ -172,6 +163,41 @@ public class BackupService {
                 return;
             }
         }
+    }
+
+    /**
+     * Imports rows into a registered metadata table. Rows whose key already exists are skipped, failures are
+     * collected in {@code result} (never thrown).
+     */
+    public void importRows(String tableName, List<Map<String, Object>> rows, BackupDataImportResult result) {
+        String tableKey = resolveImportTableKey(tableName, result);
+        if (tableKey == null || rows == null) {
+            return;
+        }
+        Log.infof("data import table=%s key=%s rows=%d", tableName, tableKey, rows.size());
+        for (Map<String, Object> row : rows) {
+            importRow(tableName, tableKey, row, result);
+        }
+    }
+
+    /** @return the table key column, or null (error recorded) when the table can't take an import */
+    private String resolveImportTableKey(String tableName, BackupDataImportResult result) {
+        if (MetadataUtils.isReserved(tableName)) {
+            result.errors.add(tableName + ": reserved name, skipped");
+            return null;
+        }
+        Metadata meta;
+        try {
+            meta = metadataService.metadataMap().get(tableName);
+        } catch (Exception e) {
+            result.errors.add(tableName + ": cannot resolve metadata (" + e.getMessage() + ")");
+            return null;
+        }
+        if (meta == null) {
+            result.errors.add(tableName + ": metadata not registered");
+            return null;
+        }
+        return (meta.table_key != null && !meta.table_key.isBlank()) ? meta.table_key : UUID;
     }
 
     private void importRow(String tableName, String tableKey, Map<String, Object> row, BackupDataImportResult result) {
@@ -207,24 +233,7 @@ public class BackupService {
              ZipOutputStream zos = new ZipOutputStream(fos)) {
 
             for (String tableName : tableNames) {
-                TableExport export = exportTablePages(tableName, skipMissingTables);
-                if (export == null) {
-                    continue;
-                }
-                int chunkIndex = 1;
-                for (List<Map<String, Object>> page : export.pages) {
-                    String entryName = String.format("data/%s/%04d.json", tableName, chunkIndex++);
-                    writeZipJson(zos, entryName, page);
-                }
-                Map<String, Object> summary = new LinkedHashMap<>();
-                summary.put("name", tableName);
-                summary.put("chunks", export.pages.size());
-                summary.put("rows", export.totalRows);
-                if (export.skipped) {
-                    summary.put("skipped", true);
-                    summary.put("reason", export.skipReason);
-                }
-                tableSummaries.add(summary);
+                tableSummaries.add(writeTableData(zos, tableName, skipMissingTables));
             }
 
             Map<String, Object> manifest = new LinkedHashMap<>();
@@ -236,6 +245,38 @@ public class BackupService {
             writeZipJson(zos, "manifest.json", manifest);
         }
         return zipPath;
+    }
+
+    /**
+     * Writes one table as {@code data/<table>/NNNN.json} chunks.
+     *
+     * @return manifest summary: name, chunks, rows (+ skipped/reason when the table could not be read)
+     */
+    public Map<String, Object> writeTableData(ZipOutputStream zos, String tableName, boolean skipMissingTable) throws Exception {
+        TableExport export = exportTablePages(tableName, skipMissingTable);
+        int chunkIndex = 1;
+        for (List<Map<String, Object>> page : export.pages()) {
+            writeZipJson(zos, String.format("data/%s/%04d.json", tableName, chunkIndex++), page);
+        }
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("name", tableName);
+        summary.put("chunks", export.pages().size());
+        summary.put("rows", export.totalRows());
+        if (export.skipped()) {
+            summary.put("skipped", true);
+            summary.put("reason", export.skipReason());
+        }
+        Log.infof("data export table=%s rows=%d chunks=%d skipped=%s", tableName, export.totalRows(), export.pages().size(), export.skipped());
+        return summary;
+    }
+
+    /** All rows of one table (paged reads), for the inline JSON export. Fails if the table can't be read. */
+    public List<Map<String, Object>> exportTableRows(String tableName) throws Exception {
+        TableExport export = exportTablePages(tableName, false);
+        List<Map<String, Object>> rows = new ArrayList<>(export.totalRows());
+        export.pages().forEach(rows::addAll);
+        Log.infof("data export table=%s rows=%d (inline json)", tableName, rows.size());
+        return rows;
     }
 
     private TableExport exportTablePages(String tableName, boolean skipMissingTables) throws Exception {
@@ -269,14 +310,11 @@ public class BackupService {
         }
     }
 
-    private void writeZipJson(ZipOutputStream zos, String entryName, Object value) throws IOException {
+    public void writeZipJson(ZipOutputStream zos, String entryName, Object value) throws IOException {
         zos.putNextEntry(new ZipEntry(entryName));
         // write bytes so Jackson does not close the ZipOutputStream
         byte[] json = mapper.writeValueAsBytes(value);
         zos.write(json);
         zos.closeEntry();
-    }
-
-    private record TableExport(List<List<Map<String, Object>>> pages, int totalRows, boolean skipped, String skipReason) {
     }
 }

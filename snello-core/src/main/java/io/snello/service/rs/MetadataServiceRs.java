@@ -13,6 +13,7 @@ import io.snello.model.events.MetadataDeleteEvent;
 import io.snello.model.pojo.JsonFormData;
 import io.snello.service.AiProfileValidator;
 import io.snello.service.ApiService;
+import io.snello.service.MetadataTransferService;
 import io.snello.service.TableSchemaService;
 import io.snello.util.MetadataUtils;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,6 +113,10 @@ public class MetadataServiceRs extends AbstractServiceRs {
     TableSchemaService tableSchemaService;
     @Inject
     AiProfileValidator aiProfileValidator;
+    @Inject
+    MetadataTransferService metadataTransferService;
+
+    private static final String ZIP_MEDIA_TYPE = "application/zip";
 
 
     @Inject
@@ -231,14 +237,26 @@ public class MetadataServiceRs extends AbstractServiceRs {
         return ok(result).build();
     }
 
+    /**
+     * Body: {@code {"metadatas": [uuid...]} | {"all": true}}, optional {@code "data": true} to include the table
+     * rows and {@code "format": "json" | "zip"} (default json). See {@link MetadataTransferService} for the layouts.
+     */
     @POST
     @Path("/export")
+    @Produces({MediaType.APPLICATION_JSON, ZIP_MEDIA_TYPE})
     public Response export(Map<String, Object> body) throws Exception {
         List<String> uuids = resolveExportUuids(body);
         if (uuids.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("metadatas list is required (or pass \"all\": true)").build();
         }
+        boolean withData = body != null && Boolean.TRUE.equals(body.get("data"));
+        String format = body == null || body.get("format") == null ? "json" : body.get("format").toString().trim().toLowerCase();
+        if (!format.equals("json") && !format.equals("zip")) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("format must be json or zip, got '" + format + "'").build();
+        }
+        Log.infof("metadata export: metadatas=%d withData=%s format=%s", uuids.size(), withData, format);
         List<Map<String, Object>> result = new ArrayList<>();
         for (String uuid : uuids) {
             Map<String, Object> raw = getApiService().fetch(null, METADATAS, uuid, UUID);
@@ -246,9 +264,18 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 String tableName = (String) raw.get(TABLE_NAME);
                 Metadata full = getApiService().metadataWithFields(tableName);
                 if (full != null) {
-                    result.add(Map.of("metadata", full, "fields", full.fields != null ? full.fields : List.of()));
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("metadata", full);
+                    entry.put("fields", full.fields != null ? full.fields : List.of());
+                    result.add(entry);
                 }
             }
+        }
+        if (format.equals("zip")) {
+            return BackupServiceRs.zipDownload(metadataTransferService.buildExportZip(result, withData), "metadatas-export.zip");
+        }
+        if (withData) {
+            metadataTransferService.attachInlineData(result);
         }
         String filename = "metadatas-export.json";
         return Response.ok(Map.of("metadatas", result))
@@ -290,20 +317,43 @@ public class MetadataServiceRs extends AbstractServiceRs {
                     .build();
         }
 
+        InputStream in = MetadataTransferService.buffered(formData.data);
+        if (MetadataTransferService.isZip(in)) {
+            Log.info("metadata import: multipart file is a zip");
+            return importMetadatasZip(in);
+        }
+        Log.info("metadata import: multipart file is json");
         JsonMapper mapper = JsonMapper.builder().build();
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue((InputStream) formData.data, Map.class);
-        return importMetadatasInternal(body);
+        Map<String, Object> body = mapper.readValue(in, Map.class);
+        return importMetadatasInternal(body, null);
+    }
+
+    /** Raw zip body: {@code curl -X POST -H 'Content-Type: application/zip' --data-binary @export.zip}. */
+    @POST
+    @Path("/import")
+    @Consumes({ZIP_MEDIA_TYPE, MediaType.APPLICATION_OCTET_STREAM})
+    public Response importMetadatasZip(InputStream zip) throws Exception {
+        if (zip == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("request body is empty").build();
+        }
+        java.nio.file.Path root = metadataTransferService.unzipImport(zip);
+        try {
+            return importMetadatasInternal(metadataTransferService.readMetadatas(root), root);
+        } finally {
+            metadataTransferService.cleanup(root);
+        }
     }
 
     @POST
     @Path("/import")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response importMetadatasJson(Map<String, Object> body) throws Exception {
-        return importMetadatasInternal(body);
+        return importMetadatasInternal(body, null);
     }
 
-    private Response importMetadatasInternal(Map<String, Object> body) throws Exception {
+    /** @param zipRoot unzipped zip import (rows under data/), or null for JSON (rows inline under "data") */
+    private Response importMetadatasInternal(Map<String, Object> body, java.nio.file.Path zipRoot) throws Exception {
         if (body == null) {
             return Response.status(Response.Status.BAD_REQUEST).entity("request body is empty").build();
         }
@@ -344,6 +394,7 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 metadataToPersist.put(UUID, java.util.UUID.randomUUID().toString());
             }
             String metaUuid = metadataToPersist.get(UUID).toString();
+            metaMap.put(UUID, metaUuid); // the data import step finds the metadata (and creates its table) by uuid
             // the exported flag says whether the table existed at the source; here it must say whether it exists now
             String importedTable = (String) metadataToPersist.get(TABLE_NAME);
             boolean tableExists = getApiService().tableExists(importedTable);
@@ -368,10 +419,16 @@ public class MetadataServiceRs extends AbstractServiceRs {
             }
             saved.add(savedMeta);
         }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("imported", saved);
+        if (metadataTransferService.hasData(metadatasList, zipRoot)) {
+            response.put("data", metadataTransferService.importData(metadatasList, zipRoot));
+        }
         if (!saved.isEmpty()) {
             eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(saved.getLast()));
         }
-        return ok(Map.of("imported", saved)).build();
+        Log.infof("metadata import: metadatas=%d data=%s", saved.size(), response.get("data"));
+        return ok(response).build();
     }
 
     private Map<String, Object> filterImportableMetadataColumns(Map<String, Object> metaMap) {

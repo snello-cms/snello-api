@@ -303,7 +303,9 @@ public class MetadataService {
         if (!controlPlane) {
             return List.of(); // actions run on create/update/delete only, which the query plane does not serve
         }
-        return jdbcRepository.list(ACTIONS, " metadata_name asc, condition asc, phase asc ");
+        // not ordered by `condition`: it is a reserved word in MySQL (unquoted ORDER BY broke every action there) and
+        // the rows are only indexed by (table, condition, phase) afterwards, so the SQL order is irrelevant.
+        return jdbcRepository.list(ACTIONS, " metadata_name asc, phase asc ");
     }
 
     private List<Map<String, Object>> loadConditionRows() throws Exception {

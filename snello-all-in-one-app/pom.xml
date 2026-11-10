@@ -13,7 +13,7 @@
     <artifactId>snello-all-in-one-app</artifactId>
     <packaging>quarkus</packaging>
     <name>snello-all-in-one-app</name>
-    <description>Snello all-in-one API (H2 + full control surface, no embedded SPA; external SSO)</description>
+    <description>Snello all-in-one API (H2 + full control surface + bundled admin SPA from dev/bundle-admin.sh; external SSO)</description>
 
     <dependencies>
         <dependency>
