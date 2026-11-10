@@ -21,6 +21,8 @@ public class SqlHelper {
             .compile("^\\d{4}-(?:0[0-9]|1[0-2])-[0-9]{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3,9})?(Z|[+-]\\d{2}:\\d{2})?$");
     private static final Pattern DATE = Pattern.compile("^\\d{4}-(?:0[0-9]|1[0-2])-[0-9]{2}$");
     private static final Pattern TIME = Pattern.compile("^\\d{2}:\\d{2}:\\d{2}$");
+    /** Backup JSON often stores java.sql.Date / Instant as epoch millis. */
+    private static final Pattern EPOCH_MILLIS = Pattern.compile("^-?\\d{11,14}$");
     private static final Pattern UUID = Pattern
             .compile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$");
     private static final boolean castUUID = false;
@@ -63,7 +65,20 @@ public class SqlHelper {
             if (casted instanceof String) {
                 casted = castToNumericIfNeeded(statement, index, stringValue);
             }
+            // Backup JSON may stringify epoch millis for DATE / TIMESTAMP columns.
+            if (casted instanceof String stillString
+                    && EPOCH_MILLIS.matcher(stillString).matches()) {
+                Object epochCast = castEpochNumberIfNeeded(statement, index, Long.parseLong(stillString));
+                if (epochCast instanceof Date || epochCast instanceof Timestamp) {
+                    casted = epochCast;
+                }
+            }
             statement.setObject(index, casted);
+            return;
+        }
+        // Epoch millis from JSON (Jackson Number) into SQL DATE / TIMESTAMP columns (H2 is strict).
+        if (value instanceof Number number) {
+            statement.setObject(index, castEpochNumberIfNeeded(statement, index, number));
             return;
         }
         // Handle List/ArrayList by converting to JSON string
@@ -91,6 +106,26 @@ public class SqlHelper {
             }
         }
         statement.setObject(index, value);
+    }
+
+    private static Object castEpochNumberIfNeeded(PreparedStatement statement, int index, Number number) {
+        try {
+            ParameterMetaData pmd = statement.getParameterMetaData();
+            if (pmd == null) {
+                return number;
+            }
+            int paramType = pmd.getParameterType(index);
+            long ms = number.longValue();
+            if (paramType == Types.DATE) {
+                return new Date(ms);
+            }
+            if (paramType == Types.TIMESTAMP || paramType == Types.TIMESTAMP_WITH_TIMEZONE) {
+                return new Timestamp(ms);
+            }
+        } catch (SQLException | RuntimeException ignored) {
+            // fall through
+        }
+        return number;
     }
 
     private static boolean shouldBindEmptyStringAsNull(PreparedStatement statement, int index, String value) {

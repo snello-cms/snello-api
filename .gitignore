@@ -45,3 +45,6 @@ nb-configuration.xml
 .certs/
 snello-all-in-one-app/src/main/resources/META-INF/resources/
 dev/.env.mail
+
+.env.test
+dev/exports/tables/

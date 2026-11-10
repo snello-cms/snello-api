@@ -6,7 +6,7 @@
 
     <groupId>io.snello</groupId>
     <artifactId>snello-parent</artifactId>
-    <version>6.0.11-alpha</version>
+    <version>6.0.12-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
     <description>Snello multi-module parent: core + ai + control / query / mcp / all-in-one apps</description>
@@ -148,6 +148,19 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>3.1.0</version>
                     <executions>
+                        <execution>
+                            <!-- Leftover module-info.class from a prior package makes the next compile JPMS-strict. -->
+                            <id>clear-jpms-module-info-before-compile</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <delete file="${project.build.outputDirectory}/module-info.class" quiet="true"/>
+                                </target>
+                            </configuration>
+                        </execution>
                         <execution>
                             <id>clear-jpms-module-info</id>
                             <phase>process-classes</phase>

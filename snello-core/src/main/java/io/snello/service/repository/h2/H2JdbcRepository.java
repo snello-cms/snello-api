@@ -449,7 +449,7 @@ public class H2JdbcRepository implements JdbcRepository {
             case SHORT_TEXT -> " varchar(200) default null";
             case MEDIUM_TEXT -> " varchar(2048) default null";
             case LONG_TEXT -> " VARCHAR default null";
-            case INTEGER -> " int(10)";
+            case INTEGER -> " INTEGER";
             case DECIMAL -> " DOUBLE";
             case BOOLEAN -> " boolean default false";
             case DATE -> " date default null";

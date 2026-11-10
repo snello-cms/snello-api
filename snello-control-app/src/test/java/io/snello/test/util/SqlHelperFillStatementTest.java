@@ -97,6 +97,40 @@ class SqlHelperFillStatementTest {
         assertEquals("5", preparedStatement.values().getFirst());
     }
 
+    @Test
+    void shouldCastEpochMillisNumberToSqlDate() throws Exception {
+        RecordingPreparedStatement preparedStatement = new RecordingPreparedStatement(Types.DATE);
+        long epoch = 1_791_669_600_000L;
+
+        SqlHelper.fillStatement(preparedStatement.proxy(), List.of(epoch));
+
+        Object bound = preparedStatement.values().getFirst();
+        assertInstanceOf(java.sql.Date.class, bound);
+        assertEquals(epoch, ((java.sql.Date) bound).getTime());
+    }
+
+    @Test
+    void shouldCastEpochMillisStringToTimestamp() throws Exception {
+        RecordingPreparedStatement preparedStatement = new RecordingPreparedStatement(Types.TIMESTAMP);
+        long epoch = 1_791_669_600_000L;
+
+        SqlHelper.fillStatement(preparedStatement.proxy(), List.of(Long.toString(epoch)));
+
+        Object bound = preparedStatement.values().getFirst();
+        assertInstanceOf(java.sql.Timestamp.class, bound);
+        assertEquals(epoch, ((java.sql.Timestamp) bound).getTime());
+    }
+
+    @Test
+    void shouldKeepEpochMillisStringForVarchar() throws Exception {
+        RecordingPreparedStatement preparedStatement = new RecordingPreparedStatement(Types.VARCHAR);
+        String epoch = "1791669600000";
+
+        SqlHelper.fillStatement(preparedStatement.proxy(), List.of(epoch));
+
+        assertEquals(epoch, preparedStatement.values().getFirst());
+    }
+
     private static final class RecordingPreparedStatement {
         private final List<Object> values = new ArrayList<>();
         private final PreparedStatement proxy;
