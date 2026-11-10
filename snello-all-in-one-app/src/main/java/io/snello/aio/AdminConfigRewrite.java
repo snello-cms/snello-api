@@ -1,9 +1,11 @@
 package io.snello.aio;
 
 import io.quarkus.logging.Log;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -13,10 +15,13 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Serves rewritten admin SPA config from {@code /assets/config.json} so Docker-copied
- * snello-admin assets talk same-origin {@code /api} instead of whatever host was baked into
- * the admin image (e.g. kayak.love). Leaves {@code config.local.json} as 404 — the SPA treats
- * any JSON 200 there as the full config and would skip {@code config.json}.
+ * Serves rewritten admin SPA config from {@code /assets/config.json} and
+ * {@code /assets/config.local.json} so Docker-copied snello-admin assets talk same-origin
+ * {@code /api} instead of whatever host was baked into the admin image (e.g. kayak.love).
+ * <p>
+ * Both paths return the <em>full</em> rewritten JSON (paths + keycloak). The SPA prefers
+ * {@code config.local.json} when it returns JSON 200 — an empty {@code {}} previously caused a
+ * blank page; omitting the route caused a noisy 404 then fallback to {@code config.json}.
  * <p>
  * {@code keycloakConfig.url} / {@code realm} come from the API OIDC issuer
  * ({@code quarkus.oidc.auth-server-url}); {@code clientId} from
@@ -49,22 +54,22 @@ public class AdminConfigRewrite {
             return;
         }
 
-        router.get("/assets/config.json").order(ORDER).handler(ctx -> {
+        Handler<RoutingContext> serveRewritten = ctx -> {
             try {
                 ctx.response()
                         .putHeader("Content-Type", "application/json; charset=UTF-8")
                         .putHeader("Cache-Control", "no-store")
                         .end(Buffer.buffer(rewrittenConfig(configPath).encodePrettily()));
             } catch (Exception e) {
-                Log.error("failed to rewrite admin config.json", e);
+                Log.error("failed to rewrite admin SPA config", e);
                 ctx.next();
             }
-        });
+        };
+        // Before StaticHandler (-2000): overrides any baked config.local.json on disk.
+        router.get("/assets/config.json").order(ORDER).handler(serveRewritten);
+        router.get("/assets/config.local.json").order(ORDER).handler(serveRewritten);
 
-        // Do NOT serve config.local.json: the SPA treats any JSON 200 (even {}) as the full config
-        // and skips config.json — that left keycloakConfig undefined and a blank page.
-
-        Log.info("admin SPA config rewrite enabled (/assets/config.json → same-origin /api)");
+        Log.info("admin SPA config rewrite enabled (/assets/config.json + config.local.json → same-origin /api)");
     }
 
     JsonObject rewrittenConfig(Path configPath) throws Exception {

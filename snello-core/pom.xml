@@ -7,13 +7,17 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.7-alpha</version>
+        <version>6.0.8-alpha</version>
     </parent>
 
     <artifactId>snello-core</artifactId>
     <packaging>jar</packaging>
     <name>snello-core</name>
     <description>Shared Snello domain, JDBC, security and service layer</description>
+
+    <properties>
+        <snello.automatic.module.name>io.snello.core</snello.automatic.module.name>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -118,6 +122,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>

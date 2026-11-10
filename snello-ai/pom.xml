@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.7-alpha</version>
+        <version>6.0.8-alpha</version>
     </parent>
 
     <artifactId>snello-ai</artifactId>
@@ -15,6 +15,10 @@
     <name>snello-ai</name>
     <description>Snello AI: AG-UI WebSocket, history, skills/MCP tools, LangChain4j agents.
         Depended on by control (and mcp); the query plane does not ship it.</description>
+
+    <properties>
+        <snello.automatic.module.name>io.snello.ai</snello.automatic.module.name>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -41,6 +45,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>

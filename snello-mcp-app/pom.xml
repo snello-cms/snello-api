@@ -7,13 +7,17 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.7-alpha</version>
+        <version>6.0.8-alpha</version>
     </parent>
 
     <artifactId>snello-mcp-app</artifactId>
     <packaging>quarkus</packaging>
     <name>snello-mcp-app</name>
     <description>Snello MCP / AI tools plane</description>
+
+    <properties>
+        <snello.automatic.module.name>io.snello.mcp</snello.automatic.module.name>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -28,6 +32,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>

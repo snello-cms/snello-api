@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.7-alpha</version>
+        <version>6.0.8-alpha</version>
     </parent>
 
     <artifactId>snello-all-in-one-app</artifactId>
@@ -16,6 +16,7 @@
     <description>Snello all-in-one API (H2 + full control surface + snello-admin SPA via Docker COPY or dev/bundle-admin.sh; external SSO)</description>
 
     <properties>
+        <snello.automatic.module.name>io.snello.allinone</snello.automatic.module.name>
         <!-- false locally when running AdminSpaStaticTest; Docker black-box remains *IT via failsafe -->
         <aio.skipUnitTests>false</aio.skipUnitTests>
     </properties>
@@ -48,6 +49,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>

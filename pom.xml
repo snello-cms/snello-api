@@ -6,7 +6,7 @@
 
     <groupId>io.snello</groupId>
     <artifactId>snello-parent</artifactId>
-    <version>6.0.7-alpha</version>
+    <version>6.0.8-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
     <description>Snello multi-module parent: core + ai + control / query / mcp / all-in-one apps</description>
@@ -126,6 +126,18 @@
                     <groupId>io.smallrye</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${jandex-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <archive>
+                            <manifestEntries>
+                                <!-- Quarkus JPMS: avoid "does not have a defined module name" warn -->
+                                <Automatic-Module-Name>${snello.automatic.module.name}</Automatic-Module-Name>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -7,13 +7,17 @@
     <parent>
         <groupId>io.snello</groupId>
         <artifactId>snello-parent</artifactId>
-        <version>6.0.7-alpha</version>
+        <version>6.0.8-alpha</version>
     </parent>
 
     <artifactId>snello-control-app</artifactId>
     <packaging>quarkus</packaging>
     <name>snello-control-app</name>
     <description>Snello control plane (metadata, DDL, admin, AI write)</description>
+
+    <properties>
+        <snello.automatic.module.name>io.snello.control</snello.automatic.module.name>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -43,6 +47,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
