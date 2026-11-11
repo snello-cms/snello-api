@@ -18,6 +18,7 @@ public class MetadataUtils {
             case AUTH:
             case BACKUP:
             case DRAFTS:
+            case INTROSPECT:
             case PAGES:
             case CONDITIONS:
             case DATALISTS:

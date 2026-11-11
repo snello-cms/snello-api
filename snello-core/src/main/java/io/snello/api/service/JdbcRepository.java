@@ -7,16 +7,21 @@ import io.snello.model.Metadata;
 import io.snello.model.facet.EntityIdentity;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.pojo.ColumnSpec;
+import io.snello.model.pojo.DbColumn;
+import io.snello.model.pojo.DbForeignKey;
 import io.snello.util.ColumnSpecs;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -204,18 +209,68 @@ public interface JdbcRepository {
      */
     default Set<String> columns(String table) throws Exception {
         Set<String> result = new TreeSet<>();
+        for (DbColumn column : columnDetails(table)) {
+            result.add(column.name());
+        }
+        return result;
+    }
+
+    /**
+     * User tables in the connection catalog/schema, lower-cased, excluding views.
+     * Names are the logical identifiers Snello stores on {@code metadatas.table_name}.
+     */
+    default List<String> tables() throws Exception {
+        Set<String> names = new TreeSet<>();
+        try (Connection connection = getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (ResultSet rs = metaData.getTables(connection.getCatalog(), connection.getSchema(), "%",
+                    new String[]{"TABLE"})) {
+                while (rs.next()) {
+                    String name = rs.getString("TABLE_NAME");
+                    if (name != null && !name.isBlank()) {
+                        names.add(name.toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(names);
+    }
+
+    /** Full column metadata for {@code table}, lower-cased names, ordered by ordinal. */
+    default List<DbColumn> columnDetails(String table) throws Exception {
+        List<DbColumn> result = new ArrayList<>();
         if (table == null || table.isBlank()) {
             return result;
         }
         try (Connection connection = getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            for (String candidate : new String[]{table, table.toLowerCase(), table.toUpperCase()}) {
-                try (ResultSet resultSet = metaData.getColumns(connection.getCatalog(), connection.getSchema(), candidate, null)) {
-                    while (resultSet.next()) {
-                        // the table pattern treats '_' as a wildcard, so keep exact matches only
-                        if (table.equalsIgnoreCase(resultSet.getString("TABLE_NAME"))) {
-                            result.add(resultSet.getString("COLUMN_NAME").toLowerCase());
+            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
+                try (ResultSet rs = metaData.getColumns(connection.getCatalog(), connection.getSchema(), candidate, null)) {
+                    while (rs.next()) {
+                        if (!table.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+                            continue;
                         }
+                        String name = rs.getString("COLUMN_NAME");
+                        String typeName = rs.getString("TYPE_NAME");
+                        int size = rs.getInt("COLUMN_SIZE");
+                        int digits = rs.getInt("DECIMAL_DIGITS");
+                        boolean nullable = rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls;
+                        String def = rs.getString("COLUMN_DEF");
+                        boolean autoInc = false;
+                        try {
+                            String isAuto = rs.getString("IS_AUTOINCREMENT");
+                            autoInc = "YES".equalsIgnoreCase(isAuto);
+                        } catch (SQLException ignored) {
+                            // some drivers omit the column
+                        }
+                        result.add(new DbColumn(
+                                name == null ? null : name.toLowerCase(Locale.ROOT),
+                                typeName,
+                                size,
+                                digits,
+                                nullable,
+                                autoInc,
+                                def));
                     }
                 }
                 if (!result.isEmpty()) {
@@ -224,6 +279,104 @@ public interface JdbcRepository {
             }
         }
         return result;
+    }
+
+    /** Primary-key column names (lower-cased), ordered by KEY_SEQ. */
+    default List<String> primaryKeys(String table) throws Exception {
+        List<String> result = new ArrayList<>();
+        if (table == null || table.isBlank()) {
+            return result;
+        }
+        try (Connection connection = getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
+                try (ResultSet rs = metaData.getPrimaryKeys(connection.getCatalog(), connection.getSchema(), candidate)) {
+                    List<String[]> rows = new ArrayList<>();
+                    while (rs.next()) {
+                        if (!table.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+                            continue;
+                        }
+                        String col = rs.getString("COLUMN_NAME");
+                        short seq = rs.getShort("KEY_SEQ");
+                        if (col != null) {
+                            rows.add(new String[]{String.valueOf(seq), col.toLowerCase(Locale.ROOT)});
+                        }
+                    }
+                    rows.sort((a, b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
+                    for (String[] row : rows) {
+                        result.add(row[1]);
+                    }
+                }
+                if (!result.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /** Outbound foreign keys of {@code table} (lower-cased names). */
+    default List<DbForeignKey> importedKeys(String table) throws Exception {
+        List<DbForeignKey> result = new ArrayList<>();
+        if (table == null || table.isBlank()) {
+            return result;
+        }
+        try (Connection connection = getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
+                try (ResultSet rs = metaData.getImportedKeys(connection.getCatalog(), connection.getSchema(), candidate)) {
+                    while (rs.next()) {
+                        if (!table.equalsIgnoreCase(rs.getString("FKTABLE_NAME"))) {
+                            continue;
+                        }
+                        String fkCol = rs.getString("FKCOLUMN_NAME");
+                        String pkTable = rs.getString("PKTABLE_NAME");
+                        String pkCol = rs.getString("PKCOLUMN_NAME");
+                        result.add(new DbForeignKey(
+                                fkCol == null ? null : fkCol.toLowerCase(Locale.ROOT),
+                                pkTable == null ? null : pkTable.toLowerCase(Locale.ROOT),
+                                pkCol == null ? null : pkCol.toLowerCase(Locale.ROOT)));
+                    }
+                }
+                if (!result.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Up to {@code limit} rows from {@code table} for heuristic sampling. Empty when limit ≤ 0 or the table
+     * cannot be read. Failures are logged and yield an empty list (introspection must stay best-effort).
+     */
+    default List<Map<String, Object>> sampleRows(String table, int limit) throws Exception {
+        if (table == null || table.isBlank() || limit <= 0) {
+            return List.of();
+        }
+        String sql = "SELECT * FROM " + escape(table);
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setMaxRows(limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Map<String, Object>> rows = new ArrayList<>();
+                int cols = rs.getMetaData().getColumnCount();
+                while (rs.next() && rows.size() < limit) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    for (int i = 1; i <= cols; i++) {
+                        String label = rs.getMetaData().getColumnLabel(i);
+                        if (label != null) {
+                            row.put(label.toLowerCase(Locale.ROOT), rs.getObject(i));
+                        }
+                    }
+                    rows.add(row);
+                }
+                return rows;
+            }
+        } catch (Exception e) {
+            Log.warnf(e, "sampleRows failed for table=%s", table);
+            return List.of();
+        }
     }
 
     /** ALTER statement adding one column; columnSql is a full column definition ("name type default ..."). */

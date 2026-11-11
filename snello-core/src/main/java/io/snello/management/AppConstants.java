@@ -18,6 +18,7 @@ public class AppConstants {
     public static final String METADATAS = "metadatas";
     public static final String PUBLIC_DATA = "publicdata";
     public static final String DRAFTS = "drafts";
+    public static final String INTROSPECT = "introspect";
     public static final String PAGES = "p";
     public static final String SELECT_QUERY = "selectqueries";
     public static final String SCHEDULED_ACTIONS = "scheduledactions";
@@ -48,6 +49,7 @@ public class AppConstants {
     public static final String AI_CARDS_PATH = AI_PATH + "/cards";
     public static final String AI_SERVICE_ACCOUNTS_PATH = AI_PATH + "/service-accounts";
     public static final String DRAFTS_PATH = API_PATH + BASE_PATH + DRAFTS;
+    public static final String INTROSPECT_PATH = API_PATH + BASE_PATH + INTROSPECT;
     public static final String CONDITIONS_PATH = API_PATH + BASE_PATH + CONDITIONS;
     public static final String DATALIST_PATH = API_PATH + BASE_PATH + DATALISTS;
     public static final String DOCUMENTS_PATH = API_PATH + BASE_PATH + DOCUMENTS;

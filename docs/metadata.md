@@ -45,7 +45,7 @@ In code, the flat model is [`Metadata`](../snello-core/src/main/java/io/snello/m
 | `autoincrement` | dialect serial / identity | |
 | `userdefined` | no generated key column | key is one of the declared fields (`table_key` flag) |
 
-Slug sizing is shared across PostgreSQL, H2, and MySQL (`ColumnSpecs.resolveKeyVarcharLength` / `SlugKeySizes` on 5.1.x). See also [Drafts](drafts.md).
+Slug sizing is shared across PostgreSQL, H2, and MySQL (`ColumnSpecs.resolveKeyVarcharLength` / `SlugKeySizes` on 5.1.x). See also [Drafts](drafts.md) and [Introspect](introspect.md) for existing tables (`already_exist`).
 
 ## Ownership Protection: `api_protected` and `username_field`
 

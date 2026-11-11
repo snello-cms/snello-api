@@ -23,6 +23,7 @@ Architecture (repo root):
 - [Metadata: Table key types](metadata.md#table-key-types)
 - [Field Definitions](field-definitions.md)
 - [Entity drafts](drafts.md) — `/api/drafts/validate|apply`
+- [Schema introspect](introspect.md) — existing tables → metadata (`/api/introspect/preview|apply`)
 - [SelectQuery](select-query.md)
 - [REST Query Params](rest-query-params.md)
 
