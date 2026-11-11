@@ -31,9 +31,10 @@ import static io.snello.management.AppConstants.UUID;
 /**
  * Data part of the metadata export/import: rows travel with their metadata, as JSON or ZIP.
  * <pre>
- * JSON: {"metadatas": [{"metadata": {...}, "fields": [...], "data": [rows]}]}
- * ZIP:  manifest.json                      {"kind": "snello-metadata-export", "data": true, "tables": [...]}
- *       metadatas.json                     {"metadatas": [{"metadata": {...}, "fields": [...]}]}
+ * JSON: {"metadatas": [{"metadata": {...}, "fields": [...], "data": [rows]}], "config": {...}}
+ * ZIP:  manifest.json                      {"kind": "snello-metadata-export", "data": true, "tables": [...],
+ *                                           "config": {"actions": 3, ...}}
+ *       metadatas.json                     {"metadatas": [{"metadata": {...}, "fields": [...]}], "config": {...}}
  *       data/&lt;table&gt;/0001.json, 0002.json  row chunks, same layout as the data backup zip
  * </pre>
  * Rows are imported with the backup rules: an existing key is skipped, errors are collected, not thrown.
@@ -78,15 +79,24 @@ public class MetadataTransferService {
 
     /**
      * @param entries export entries ({@code metadata} + {@code fields}), written as metadatas.json
+     * @param config  {@link ConfigTransferService#export} output, written next to the metadatas (may be empty)
      * @return temp ZIP (caller deletes after streaming)
      */
-    public Path buildExportZip(List<Map<String, Object>> entries, boolean withData) throws Exception {
+    public Path buildExportZip(List<Map<String, Object>> entries, boolean withData, Map<String, Object> config)
+            throws Exception {
         Path zipPath = Files.createTempFile("snello-metadata-export-", ".zip");
         List<Map<String, Object>> tables = new ArrayList<>();
         Log.infof("metadata export zip: metadatas=%d withData=%s -> %s", entries.size(), withData, zipPath);
         try (OutputStream fos = Files.newOutputStream(zipPath);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
-            backupService.writeZipJson(zos, METADATAS_ENTRY, Map.of(METADATAS, entries));
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put(METADATAS, entries);
+            Map<String, Object> configCounts = new LinkedHashMap<>();
+            if (config != null && !config.isEmpty()) {
+                body.put(ConfigTransferService.CONFIG_KEY, config);
+                config.forEach((table, rows) -> configCounts.put(table, rows instanceof List<?> l ? l.size() : 0));
+            }
+            backupService.writeZipJson(zos, METADATAS_ENTRY, body);
             if (withData) {
                 for (Map<String, Object> entry : entries) {
                     String table = tableName(entry);
@@ -107,6 +117,7 @@ public class MetadataTransferService {
             manifest.put("created_at", Instant.now().toString());
             manifest.put("data", withData);
             manifest.put("tables", tables);
+            manifest.put(ConfigTransferService.CONFIG_KEY, configCounts);
             backupService.writeZipJson(zos, MANIFEST_ENTRY, manifest);
         } catch (Exception e) {
             Files.deleteIfExists(zipPath);

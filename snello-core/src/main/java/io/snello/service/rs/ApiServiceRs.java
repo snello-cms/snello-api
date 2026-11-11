@@ -169,35 +169,10 @@ public class ApiServiceRs {
      */
     private Response applyRowFilter(String table, MultivaluedMap<String, String> parameters) throws Exception {
         Optional<RowProtection> protection = catalog.rowProtection(table);
-        if (protection.isEmpty() || !protection.get().apiProtected()) {
+        if (protection.isEmpty()) {
             return null;
         }
-        if (isAdminOrManager(securityContext)) {
-            Log.infof("row filter table=%s: admin or manager, no filter", table);
-            return null;
-        }
-        if (!isAuthenticated(securityContext)) {
-            Log.infof("row filter table=%s: anonymous on protected table -> 401", table);
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        if (protection.get().rowLevelSecured()) {
-            String user = username(securityContext);
-            if (user == null || user.isBlank()) {
-                // an empty value is skipped by ParamUtils.where, which would drop the owner filter entirely
-                Log.warnf("row filter table=%s: authenticated caller without a username -> 403", table);
-                return Response.status(Response.Status.FORBIDDEN).build();
-            }
-            if (SqlSafety.isUnsafeOwnerColumn(protection.get().usernameField())) {
-                Log.errorf("row filter table=%s: username_field=%s is not a plain column name (operator suffix?) -> 500",
-                        table, protection.get().usernameField());
-                return Response.serverError().build();
-            }
-            parameters.put(protection.get().usernameField(), List.of(user));
-            Log.infof("row filter table=%s: %s=%s", table, protection.get().usernameField(), user);
-        } else {
-            Log.warnf("row filter table=%s: api_protected without username_field, authenticated users see all rows", table);
-        }
-        return null;
+        return rowFilter(protection.get(), table, parameters, securityContext);
     }
 
     private Response fetchGuarded(EntityQueryView view, String id, String key) throws Exception {

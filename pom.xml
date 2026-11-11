@@ -36,6 +36,10 @@
         <webpimageio.version>0.11.0</webpimageio.version>
         <minio-client.version>3.9.2</minio-client.version>
         <nashorn-version>15.7</nashorn-version>
+        <!-- print templates: HTML->PDF, HTML5 parsing, XLSX templates -->
+        <openhtmltopdf.version>1.1.100</openhtmltopdf.version>
+        <jsoup.version>1.23.2</jsoup.version>
+        <jxls.version>3.2.0</jxls.version>
     </properties>
 
     <dependencyManagement>
@@ -88,6 +92,21 @@
                 <groupId>com.github.usefulness</groupId>
                 <artifactId>webp-imageio</artifactId>
                 <version>${webpimageio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.openhtmltopdf</groupId>
+                <artifactId>openhtmltopdf-pdfbox</artifactId>
+                <version>${openhtmltopdf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jxls</groupId>
+                <artifactId>jxls-poi</artifactId>
+                <version>${jxls.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

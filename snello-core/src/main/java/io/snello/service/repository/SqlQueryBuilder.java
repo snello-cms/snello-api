@@ -74,7 +74,8 @@ public final class SqlQueryBuilder {
     }
 
     private static Map<String, Object> row(ResultSet rs, ResultSetMetaData rsmd, int columnCount) throws Exception {
-        Map<String, Object> map = new HashMap<>();
+        // keep the SELECT's column order (CSV exports and JSON follow it)
+        Map<String, Object> map = new java.util.LinkedHashMap<>();
         for (int i = 1; i <= columnCount; i++) {
             // Convert CLOB/BLOB/temporal JDBC types to JSON-friendly values (String/byte[]/...).
             map.put(rsmd.getColumnLabel(i), SqlHelper.convertSqlValue(rs.getObject(i)));

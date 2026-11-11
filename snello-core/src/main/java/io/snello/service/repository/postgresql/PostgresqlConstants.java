@@ -304,6 +304,37 @@ public class PostgresqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ";
 
+    /** Print templates: a query + a Qute/CSV body or a JXLS xlsx (template_file, base64), rendered to pdf/html/csv/xlsx. */
+    public static String creationPrintTemplates = "CREATE TABLE IF NOT EXISTS printtemplates (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  description varchar(255) DEFAULT NULL,\n" +
+            "  export_type varchar(10) NOT NULL,\n" +
+            "  sql_query TEXT DEFAULT NULL,\n" +
+            "  html_body TEXT DEFAULT NULL,\n" +
+            "  template_file TEXT DEFAULT NULL,\n" +
+            "  template_file_name varchar(255) DEFAULT NULL,\n" +
+            "  api_protected boolean NOT NULL DEFAULT false,\n" +
+            "  username_field varchar(255) DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ";
+
+    /** Jobs run by ScheduledActionTimer: a cron (frequency) and a JS body with the same bindings as an Action. */
+    public static String creationScheduledActions = "CREATE TABLE IF NOT EXISTS scheduledactions (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  name varchar(255) NOT NULL,\n" +
+            "  description varchar(255) DEFAULT NULL,\n" +
+            "  frequency varchar(255) NOT NULL,\n" +
+            "  enabled boolean DEFAULT true NOT NULL,\n" +
+            "  body TEXT DEFAULT NULL,\n" +
+            "  next_run varchar(64) DEFAULT NULL,\n" +
+            "  last_run varchar(64) DEFAULT NULL,\n" +
+            "  last_status varchar(20) DEFAULT NULL,\n" +
+            "  last_message TEXT DEFAULT NULL,\n" +
+            "  last_duration_ms bigint DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ";
+
     public static String creationAiServiceAccount = "CREATE TABLE IF NOT EXISTS ai_service_account (\n" +
             "  uuid varchar(255) NOT NULL,\n" +
             "  project_uuid varchar(36) NOT NULL,\n" +

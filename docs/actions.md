@@ -38,3 +38,32 @@ Example — PRE PERSIST, default a field:
 ```js
 if (map.get('notes') == null) map.put('notes', 'created via API');
 ```
+
+## Scheduled Actions
+
+A Scheduled Action is a script run on a schedule instead of on a row write. Rows live in `scheduledactions`
+(`/api/scheduledactions`, admin page *Scheduled Actions*).
+
+| Field | Meaning |
+|---|---|
+| `name`, `description` | label |
+| `frequency` | cron: 5 fields (`0 17 * * *` = every day at 17:00) or Quartz with seconds (`0 0 17 * * ?`) |
+| `enabled` | `false` keeps the job but never runs it |
+| `body` | the script: same bindings as an Action (`db`, `mail`, `http`, `documents`, `metadata`, `log`, `action`); `table`, `table_key`, `key` are `null`, `map` is empty |
+| `next_run`, `last_run`, `last_status` (`RUNNING`/`OK`/`ERROR`), `last_message`, `last_duration_ms` | written by the scheduler, ignored on input |
+
+One timer polls the table and runs the jobs whose `next_run` has passed:
+
+```properties
+snello.scheduled-actions.enabled=true            # SNELLO_SCHEDULED_ACTIONS_ENABLED
+snello.scheduled-actions.cron=0 */5 * * * ?      # tick, SNELLO_SCHEDULED_ACTIONS_CRON (0 * * * * ? = every minute)
+snello.scheduled-actions.timezone=Europe/Rome    # zone of the jobs' cron, SNELLO_SCHEDULED_ACTIONS_TIMEZONE (default: server zone)
+```
+
+- The tick is the precision: with the default 5 minutes, a job "every minute" runs every 5 minutes.
+- Runs missed while the server was down collapse into one run at the next tick. Saving or re-enabling a job
+  recomputes `next_run` from now (no replay).
+- With several instances on one database, each due run is claimed with a conditional UPDATE, so it runs once.
+- Only the control plane (and all-in-one) runs jobs; query nodes never do.
+- `GET /api/scheduledactions/preview?frequency=0 17 * * *&count=5` lists the next fire times;
+  `POST /api/scheduledactions/{uuid}/run` runs a job now (Admin/Manager) and returns its outcome.

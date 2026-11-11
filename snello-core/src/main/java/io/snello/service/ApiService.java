@@ -242,6 +242,39 @@ public class ApiService {
         return jdbcRepository.exist(table, table_key, uuid);
     }
 
+    /**
+     * Runs a SelectQuery (stored or built on the fly, e.g. by a print template): owner scope when protected, filters
+     * when with_params, then sort and paging. {@code httpParameters} must already carry the owner value for
+     * non-admin callers (see ApiRequestUtils.rowFilter).
+     */
+    public List<Map<String, Object>> listSelectQuery(String table, SelectQuery selectQuery,
+            MultivaluedMap<String, String> httpParameters, String sort, int limit, int start) throws Exception {
+        SqlSafety.requireSafeSort(sort);
+        List<Condition> conditions = null;
+        if (ownerScoped(selectQuery, httpParameters)) {
+            // Row-level security: the owner value was bound by ApiServiceRs. Wrap the stored SQL so the filter
+            // applies to the query result whatever its own WHERE / JOIN / GROUP BY look like, and ignore every
+            // other request parameter when the query is not with_params.
+            String wrapped = SELECT_QUERY_OWNER_WRAP_PREFIX + stripTrailingSemicolons(selectQuery.select_query)
+                    + SELECT_QUERY_OWNER_WRAP_SUFFIX;
+            Log.infof("selectquery %s: owner-scoped list on column=%s with_params=%s", table,
+                    selectQuery.username_field, selectQuery.with_params);
+            return jdbcRepository.list(wrapped, ownerScopedParameters(selectQuery, httpParameters), conditions, sort,
+                    limit, start);
+        }
+        // Filters (with_params only), sort and paging are appended to the stored SQL. When it already ends with
+        // GROUP BY / ORDER BY / LIMIT / ... appending is a syntax error, so it is wrapped as a subquery first.
+        // Non-with_params queries used to ignore sort and paging and return every row.
+        MultivaluedMap<String, String> filters = selectQueryFilters(selectQuery, httpParameters);
+        String sql = stripTrailingSemicolons(selectQuery.select_query);
+        boolean appends = hasFilters(filters) || (sort != null && !sort.isBlank()) || limit > 0 || start > 0;
+        if (appends && SqlWhere.needsWrap(sql)) {
+            sql = "SELECT * FROM (" + sql + ") snello_q";
+            Log.infof("selectquery %s: wrapped as subquery for filters/sort/paging", table);
+        }
+        return jdbcRepository.list(sql, filters, null, sort, limit, start);
+    }
+
     public List<Map<String, Object>> list(String table, MultivaluedMap<String, String> httpParameters, String sort,
             int limit,
             int start) throws Exception {
@@ -251,29 +284,7 @@ public class ApiService {
         String alias_condition = null;
         List<Condition> conditions = null;
         if (metadataService.selectqueryMap().containsKey(table)) {
-            SelectQuery selectQuery = metadataService.selectqueryMap().get(table);
-            if (ownerScoped(selectQuery, httpParameters)) {
-                // Row-level security: the owner value was bound by ApiServiceRs. Wrap the stored SQL so the filter
-                // applies to the query result whatever its own WHERE / JOIN / GROUP BY look like, and ignore every
-                // other request parameter when the query is not with_params.
-                String wrapped = SELECT_QUERY_OWNER_WRAP_PREFIX + stripTrailingSemicolons(selectQuery.select_query)
-                        + SELECT_QUERY_OWNER_WRAP_SUFFIX;
-                Log.infof("selectquery %s: owner-scoped list on column=%s with_params=%s", table,
-                        selectQuery.username_field, selectQuery.with_params);
-                return jdbcRepository.list(wrapped, ownerScopedParameters(selectQuery, httpParameters), conditions, sort,
-                        limit, start);
-            }
-            // Filters (with_params only), sort and paging are appended to the stored SQL. When it already ends with
-            // GROUP BY / ORDER BY / LIMIT / ... appending is a syntax error, so it is wrapped as a subquery first.
-            // Non-with_params queries used to ignore sort and paging and return every row.
-            MultivaluedMap<String, String> filters = selectQueryFilters(selectQuery, httpParameters);
-            String sql = stripTrailingSemicolons(selectQuery.select_query);
-            boolean appends = hasFilters(filters) || (sort != null && !sort.isBlank()) || limit > 0 || start > 0;
-            if (appends && SqlWhere.needsWrap(sql)) {
-                sql = "SELECT * FROM (" + sql + ") snello_q";
-                Log.infof("selectquery %s: wrapped as subquery for filters/sort/paging", table);
-            }
-            return jdbcRepository.list(sql, filters, null, sort, limit, start);
+            return listSelectQuery(table, metadataService.selectqueryMap().get(table), httpParameters, sort, limit, start);
         }
         Optional<EntityQueryView> resolved = catalog.queryView(table);
         if (resolved.isPresent()) {

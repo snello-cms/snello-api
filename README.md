@@ -193,7 +193,7 @@ To re-run DB restore from scratch: `docker compose down -v` then `up --build` ag
 
 ## Control plane APIs (`snello-control`)
 
-With `snello.control-plane.enabled=true`, control registers the full surface: data CRUD + metadata/DDL + documents + auth + AI. Auth typical: GET/OPTIONS open on `/api/*`; data writes (`/api/{table}`) need role `Admin|Manager|User` (row-level security per owner); configuration writes (metadatas, fielddefinitions, conditions, actions, selectqueries, links, AI config) need `Admin|Manager`; table DDL (`POST /api/metadatas/{id}/create|delete|truncate`) needs `Admin`; `/api/auth*` Admin-only. See [Actions](docs/actions.md).
+With `snello.control-plane.enabled=true`, control registers the full surface: data CRUD + metadata/DDL + documents + auth + AI. Auth typical: GET/OPTIONS open on `/api/*`; data writes (`/api/{table}`) need role `Admin|Manager|User` (row-level security per owner); configuration writes (metadatas, fielddefinitions, conditions, actions, scheduledactions, printtemplates, selectqueries, links, AI config) need `Admin|Manager`; table DDL (`POST /api/metadatas/{id}/create|delete|truncate`) needs `Admin`; `/api/auth*` Admin-only. See [Actions](docs/actions.md) and [Print templates](docs/print-templates.md).
 
 ### OpenAPI (`GET /openapi`)
 

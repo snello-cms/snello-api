@@ -7,7 +7,6 @@ import io.restassured.http.ContentType;
 import io.snello.api.service.JdbcRepository;
 import io.snello.api.service.MailService;
 import io.snello.service.MetadataService;
-import io.snello.service.ScheduledScriptJob;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,8 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Renter flow: after a registration is saved, a POST action mails the renter; a cron job does the same on a schedule.
+ * Renter flow: after a registration is saved, a POST action mails the renter
+ * (scheduled jobs: see ScheduledActionsTest).
  * Mailer runs in mock mode, so no real SMTP is needed (provider settings are env-driven, see application.properties).
  */
 @QuarkusTest
@@ -39,8 +39,6 @@ class MailAndSchedulerTest {
     MockMailbox mailbox;
     @Inject
     MailService mailService;
-    @Inject
-    ScheduledScriptJob job;
 
     @BeforeEach
     void seed() throws Exception {
@@ -97,12 +95,5 @@ class MailAndSchedulerTest {
         }
         assertEquals(1, mailbox.getMailsSentTo("mario@rent.it").size());
         assertEquals("Welcome Mario", mailbox.getMailsSentTo("mario@rent.it").get(0).getSubject());
-    }
-
-    @Test
-    void schedulerRunsConfiguredScript() {
-        // script is set in src/test/resources/application.properties (snello.scheduler.script)
-        assertTrue(job.runOnce());
-        assertEquals(1, mailbox.getMailsSentTo("sched@rent.it").size());
     }
 }

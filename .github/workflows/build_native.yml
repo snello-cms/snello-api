@@ -76,13 +76,13 @@ jobs:
 
       - name: Maven Package (Native)
         # Native builds a fixed db-kind at compile time (not mutable-jar). Default: postgresql.
-        # LangChain4j OpenAI ObjectMapperHolder must init at runtime on Quarkus 4 / Jackson 3.
+        # Native build args (run-time init for LangChain4j holders, POI, zstd) live in
+        # snello-control-app application.properties: passing quarkus.native.additional-build-args here would replace them.
         run: >
           mvn -pl snello-control-app -am clean package -DskipTests=true -Pnative
           -Dquarkus.native.container-build=true
           -Dquarkus.package.jar.type=fast-jar
           -Dquarkus.datasource.db-kind=postgresql
-          '-Dquarkus.native.additional-build-args=--initialize-at-run-time=io.quarkiverse.langchain4j.openai.common.OpenAiRestApi\$ObjectMapperHolder,--initialize-at-run-time=io.quarkiverse.langchain4j.QuarkusJsonCodecFactory\$SnakeCaseObjectMapperHolder'
 
       - name: Verify native runner artifact
         run: |

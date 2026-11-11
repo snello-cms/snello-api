@@ -118,6 +118,24 @@
             <groupId>com.github.usefulness</groupId>
             <artifactId>webp-imageio</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.openhtmltopdf</groupId>
+            <artifactId>openhtmltopdf-pdfbox</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jxls</groupId>
+            <artifactId>jxls-poi</artifactId>
+        </dependency>
+        <!-- POI (xlsx) -> commons-compress ZipArchiveInputStream references the zstd codec: native-image needs the
+             class to resolve, otherwise the build fails with "unresolved method ZstdCompressorInputStream.<init>" -->
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
