@@ -16,8 +16,9 @@
 #     -t snellocms/snello-all-in-one:alpha snello-all-in-one-app
 # Or:  dev/build-aio-image.sh [--skip-admin-build] [tag]
 #
-# Optional admin image override:
-#   --build-arg SNELLO_ADMIN_IMAGE=snellocms/snello-admin:alpha
+# Admin image: edge = latest push to snello-admin main (6.x admin). latest is only moved by a release tag and
+# still points at the 3.0.x admin, which lacks the 6.x pages (select query protection, scheduled actions, ...).
+# Pin a build instead with --build-arg SNELLO_ADMIN_IMAGE=snellocms/snello-admin:sha-<commit>
 #
 # Run (SSO required; AG-UI optional keys):
 #   docker run --rm -p 8080:8080 -v snello-aio:/data \
@@ -26,7 +27,7 @@
 #     -e SNELLO_AITYPE=ai-gemini -e GEMINI_API_KEY=... \
 #     snellocms/snello-all-in-one:alpha
 ###
-ARG SNELLO_ADMIN_IMAGE=snellocms/snello-admin:latest
+ARG SNELLO_ADMIN_IMAGE=snellocms/snello-admin:edge
 FROM ${SNELLO_ADMIN_IMAGE} AS snello-admin
 
 FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24

@@ -18,7 +18,7 @@ import java.util.Set;
 
 /**
  * Writes to the configuration resources ({@link AbstractServiceRs} subclasses: metadatas, fielddefinitions,
- * conditions, actions, selectqueries, links, AI projects / skills / tools / cards / service accounts) require
+ * conditions, actions, scheduledactions, printtemplates, selectqueries, links, AI projects / skills / tools / cards / service accounts) require
  * Admin or Manager.
  * <p>
  * The HTTP policy lets any authenticated {@code User} POST/PUT/DELETE on {@code /api/*}, which is right for the data

@@ -233,6 +233,37 @@ public class MysqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+    /** Print templates: a query + a Qute/CSV body or a JXLS xlsx (template_file, base64), rendered to pdf/html/csv/xlsx. */
+    public static String creationPrintTemplates = "CREATE TABLE IF NOT EXISTS `printtemplates` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `name` varchar(255) NOT NULL,\n" +
+            "  `description` varchar(255) DEFAULT NULL,\n" +
+            "  `export_type` varchar(10) NOT NULL,\n" +
+            "  `sql_query` LONGTEXT,\n" +
+            "  `html_body` LONGTEXT,\n" +
+            "  `template_file` LONGTEXT,\n" +
+            "  `template_file_name` varchar(255) DEFAULT NULL,\n" +
+            "  `api_protected` boolean NOT NULL DEFAULT false,\n" +
+            "  `username_field` varchar(255) DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    /** Jobs run by ScheduledActionTimer: a cron (frequency) and a JS body with the same bindings as an Action. */
+    public static String creationScheduledActions = "CREATE TABLE IF NOT EXISTS `scheduledactions` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `name` varchar(255) NOT NULL,\n" +
+            "  `description` varchar(255) DEFAULT NULL,\n" +
+            "  `frequency` varchar(255) NOT NULL,\n" +
+            "  `enabled` boolean NOT NULL DEFAULT true,\n" +
+            "  `body` MEDIUMTEXT,\n" +
+            "  `next_run` varchar(64) DEFAULT NULL,\n" +
+            "  `last_run` varchar(64) DEFAULT NULL,\n" +
+            "  `last_status` varchar(20) DEFAULT NULL,\n" +
+            "  `last_message` MEDIUMTEXT,\n" +
+            "  `last_duration_ms` bigint DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationAiServiceAccount = "CREATE TABLE IF NOT EXISTS `ai_service_account` (\n" +
             "  `uuid` varchar(255) NOT NULL,\n" +
             "  `project_uuid` varchar(36) NOT NULL,\n" +

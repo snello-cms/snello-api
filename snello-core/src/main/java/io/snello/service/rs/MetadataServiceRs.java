@@ -13,6 +13,7 @@ import io.snello.model.events.MetadataDeleteEvent;
 import io.snello.model.pojo.JsonFormData;
 import io.snello.service.AiProfileValidator;
 import io.snello.service.ApiService;
+import io.snello.service.ConfigTransferService;
 import io.snello.service.MetadataTransferService;
 import io.snello.service.TableSchemaService;
 import io.snello.util.MetadataUtils;
@@ -115,6 +116,8 @@ public class MetadataServiceRs extends AbstractServiceRs {
     AiProfileValidator aiProfileValidator;
     @Inject
     MetadataTransferService metadataTransferService;
+    @Inject
+    ConfigTransferService configTransferService;
 
     private static final String ZIP_MEDIA_TYPE = "application/zip";
 
@@ -240,15 +243,18 @@ public class MetadataServiceRs extends AbstractServiceRs {
     /**
      * Body: {@code {"metadatas": [uuid...]} | {"all": true}}, optional {@code "data": true} to include the table
      * rows and {@code "format": "json" | "zip"} (default json). See {@link MetadataTransferService} for the layouts.
+     * Config flags {@code "actions", "conditions", "select_queries", "scheduled_actions", "print_templates"} add a
+     * {@code "config"} object (see {@link ConfigTransferService}); with a flag set the metadata list may be empty.
      */
     @POST
     @Path("/export")
     @Produces({MediaType.APPLICATION_JSON, ZIP_MEDIA_TYPE})
     public Response export(Map<String, Object> body) throws Exception {
         List<String> uuids = resolveExportUuids(body);
-        if (uuids.isEmpty()) {
+        boolean withConfig = ConfigTransferService.anyRequested(body);
+        if (uuids.isEmpty() && !withConfig) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("metadatas list is required (or pass \"all\": true)").build();
+                    .entity("metadatas list is required (or pass \"all\": true, or a config flag)").build();
         }
         boolean withData = body != null && Boolean.TRUE.equals(body.get("data"));
         String format = body == null || body.get("format") == null ? "json" : body.get("format").toString().trim().toLowerCase();
@@ -256,14 +262,17 @@ public class MetadataServiceRs extends AbstractServiceRs {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("format must be json or zip, got '" + format + "'").build();
         }
-        Log.infof("metadata export: metadatas=%d withData=%s format=%s", uuids.size(), withData, format);
+        Log.infof("metadata export: metadatas=%d withData=%s format=%s config=%s", uuids.size(), withData, format,
+                withConfig);
         List<Map<String, Object>> result = new ArrayList<>();
+        List<String> tableNames = new ArrayList<>();
         for (String uuid : uuids) {
             Map<String, Object> raw = getApiService().fetch(null, METADATAS, uuid, UUID);
             if (raw != null) {
                 String tableName = (String) raw.get(TABLE_NAME);
                 Metadata full = getApiService().metadataWithFields(tableName);
                 if (full != null) {
+                    tableNames.add(tableName);
                     Map<String, Object> entry = new LinkedHashMap<>();
                     entry.put("metadata", full);
                     entry.put("fields", full.fields != null ? full.fields : List.of());
@@ -271,14 +280,21 @@ public class MetadataServiceRs extends AbstractServiceRs {
                 }
             }
         }
+        Map<String, Object> config = configTransferService.export(body, tableNames);
         if (format.equals("zip")) {
-            return BackupServiceRs.zipDownload(metadataTransferService.buildExportZip(result, withData), "metadatas-export.zip");
+            return BackupServiceRs.zipDownload(metadataTransferService.buildExportZip(result, withData, config),
+                    "metadatas-export.zip");
         }
         if (withData) {
             metadataTransferService.attachInlineData(result);
         }
         String filename = "metadatas-export.json";
-        return Response.ok(Map.of("metadatas", result))
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("metadatas", result);
+        if (!config.isEmpty()) {
+            out.put(ConfigTransferService.CONFIG_KEY, config);
+        }
+        return Response.ok(out)
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .build();
     }
@@ -360,9 +376,14 @@ public class MetadataServiceRs extends AbstractServiceRs {
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> metadatasList = (List<Map<String, Object>>) body.get("metadatas");
-        if (metadatasList == null || metadatasList.isEmpty()) {
+        boolean withConfig = ConfigTransferService.hasConfig(body);
+        if ((metadatasList == null || metadatasList.isEmpty()) && !withConfig) {
             return Response.status(Response.Status.BAD_REQUEST).entity("metadatas list is empty or missing").build();
         }
+        if (metadatasList == null) {
+            metadatasList = List.of();
+        }
+        Log.infof("metadata import: metadatas=%d config=%s", metadatasList.size(), withConfig);
         // Fase 1: verifica che nessun metadata esista già
         for (Map<String, Object> entry : metadatasList) {
             @SuppressWarnings("unchecked")
@@ -424,10 +445,14 @@ public class MetadataServiceRs extends AbstractServiceRs {
         if (metadataTransferService.hasData(metadatasList, zipRoot)) {
             response.put("data", metadataTransferService.importData(metadatasList, zipRoot));
         }
+        if (withConfig) {
+            response.put(ConfigTransferService.CONFIG_KEY, configTransferService.importConfig(body));
+        }
         if (!saved.isEmpty()) {
             eventCreateUpdatePublisher.fireAsync(new MetadataCreateUpdateEvent(saved.getLast()));
         }
-        Log.infof("metadata import: metadatas=%d data=%s", saved.size(), response.get("data"));
+        Log.infof("metadata import: metadatas=%d data=%s config=%s", saved.size(), response.get("data"),
+                response.get(ConfigTransferService.CONFIG_KEY));
         return ok(response).build();
     }
 
