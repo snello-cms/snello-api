@@ -59,8 +59,7 @@ public class DocumentServiceRs {
     @Consumes(MediaType.APPLICATION_JSON)
 
     public Response fetch(@PathParam("id") String id) throws Exception {
-        Map<String, Object> result = apiService.fetch(null, table, id, UUID);
-        return ok(result).build();
+        return ok(requireDocument(id)).build();
     }
 
     @GET
@@ -70,7 +69,7 @@ public class DocumentServiceRs {
     public Response download(@PathParam("uuid") @NotNull String uuid, @QueryParam(value = "format") String format)
             throws Exception {
         Log.info("download - " + uuid + "," + format);
-        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        Map<String, Object> map = requireDocument(uuid);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
         String filename = downloadName(map);
@@ -109,7 +108,7 @@ public class DocumentServiceRs {
     public Response webp(@PathParam("uuid") @NotNull String uuid,
             @QueryParam(value = "format") String format) throws Exception {
         Log.info("webp - " + uuid + "," + format);
-        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        Map<String, Object> map = requireDocument(uuid);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
         String filename = (String) map.get(DOCUMENT_NAME);
@@ -148,7 +147,7 @@ public class DocumentServiceRs {
 
     public Response downloadWithName(@PathParam("uuid") @NotNull String uuid,
             @PathParam("name") @NotNull String name) throws Exception {
-        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        Map<String, Object> map = requireDocument(uuid);
         String path = (String) map.get(DOCUMENT_PATH);
         String mimetype = (String) map.get(DOCUMENT_MIME_TYPE);
         StreamingOutput output = documentsService.streamingOutput(path, mimetype);
@@ -163,7 +162,7 @@ public class DocumentServiceRs {
     public Response video(@PathParam("uuid") @NotNull String uuid,
             @PathParam("name") @NotNull String name,
             @Context RoutingContext routingContext) throws Exception {
-        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        Map<String, Object> map = requireDocument(uuid);
         String path = (String) map.get(DOCUMENT_PATH);
         File file = documentsService.getFile(path);
         routingContext.addBodyEndHandler(v -> deleteTempFile(file));
@@ -239,20 +238,24 @@ public class DocumentServiceRs {
 
     public Response delete(@PathParam("uuid") @NotNull String uuid,
             @Nullable @QueryParam("delete") String delete) throws Exception {
-        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        Map<String, Object> map = requireDocument(uuid);
         if (delete != null && delete.toLowerCase().equals(TRUE)) {
             documentsService.delete((String) map.get(DOCUMENT_PATH));
         }
-        if (map != null) {
-            boolean result = apiService.delete(table, uuid, AppConstants.UUID);
-            if (result) {
-                return ok().build();
-            } else {
-                return serverError().build();
-            }
-        } else {
-            return serverError().build();
+        boolean result = apiService.delete(table, uuid, AppConstants.UUID);
+        if (result) {
+            return ok().build();
         }
+        return serverError().build();
+    }
+
+    /** Loads the documents row or answers 404 when uuid is unknown. */
+    private Map<String, Object> requireDocument(String uuid) throws Exception {
+        Map<String, Object> map = apiService.fetch(null, table, uuid, AppConstants.UUID);
+        if (map == null) {
+            throw new NotFoundException("document not found: " + uuid);
+        }
+        return map;
     }
 
     @GET
