@@ -23,6 +23,7 @@ public class AppConstants {
     public static final String SELECT_QUERY = "selectqueries";
     public static final String SCHEDULED_ACTIONS = "scheduledactions";
     public static final String PRINT_TEMPLATES = "printtemplates";
+    public static final String MAIL = "mail";
     public static final String AI_TOOLS = "ai_tools";
     public static final String HISTORY_SESSION = "history_session";
     public static final String HISTORY_EVENT = "history_event";
@@ -59,6 +60,7 @@ public class AppConstants {
     public static final String SELECT_QUERY_PATH = API_PATH + BASE_PATH + SELECT_QUERY;
     public static final String SCHEDULED_ACTIONS_PATH = API_PATH + BASE_PATH + SCHEDULED_ACTIONS;
     public static final String PRINT_TEMPLATES_PATH = API_PATH + BASE_PATH + PRINT_TEMPLATES;
+    public static final String MAIL_PATH = API_PATH + BASE_PATH + MAIL;
 
     public static final String _0 = "0";
     public static final String _10 = "10";

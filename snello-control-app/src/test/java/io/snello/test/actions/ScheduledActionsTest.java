@@ -39,6 +39,7 @@ class ScheduledActionsTest {
     @AfterEach
     void clean() throws Exception {
         jdbc.executeQuery("DELETE FROM scheduledactions WHERE name LIKE 'test-sched-%'");
+        jdbc.executeQuery("DELETE FROM printtemplates WHERE name LIKE 'test-sched-%'");
         mailbox.clear();
     }
 
@@ -132,5 +133,30 @@ class ScheduledActionsTest {
         assertEquals(0, service.runDue());
         assertNotNull(service.find(uuid).next_run);
         assertEquals(0, mailbox.getMailsSentTo(MAIL).size());
+    }
+
+    /** The {@code prints} binding renders a Print Template from a script, with filters and sort. */
+    @Test
+    void scriptRendersPrintTemplate() throws Exception {
+        Map<String, Object> template = new HashMap<>();
+        template.put("uuid", java.util.UUID.randomUUID().toString());
+        template.put("name", "test-sched-print");
+        template.put("export_type", "csv");
+        template.put("sql_query", "SELECT 'a' AS x UNION ALL SELECT 'b' AS x");
+        template.put("api_protected", false);
+        jdbc.create("printtemplates", "uuid", template);
+
+        String body = "var out = prints.print('test-sched-print', {x: 'b'}, null);"
+                + "mail.send('rows ' + out.rows() + ' ' + out.fileName(), new java.lang.String(out.bytes(), 'UTF-8'),"
+                + " java.util.List.of('" + MAIL + "'), null, null, null);";
+        String uuid = create("test-sched-print-job", "0 3 * * *", true, body);
+        given().post("/api/scheduledactions/" + uuid + "/run")
+                .then().statusCode(200).body("last_status", org.hamcrest.Matchers.equalTo("OK"));
+
+        var mails = mailbox.getMailsSentTo(MAIL);
+        assertEquals(1, mails.size());
+        assertEquals("rows 1 test-sched-print.csv", mails.getFirst().getSubject());
+        assertTrue(mails.getFirst().getHtml().contains("b"), mails.getFirst().getHtml());
+        assertFalse(mails.getFirst().getHtml().contains("a\r\n"), "filter x=b must drop row a");
     }
 }

@@ -32,6 +32,10 @@ public class ScriptService {
     @Inject
     HttpCallService httpCallService;
 
+    /** {@code prints}: renders Print Templates from scripts (e.g. a scheduled report saved into documents). */
+    @Inject
+    PrintTemplateService printTemplateService;
+
     // call(GET, url[, body[, headers]]) sugar over the `http` binding; GET/POST/... are plain strings.
     // result() is parsed with the script's own JSON.parse, so it is a real JS object/array: r.name, list.map(...),
     // JSON.stringify(r) all work (a Java Map/List from Jackson would not support map/filter/stringify).
@@ -79,6 +83,7 @@ public class ScriptService {
         bindings.put("documents", documentsService);
         bindings.put("mail", mailService);
         bindings.put("http", httpCallService);
+        bindings.put("prints", printTemplateService);
         // JBoss logger per script: category snello.script.<action name>, so log lines say which action wrote them.
         // log.info('x'), log.infof('renter %s saved', key), log.warn(...), log.error(...), log.debug(...)
         String loggerName = "snello.script." + (action != null && action.name != null && !action.name.isBlank()
