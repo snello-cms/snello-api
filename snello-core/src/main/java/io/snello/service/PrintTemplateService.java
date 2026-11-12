@@ -67,6 +67,33 @@ public class PrintTemplateService {
     }
 
     /**
+     * Script entry point ({@code prints} binding):
+     * {@code prints.print('events-year', {begin_date_gte: '2026-01-01'}, 'begin_date:asc')}.
+     * Scripts cannot reach CDI beans or MicroProfile Config by class name (the script class loader resolves other
+     * copies of the classes), so this binding is the way to render a template from an Action or Scheduled Action.
+     *
+     * @param params column filters, as the print endpoint query parameters (a JS object is a Map); may be null
+     * @param sort   {@code _sort} value, e.g. {@code begin_date:asc}; may be null
+     * @return bytes(), contentType(), fileName(), rows()
+     */
+    public PrintOutput print(String name, Map<String, ?> params, String sort) throws Exception {
+        PrintTemplate template = findByName(name);
+        if (template == null) {
+            throw new IllegalArgumentException("print template not found: " + name);
+        }
+        MultivaluedMap<String, String> filters = new MultivaluedHashMap<>();
+        if (params != null) {
+            params.forEach((k, v) -> {
+                if (v != null) {
+                    filters.putSingle(k, v.toString());
+                }
+            });
+        }
+        Log.infof("PRINT [%s] from script, params=%s sort=%s", name, filters, sort);
+        return print(template, filters, sort, null);
+    }
+
+    /**
      * @param filters request parameters (column filters, plus the owner value already bound for non-admin callers)
      * @param sort    {@code _sort} value or null
      */

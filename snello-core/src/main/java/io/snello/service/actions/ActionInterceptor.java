@@ -97,11 +97,22 @@ public class ActionInterceptor {
         if (condition == null) {
             return;
         }
+        // runAsync uses the common ForkJoinPool, whose threads carry the JDK system class loader as TCCL, not the
+        // Quarkus application class loader. Lazily created beans resolved through the TCCL then fail, e.g. the first
+        // mail.send() of a POST script: "ClassNotFoundException: io.quarkus.mailer.runtime.Mailers". Carry the
+        // caller's TCCL over to the worker thread and restore the worker's own afterwards.
+        ClassLoader callerLoader = Thread.currentThread().getContextClassLoader();
+        Log.debugf("ACTION [%s.%s] scheduling async POST with TCCL %s", className, methodName, callerLoader);
         CompletableFuture.runAsync(() -> {
+            Thread worker = Thread.currentThread();
+            ClassLoader workerLoader = worker.getContextClassLoader();
+            worker.setContextClassLoader(callerLoader);
             try {
                 runConfiguredAction(condition, ActionUtils.PHASE_POST, params, ret);
             } catch (Exception e) {
                 Log.error(String.format("ACTION [%s.%s] post async execution failed", className, methodName), e);
+            } finally {
+                worker.setContextClassLoader(workerLoader);
             }
         });
     }
