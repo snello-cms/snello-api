@@ -33,6 +33,10 @@ Architecture (repo root):
 - [AI Agent](ai-agent.md)
 - [AI Tools Schema](ai-tools-schema.md)
 
+### Planning
+
+- [Roadmap](roadmap.md) — introspect testing, AI admin pages, admin UI refactor
+
 ## Where to Start
 
 1. Pick a runtime: full stack (`compose.yml`), or [All-in-one](all-in-one.md).

@@ -23,6 +23,7 @@ public class SqlHelper {
     private static final Pattern TIME = Pattern.compile("^\\d{2}:\\d{2}:\\d{2}$");
     /** Backup JSON often stores java.sql.Date / Instant as epoch millis. */
     private static final Pattern EPOCH_MILLIS = Pattern.compile("^-?\\d{11,14}$");
+    private static final Pattern SHORT_TIME = Pattern.compile("^\\d{1,2}:\\d{2}$");
     private static final Pattern UUID = Pattern
             .compile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$");
     private static final boolean castUUID = false;
@@ -72,6 +73,9 @@ public class SqlHelper {
                 if (epochCast instanceof Date || epochCast instanceof Timestamp) {
                     casted = epochCast;
                 }
+            }
+            if (casted instanceof String stillString && bindNativeTyped(statement, index, stillString)) {
+                return;
             }
             statement.setObject(index, casted);
             return;
@@ -144,6 +148,50 @@ public class SqlHelper {
         } catch (SQLException | RuntimeException e) {
             return false;
         }
+    }
+
+    /**
+     * Binds a row key taken from a URL path ({@code /api/{table}/{key}}): always a String, but the column may be
+     * an integer (autoincrement / introspected tables), which PostgreSQL refuses to compare with varchar.
+     * Only the numeric cast is applied - never {@link #optimisticCast}, which would turn a slug like
+     * {@code 2024-01-01} into a date.
+     */
+    public static void bindKey(PreparedStatement statement, int index, String key) throws SQLException {
+        if (key == null) {
+            statement.setObject(index, null);
+            return;
+        }
+        if (bindNativeTyped(statement, index, key)) {
+            return;
+        }
+        statement.setObject(index, castToNumericIfNeeded(statement, index, key));
+    }
+
+    /**
+     * Columns of a database-specific type (PostgreSQL {@code uuid}, {@code json}, {@code jsonb}, enums...) refuse a
+     * varchar parameter: the text is sent untyped and the server converts it. {@code time} columns get the
+     * {@code HH:mm} a time picker produces. Tables created by snello only use portable types, so this matters for
+     * tables introspected from an existing schema. Returns false when the value was not bound.
+     */
+    private static boolean bindNativeTyped(PreparedStatement statement, int index, String value) {
+        try {
+            ParameterMetaData pmd = statement.getParameterMetaData();
+            if (pmd == null) {
+                return false;
+            }
+            int type = pmd.getParameterType(index);
+            if (type == Types.OTHER) {
+                statement.setObject(index, value, Types.OTHER);
+                return true;
+            }
+            if (type == Types.TIME && SHORT_TIME.matcher(value).matches()) {
+                statement.setTime(index, Time.valueOf(value.length() == 4 ? "0" + value + ":00" : value + ":00"));
+                return true;
+            }
+        } catch (SQLException | RuntimeException ignore) {
+            // unknown parameter type: fall back to the generic binding
+        }
+        return false;
     }
 
     private static Object castToNumericIfNeeded(PreparedStatement statement, int index, String value) {

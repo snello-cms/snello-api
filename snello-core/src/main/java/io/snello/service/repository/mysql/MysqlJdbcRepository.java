@@ -349,7 +349,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
             Log.info("FETCH QUERY: " + "_SELECT_ * _FROM_ " + MysqlSqlUtils.escape(table) + " _WHERE_ " + table_key + " = ?");
             PreparedStatement preparedStatement = connection.prepareStatement(_SELECT_ + select_fields + _FROM_ + MysqlSqlUtils.escape(table)
                                                                               + _WHERE_ + MysqlSqlUtils.escape(table_key) + " = ?");
-            preparedStatement.setObject(1, uuid);
+            SqlHelper.bindKey(preparedStatement, 1, uuid);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 return MysqlSqlUtils.single(resultSet);
             }
@@ -361,7 +361,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
             Log.info("DELETE QUERY: " + DELETE_FROM + table + _WHERE_ + table_key + " = ? ");
             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_FROM + MysqlSqlUtils.escape(table) + _WHERE_
                                                                               + MysqlSqlUtils.escape(table_key) + " = ?");
-            preparedStatement.setObject(1, uuid);
+            SqlHelper.bindKey(preparedStatement, 1, uuid);
             int result = preparedStatement.executeUpdate();
             return result > 0;
         }

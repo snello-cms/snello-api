@@ -310,7 +310,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             Log.info("FETCH QUERY: " + "_SELECT_ * _FROM_ " + PostgresqlSqlUtils.escape(table) + " _WHERE_ " + table_key + " = ?");
             PreparedStatement preparedStatement = connection.prepareStatement(_SELECT_ + select_fields + _FROM_ + PostgresqlSqlUtils.escape(table)
                                                                               + _WHERE_ + PostgresqlSqlUtils.escape(table_key) + " = ?");
-            preparedStatement.setObject(1, uuid);
+            SqlHelper.bindKey(preparedStatement, 1, uuid);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 return PostgresqlSqlUtils.single(resultSet);
             }
@@ -322,7 +322,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
             Log.info("DELETE QUERY: " + DELETE_FROM + table + _WHERE_ + table_key + " = ? ");
             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_FROM + PostgresqlSqlUtils.escape(table) + _WHERE_
                                                                               + PostgresqlSqlUtils.escape(table_key) + " = ?");
-            preparedStatement.setObject(1, uuid);
+            SqlHelper.bindKey(preparedStatement, 1, uuid);
             int result = preparedStatement.executeUpdate();
             return result > 0;
         }

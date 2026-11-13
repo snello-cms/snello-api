@@ -25,7 +25,6 @@ import io.snello.model.pojo.IntrospectedEntity;
 import io.snello.util.FieldUiDerivation;
 import io.snello.util.MetadataUtils;
 import io.snello.util.SchemaIntrospection;
-import io.snello.util.SchemaIntrospection.BridgeGuess;
 import io.snello.util.SchemaIntrospection.JoinGuess;
 import io.snello.util.SchemaIntrospection.KeyGuess;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static io.snello.management.AppConstants.DOCUMENTS;
 import static io.snello.management.AppConstants.FIELD_DEFINITIONS;
 import static io.snello.management.AppConstants.METADATAS;
 import static io.snello.management.AppConstants.UUID;
@@ -54,6 +54,12 @@ import static io.snello.management.AppConstants.UUID;
 @ApplicationScoped
 @IfBuildProperty(name = SnelloPlane.CONTROL_PLANE_PROPERTY, stringValue = "true", enableIfMissing = true)
 public class IntrospectService {
+
+    /** More distinct values than this is free text, not a select. */
+    private static final int ENUM_MAX_VALUES = 30;
+    /** Sample values checked against a join target. */
+    private static final int JOIN_CHECK_VALUES = 30;
+    private static final int MIN_LIST_FIELDS = 3;
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -83,6 +89,7 @@ public class IntrospectService {
         }
         List<IntrospectedEntity> appliedEntities = new ArrayList<>();
         List<String> warnings = new ArrayList<>(preview.warnings());
+        List<Map<String, Object>> writtenMetadata = new ArrayList<>();
         for (IntrospectedEntity entity : preview.entities()) {
             if (entity.skipped() || entity.metadata() == null) {
                 appliedEntities.add(entity);
@@ -106,7 +113,7 @@ public class IntrospectService {
                     writtenFields.add((String) fieldRow.get(UUID));
                     fieldRows.add(fieldRow);
                 }
-                metadataEvents.fireAsync(new MetadataCreateUpdateEvent(metadataRow));
+                writtenMetadata.add(metadataRow);
                 appliedEntities.add(new IntrospectedEntity(entity.table_name(), false, null, metadataRow, fieldRows,
                         entity.warnings()));
                 Log.infof("introspect apply table=%s metadata_uuid=%s fields=%d", entity.table_name(), metadataUuid,
@@ -122,6 +129,15 @@ public class IntrospectService {
                 throw e;
             }
         }
+        // Invalidate here, synchronously: a caller reading metadata right away (admin opening the new table, the
+        // next request) must not see the old map. Events go out only now that every row is written: their
+        // observer rebuilds the caches on another thread, and a rebuild started mid-write would store a snapshot
+        // missing the later tables.
+        metadataService.invalidateMetadataCaches();
+        for (Map<String, Object> metadataRow : writtenMetadata) {
+            metadataEvents.fireAsync(new MetadataCreateUpdateEvent(metadataRow));
+        }
+        Log.infof("introspect apply done entities=%d, metadata caches invalidated", writtenMetadata.size());
         return new IntrospectResult(true, preview.errors(), warnings, appliedEntities, true);
     }
 
@@ -156,27 +172,26 @@ public class IntrospectService {
             infos.put(table, loadTable(table, req.sampleRowsOrDefault()));
         }
 
-        // bridges first: skip as entities, attach multijoin later
-        Map<String, BridgeGuess> bridges = new LinkedHashMap<>();
+        // a snello-style bridge (a_b with a_id + b_id) is still generated as a plain entity with two joins:
+        // a multijoin field keeps its values in a column of the owner table, which an existing bridge does not have
         for (Map.Entry<String, TableInfo> e : infos.entrySet()) {
-            Optional<BridgeGuess> bridge = SchemaIntrospection.guessBridge(
-                    e.getKey(), e.getValue().columns, e.getValue().foreignKeys, known);
-            bridge.ifPresent(b -> bridges.put(e.getKey(), b));
+            SchemaIntrospection.guessBridge(e.getKey(), e.getValue().columns, e.getValue().foreignKeys, known)
+                    .ifPresent(b -> {
+                        Log.infof("introspect table=%s is a bridge %s/%s: generated as entity with two joins",
+                                e.getKey(), b.leftTable(), b.rightTable());
+                        warnings.add("bridge '" + e.getKey() + "' (" + b.leftTable() + " ↔ " + b.rightTable()
+                                + ") generated as a table with two joins, not as a multijoin field: a multijoin "
+                                + "stores its values in a column of '" + b.leftTable() + "'");
+                    });
         }
-
-        Set<String> entityTables = new LinkedHashSet<>();
-        for (String table : selected) {
-            if (!bridges.containsKey(table)) {
-                entityTables.add(table);
-            }
-        }
-        known.addAll(entityTables);
 
         // provisional key map for join_table_key resolution inside the batch
         Map<String, KeyGuess> keys = new HashMap<>();
-        for (String table : entityTables) {
-            TableInfo info = infos.get(table);
-            keys.put(table, SchemaIntrospection.guessKey(info.primaryKeys, info.columns));
+        Map<String, List<String>> keyWarnings = new HashMap<>();
+        for (String table : selected) {
+            List<String> tableWarnings = new ArrayList<>();
+            keys.put(table, guessKey(table, infos.get(table), tableWarnings));
+            keyWarnings.put(table, tableWarnings);
         }
         for (Map.Entry<String, String> e : existingKeys.entrySet()) {
             if (!keys.containsKey(e.getKey())) {
@@ -184,38 +199,16 @@ public class IntrospectService {
             }
         }
 
-        Map<String, List<FieldModel>> multijoinsByOwner = new HashMap<>();
-        for (Map.Entry<String, BridgeGuess> e : bridges.entrySet()) {
-            BridgeGuess b = e.getValue();
-            String owner = entityTables.contains(b.leftTable()) ? b.leftTable()
-                    : entityTables.contains(b.rightTable()) ? b.rightTable() : null;
-            String other = owner == null ? null
-                    : owner.equals(b.leftTable()) ? b.rightTable() : b.leftTable();
-            if (owner == null || other == null) {
-                warnings.add("bridge table '" + e.getKey() + "' skipped: ends " + b.leftTable() + "/" + b.rightTable()
-                        + " not both available as entities");
-                continue;
-            }
-            KeyGuess otherKey = keys.getOrDefault(other, new KeyGuess("uuid", "uuid", false));
-            FieldModel mj = buildMultijoinField(owner, other, otherKey.column());
-            multijoinsByOwner.computeIfAbsent(owner, k -> new ArrayList<>()).add(mj);
-            warnings.add("bridge '" + e.getKey() + "' → multijoin on '" + owner + "' → '" + other + "'");
-        }
-
         List<IntrospectedEntity> entities = new ArrayList<>();
         for (String table : selected) {
-            if (bridges.containsKey(table)) {
-                entities.add(IntrospectedEntity.skipped(table, "bridge table (mapped as multijoin when possible)"));
-                continue;
-            }
             if (MetadataUtils.isReserved(table)) {
                 entities.add(IntrospectedEntity.skipped(table, "reserved system table"));
                 continue;
             }
 
-            List<String> tableWarnings = new ArrayList<>();
+            List<String> tableWarnings = new ArrayList<>(keyWarnings.get(table));
             IntrospectedEntity built = buildEntity(table, infos.get(table), keys.get(table), known, keys,
-                    multijoinsByOwner.getOrDefault(table, List.of()), req.metadata_group(), tableWarnings);
+                    req.metadata_group(), tableWarnings);
             entities.add(built);
             warnings.addAll(tableWarnings);
         }
@@ -299,9 +292,39 @@ public class IntrospectService {
         return new TableInfo(columns, pks, fks, samples);
     }
 
+    /**
+     * Key from the JDBC primary key, then refined with the data: a varchar key whose values are slugs of another
+     * column is a {@code slug} key built from that column.
+     */
+    private KeyGuess guessKey(String table, TableInfo info, List<String> warnings) {
+        KeyGuess key = SchemaIntrospection.guessKey(info.primaryKeys, info.columns);
+        if (info.primaryKeys.size() > 1) {
+            warnings.add(table + ": composite primary key " + info.primaryKeys + ", only '" + key.column()
+                    + "' is used as key: rows sharing it cannot be told apart");
+        } else if (info.primaryKeys.isEmpty()) {
+            warnings.add(table + ": no primary key, '" + key.column() + "' is used as key (guessed)");
+        }
+        if ("uuid".equals(key.keyType())) {
+            List<Object> keyValues = columnSamples(info.samples, key.column());
+            if (!distinctStrings(keyValues, 1).isEmpty() && !SchemaIntrospection.allUuidValues(keyValues)) {
+                Optional<String> slugSource = SchemaIntrospection.guessSlugSource(info.samples, key.column(),
+                        info.columns);
+                if (slugSource.isPresent()) {
+                    Log.infof("introspect table=%s key=%s values are slugs of %s", table, key.column(),
+                            slugSource.get());
+                    return new KeyGuess(key.column(), "slug", false, slugSource.get());
+                }
+                Log.infof("introspect table=%s key=%s values are neither uuids nor slugs of a column: kept as uuid",
+                        table, key.column());
+            }
+        }
+        Log.infof("introspect table=%s key=%s key_type=%s pk=%s", table, key.column(), key.keyType(),
+                info.primaryKeys);
+        return key;
+    }
+
     private IntrospectedEntity buildEntity(String table, TableInfo info, KeyGuess key, Set<String> known,
-                                           Map<String, KeyGuess> keys, List<FieldModel> extraMultijoins,
-                                           String metadataGroup, List<String> warnings) {
+                                           Map<String, KeyGuess> keys, String metadataGroup, List<String> warnings) {
         EntityModel entity = new EntityModel();
         EntityIdentity.Builder identity = EntityIdentity.builder(entity.identity);
         identity.table_name = table;
@@ -310,40 +333,42 @@ public class IntrospectService {
         identity.created = false;
         entity.identity = identity.build();
 
+        String orderBy = SchemaIntrospection.guessOrderBy(info.columns, key.column());
+        String orderColumn = orderBy == null ? null : orderBy.substring(0, orderBy.indexOf(' '));
         EntityQueryFacet.Builder query = EntityQueryFacet.builder(entity.query);
         query.table_key = key.column();
         query.table_key_type = key.keyType();
+        query.table_key_addition = key.addition();
+        query.order_by = orderBy;
         entity.query = query.build();
         entity.ai = EntityAiFacet.ofDescription("Introspected from table " + table);
         entity.ui = EntityUiFacet.empty();
+        Log.infof("introspect table=%s order_by=%s key_addition=%s columns=%d samples=%d", table, orderBy,
+                key.addition(), info.columns.size(), info.samples.size());
 
         List<FieldModel> fields = new ArrayList<>();
         int viewIndex = 1;
-        Set<String> keyColumns = new HashSet<>();
-        if (!key.declareKeyField()) {
-            keyColumns.add(key.column());
-        }
-
         for (DbColumn column : info.columns) {
             String name = column.name();
-            if (keyColumns.contains(name)) {
+            boolean isKey = key.column().equals(name);
+            if (isKey && !key.declareKeyField()) {
                 continue;
             }
             List<Object> samples = columnSamples(info.samples, name);
-            Optional<JoinGuess> join = SchemaIntrospection.guessJoin(name, info.foreignKeys, known);
-            FieldModel field;
-            if (join.isPresent()) {
-                JoinGuess j = join.get();
-                String targetKey = keys.containsKey(j.targetTable())
-                        ? keys.get(j.targetTable()).column()
-                        : j.targetKey();
-                field = buildJoinField(table, column, j.targetTable(), targetKey, viewIndex);
-                if (!j.fromFk()) {
-                    warnings.add(table + "." + name + ": join inferred from column name → " + j.targetTable());
-                }
-            } else {
+            // a guessed or shared key can itself be a reference (bridge rows, one-to-one tables)
+            FieldModel field = referenceField(table, column, samples, info, known, keys, viewIndex, warnings);
+            if (field != null && isKey) {
+                FieldQueryFacet.Builder keyed = FieldQueryFacet.builder(field.query);
+                keyed.table_key = true;
+                field.query = keyed.build();
+            }
+            if (field == null) {
                 SemanticType semantic = SchemaIntrospection.semanticFor(column, samples);
-                field = buildScalarField(table, column, semantic, key, viewIndex);
+                if (!isKey && isPlainText(semantic) && isDocumentReference(samples)) {
+                    Log.infof("introspect %s.%s values are document uuids: media", table, name);
+                    semantic = SemanticType.MEDIA;
+                }
+                field = buildScalarField(table, column, semantic, key, viewIndex, name.equals(orderColumn));
                 if (name.endsWith("_id") || name.endsWith("_uuid")) {
                     warnings.add(table + "." + name + ": kept as plain key (no obvious join target)");
                 }
@@ -351,12 +376,7 @@ public class IntrospectService {
             fields.add(field);
             viewIndex++;
         }
-        for (FieldModel mj : extraMultijoins) {
-            FieldUiFacet.Builder ui = FieldUiFacet.builder(mj.ui);
-            ui.view_index = viewIndex++;
-            mj.ui = ui.build();
-            fields.add(mj);
-        }
+        fillSparseList(table, fields);
 
         List<String> searchable = new ArrayList<>();
         for (FieldModel f : fields) {
@@ -375,8 +395,154 @@ public class IntrospectService {
         return new IntrospectedEntity(table, false, null, metadataRow, fieldRows, List.copyOf(warnings));
     }
 
+    /**
+     * Join or select for a column that references something, null for a plain scalar. In order of confidence:
+     * JDBC FK; a name pointing at a known table, confirmed by the values; a small closed set of values that are all
+     * keys of one table (join) or just a closed set (select with those options).
+     */
+    private FieldModel referenceField(String table, DbColumn column, List<Object> samples, TableInfo info,
+                                      Set<String> known, Map<String, KeyGuess> keys, int viewIndex,
+                                      List<String> warnings) {
+        String name = column.name();
+        Optional<JoinGuess> named = SchemaIntrospection.guessJoin(table, name, info.foreignKeys, known);
+        if (named.isPresent()) {
+            JoinGuess j = named.get();
+            String targetKey = keys.containsKey(j.targetTable()) ? keys.get(j.targetTable()).column() : j.targetKey();
+            String confirmedKey = j.fromFk() ? targetKey : confirmJoinKey(table, name, j.targetTable(), targetKey,
+                    samples, warnings);
+            if (confirmedKey != null) {
+                return buildJoinField(table, column, j.targetTable(), confirmedKey,
+                        joinLabelColumn(j.targetTable(), confirmedKey), viewIndex);
+            }
+        }
+
+        if (!isPlainText(SchemaIntrospection.semanticFor(column, samples)) || !mayBeEnum(samples)) {
+            return null;
+        }
+        Map<String, Long> counts = jdbcRepository.valueCounts(table, name, ENUM_MAX_VALUES);
+        if (!SchemaIntrospection.looksLikeEnum(counts, ENUM_MAX_VALUES)) {
+            Log.debugf("introspect %s.%s not an enumeration (distinct=%s)", table, name,
+                    counts == null ? "many" : counts.size());
+            return null;
+        }
+        Optional<JoinGuess> byValues = joinByValues(table, counts.keySet(), keys);
+        if (byValues.isPresent()) {
+            JoinGuess j = byValues.get();
+            Log.infof("introspect %s.%s every value is a key of %s.%s: join", table, name, j.targetTable(),
+                    j.targetKey());
+            warnings.add(table + "." + name + ": join inferred from values → " + j.targetTable());
+            return buildJoinField(table, column, j.targetTable(), j.targetKey(),
+                    joinLabelColumn(j.targetTable(), j.targetKey()), viewIndex);
+        }
+        Log.infof("introspect %s.%s closed set of %d values: select", table, name, counts.size());
+        warnings.add(table + "." + name + ": select with the " + counts.size() + " values found in the data");
+        return buildSelectField(table, column, new java.util.TreeSet<>(counts.keySet()), viewIndex);
+    }
+
+    /**
+     * Key column of {@code target} the values of a name-matched column really point at, or null when the data says
+     * the name is a coincidence. With no data the name is all there is, and it is accepted.
+     */
+    private String confirmJoinKey(String table, String column, String target, String targetKey, List<Object> samples,
+                                  List<String> warnings) {
+        List<String> values = distinctStrings(samples, JOIN_CHECK_VALUES);
+        if (values.isEmpty()) {
+            warnings.add(table + "." + column + ": join inferred from column name → " + target
+                    + " (no data to confirm)");
+            return targetKey;
+        }
+        List<String> candidates = "id".equals(targetKey) ? List.of(targetKey) : List.of(targetKey, "id");
+        for (String candidate : candidates) {
+            int found = jdbcRepository.countMatching(target, candidate, values);
+            Log.infof("introspect %s.%s → %s.%s: %d of %d sample values exist", table, column, target, candidate,
+                    found, values.size());
+            // dangling references exist in real data: most values matching is enough
+            if (found > 0 && found * 100 / values.size() >= 80) {
+                warnings.add(table + "." + column + ": join inferred from column name → " + target);
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    /** The one entity table whose keys contain every value, if any. Values with spaces are never keys. */
+    private Optional<JoinGuess> joinByValues(String table, Set<String> values, Map<String, KeyGuess> keys) {
+        for (String value : values) {
+            if (value.chars().anyMatch(Character::isWhitespace)) {
+                return Optional.empty();
+            }
+        }
+        for (Map.Entry<String, KeyGuess> e : keys.entrySet()) {
+            if (e.getKey().equals(table)) {
+                continue;
+            }
+            if (jdbcRepository.countMatching(e.getKey(), e.getValue().column(), values) == values.size()) {
+                return Optional.of(new JoinGuess(e.getKey(), e.getValue().column(), false));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Cheap pre-check on the sample before counting values on the whole table. */
+    private static boolean mayBeEnum(List<Object> samples) {
+        List<String> all = new ArrayList<>();
+        for (Object v : samples) {
+            if (v != null && !String.valueOf(v).isBlank()) {
+                all.add(String.valueOf(v));
+            }
+        }
+        if (all.size() < SchemaIntrospection.ENUM_MIN_ROWS) {
+            return false;
+        }
+        Set<String> distinct = new HashSet<>(all);
+        return distinct.size() * 10 <= all.size() * 6
+                && distinct.stream().allMatch(v -> v.length() <= SchemaIntrospection.ENUM_VALUE_MAX_LENGTH);
+    }
+
+    private static boolean isPlainText(SemanticType semantic) {
+        return semantic == SemanticType.TEXT || semantic == SemanticType.LONG_TEXT;
+    }
+
+    /** Uploaded files are referenced by their {@code documents.uuid}. */
+    private boolean isDocumentReference(List<Object> samples) {
+        if (!SchemaIntrospection.allUuidValues(samples)) {
+            return false;
+        }
+        List<String> values = distinctStrings(samples, 10);
+        int found = jdbcRepository.countMatching(DOCUMENTS, UUID, values);
+        return found > 0 && found * 100 / values.size() >= 80;
+    }
+
+    /** A list showing one or two columns is useless: add the first short columns until it has three. */
+    private static void fillSparseList(String table, List<FieldModel> fields) {
+        long listed = fields.stream().filter(f -> f.ui.show_in_list()).count();
+        for (FieldModel f : fields) {
+            if (listed >= MIN_LIST_FIELDS) {
+                break;
+            }
+            SemanticType semantic = SemanticType.from(f.ai.semantic_type());
+            boolean shortValue = semantic == SemanticType.TEXT || semantic == SemanticType.INTEGER
+                    || semantic == SemanticType.DECIMAL || semantic == SemanticType.DATE
+                    || semantic == SemanticType.DATETIME || semantic == SemanticType.EMAIL
+                    || semantic == SemanticType.URL;
+            if (f.ui.show_in_list() || !shortValue || SchemaIntrospection.isAuditColumn(f.name)) {
+                continue;
+            }
+            FieldUiFacet.Builder ui = FieldUiFacet.builder(f.ui);
+            ui.show_in_list = true;
+            f.ui = ui.build();
+            listed++;
+            Log.debugf("introspect %s.%s added to a sparse list", table, f.name);
+        }
+    }
+
+    /**
+     * Search form and list columns are suggestions the schema cannot state. Hand-made metadata keeps both short:
+     * the columns a person recognises a row by (name, title, code...), flags and tags; dates only when the list is
+     * sorted by them. References and selects are handled by their own builders.
+     */
     private static FieldModel buildScalarField(String table, DbColumn column, SemanticType semantic, KeyGuess key,
-                                               int viewIndex) {
+                                               int viewIndex, boolean orderColumn) {
         FieldModel model = new FieldModel();
         model.metadata_name = table;
         model.name = column.name();
@@ -387,8 +553,11 @@ public class IntrospectService {
         boolean isKey = key.declareKeyField() && key.column().equals(column.name());
         query.table_key = isKey;
         boolean textLike = FieldUiDerivation.textLike(semantic.dbValue());
-        query.searchable = textLike || semantic == SemanticType.INTEGER || semantic == SemanticType.DECIMAL
-                || semantic == SemanticType.BOOLEAN || semantic == SemanticType.DATE || semantic == SemanticType.DATETIME;
+        // rich-text bodies stay out of the search form (it would render a full editor)
+        boolean richText = WidgetType.TINYMCE.dbValue().equals(uiType[0]);
+        boolean recognisable = isKey || semantic == SemanticType.BOOLEAN || semantic == SemanticType.TAGS
+                || SchemaIntrospection.isLabelLike(column.name()) && textLike && !richText;
+        query.searchable = recognisable;
         if (query.searchable) {
             if (textLike) {
                 query.search_condition = "contains";
@@ -405,8 +574,11 @@ public class IntrospectService {
         ui.type = uiType[0];
         ui.input_type = uiType[1];
         ui.view_index = viewIndex;
-        ui.show_in_list = FieldUiDerivation.shownInListByDefault(semantic.dbValue());
-        ui.mandatory = !column.nullable() && !isKey;
+        // a title declared as text is still what a row is recognised by
+        boolean listable = FieldUiDerivation.shownInListByDefault(semantic.dbValue())
+                || semantic == SemanticType.LONG_TEXT && SchemaIntrospection.isLabelLike(column.name());
+        ui.show_in_list = listable && (recognisable || orderColumn) || isKey;
+        ui.mandatory = requiredByDatabase(column) && !isKey;
         model.ui = ui.build();
 
         FieldAiFacet.Builder ai = FieldAiFacet.builder(model.ai);
@@ -416,8 +588,30 @@ public class IntrospectService {
         return model;
     }
 
+    /** NOT NULL with no default: an insert that omits the column fails, so the form must ask for it. */
+    private static boolean requiredByDatabase(DbColumn column) {
+        return !column.nullable() && !column.autoIncrement()
+                && (column.columnDef() == null || column.columnDef().isBlank());
+    }
+
+    /**
+     * Display column of a join target, read from the live table (target may be outside this batch).
+     * Without it the admin join widget has nothing to show and crashes on a null select_fields.
+     */
+    private String joinLabelColumn(String target, String targetKey) {
+        try {
+            String label = SchemaIntrospection.guessLabelColumn(jdbcRepository.columnDetails(target), targetKey);
+            Log.debugf("introspect join target=%s key=%s label=%s", target, targetKey, label);
+            return label;
+        } catch (Exception e) {
+            Log.warnf("introspect join target=%s: cannot read columns (%s), label falls back to key %s",
+                    target, e.getMessage(), targetKey);
+            return targetKey;
+        }
+    }
+
     private static FieldModel buildJoinField(String table, DbColumn column, String target, String targetKey,
-                                             int viewIndex) {
+                                             String labelColumn, int viewIndex) {
         FieldModel model = new FieldModel();
         model.metadata_name = table;
         model.name = column.name();
@@ -426,6 +620,7 @@ public class IntrospectService {
         query.sql_type = column.sqlType();
         query.join_table_name = target;
         query.join_table_key = targetKey;
+        query.join_table_select_fields = labelColumn;
         query.searchable = true;
         query.search_condition = "=";
         query.search_field_name = column.name();
@@ -436,7 +631,7 @@ public class IntrospectService {
         ui.type = WidgetType.JOIN.dbValue();
         ui.view_index = viewIndex;
         ui.show_in_list = true;
-        ui.mandatory = !column.nullable();
+        ui.mandatory = requiredByDatabase(column);
         model.ui = ui.build();
 
         FieldAiFacet.Builder ai = FieldAiFacet.builder(model.ai);
@@ -446,28 +641,48 @@ public class IntrospectService {
         return model;
     }
 
-    private static FieldModel buildMultijoinField(String owner, String other, String otherKey) {
+    /** Options are the values found in the data: a starting point, the full domain may be larger. */
+    private static FieldModel buildSelectField(String table, DbColumn column, java.util.Collection<String> options,
+                                               int viewIndex) {
         FieldModel model = new FieldModel();
-        model.metadata_name = owner;
-        model.name = other;
+        model.metadata_name = table;
+        model.name = column.name();
 
         FieldQueryFacet.Builder query = FieldQueryFacet.builder(model.query);
-        query.join_table_name = other;
-        query.join_table_key = otherKey;
-        query.searchable = false;
+        query.sql_type = column.sqlType();
+        query.searchable = true;
+        query.search_condition = "=";
+        query.search_field_name = column.name();
         model.query = query.build();
 
         FieldUiFacet.Builder ui = FieldUiFacet.builder(model.ui);
-        ui.label = FieldUiDerivation.label(other);
-        ui.type = WidgetType.MULTIJOIN.dbValue();
-        ui.show_in_list = false;
+        ui.label = FieldUiDerivation.label(column.name());
+        ui.type = WidgetType.SELECT.dbValue();
+        ui.options = String.join(",", options);
+        ui.view_index = viewIndex;
+        ui.show_in_list = true;
+        ui.mandatory = requiredByDatabase(column);
         model.ui = ui.build();
 
         FieldAiFacet.Builder ai = FieldAiFacet.builder(model.ai);
-        ai.semantic_type = SemanticType.REFERENCES.dbValue();
-        ai.description = "Many-to-many with " + other;
+        ai.semantic_type = SemanticType.ENUM.dbValue();
+        ai.description = "One of: " + String.join(", ", options);
         model.ai = ai.build();
         return model;
+    }
+
+    /** Distinct non-blank values as strings, at most {@code limit}. */
+    private static List<String> distinctStrings(List<Object> values, int limit) {
+        Set<String> distinct = new LinkedHashSet<>();
+        for (Object v : values) {
+            if (v != null && !String.valueOf(v).isBlank()) {
+                distinct.add(String.valueOf(v));
+                if (distinct.size() >= limit) {
+                    break;
+                }
+            }
+        }
+        return new ArrayList<>(distinct);
     }
 
     private static List<Object> columnSamples(List<Map<String, Object>> rows, String column) {

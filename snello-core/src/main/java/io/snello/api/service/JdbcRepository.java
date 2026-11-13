@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -376,6 +377,65 @@ public interface JdbcRepository {
         } catch (Exception e) {
             Log.warnf(e, "sampleRows failed for table=%s", table);
             return List.of();
+        }
+    }
+
+    /**
+     * Distinct non-null values of {@code column} with their row counts, most frequent first. Returns null when the
+     * column has more than {@code maxDistinct} distinct values or cannot be read: callers use it to tell an
+     * enumeration from free text, so "too many" and "unknown" both mean "not an enumeration".
+     */
+    default Map<String, Long> valueCounts(String table, String column, int maxDistinct) {
+        String col = escape(column);
+        String sql = "SELECT " + col + ", COUNT(*) FROM " + escape(table) + " WHERE " + col + " IS NOT NULL GROUP BY "
+                + col + " ORDER BY COUNT(*) DESC";
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setMaxRows(maxDistinct + 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                Map<String, Long> counts = new LinkedHashMap<>();
+                while (rs.next()) {
+                    Object value = rs.getObject(1);
+                    if (value == null || String.valueOf(value).isBlank()) {
+                        continue;
+                    }
+                    counts.put(String.valueOf(value), rs.getLong(2));
+                    if (counts.size() > maxDistinct) {
+                        return null;
+                    }
+                }
+                return counts;
+            }
+        } catch (Exception e) {
+            Log.debugf("valueCounts failed table=%s column=%s: %s", table, column, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * How many of {@code values} exist in {@code table.column}; -1 when the lookup cannot run (missing table,
+     * incompatible types). Used to confirm a guessed reference against real data.
+     */
+    default int countMatching(String table, String column, Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return 0;
+        }
+        String col = escape(column);
+        String placeholders = String.join(",", java.util.Collections.nCopies(values.size(), "?"));
+        String sql = "SELECT COUNT(DISTINCT " + col + ") FROM " + escape(table) + " WHERE " + col + " IN ("
+                + placeholders + ")";
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            int i = 1;
+            for (String value : values) {
+                io.snello.util.SqlHelper.bindKey(ps, i++, value);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (Exception e) {
+            Log.debugf("countMatching failed table=%s column=%s: %s", table, column, e.getMessage());
+            return -1;
         }
     }
 
