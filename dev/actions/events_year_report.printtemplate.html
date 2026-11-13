@@ -1,0 +1,22 @@
+<!--
+Admin > Print Templates
+  name: events_year_report   export_type: html   api_protected: false
+  sql_query: SELECT uuid, name, begin_date, end_date, city, nation, organizer FROM events
+Used by scheduled action events-year-report (dev/actions/events-year-report-rest.js) via remote_url:
+  /api/printtemplates/events_year_report/print?begin_date_gte=2026-01-01&begin_date_lt=2027-01-01&_sort=begin_date:asc
+html_body (Qute, values are HTML-escaped automatically) below this comment.
+CSS braces must sit inside {| ... |} (Qute raw text), or Qute parses them as expressions.
+-->
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Events {params.begin_date_gte} - {params.begin_date_lt}</title>
+{|<style>body{font-family:sans-serif}table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px 8px}</style>|}
+</head><body>
+<h1>Events from {params.begin_date_gte} to {params.begin_date_lt}</h1>
+<p>{count} events, generated {now}</p>
+<table>
+<tr><th>Begin</th><th>End</th><th>Name</th><th>City</th><th>Nation</th><th>Organizer</th><th>Link</th></tr>
+{#for row in rows}
+<tr><td>{row.begin_date}</td><td>{row.end_date ?: ''}</td><td>{row.name}</td><td>{row.city ?: ''}</td><td>{row.nation ?: ''}</td><td>{row.organizer ?: ''}</td><td><a href="https://api.sne.lol/api/events/{row.uuid}">{row.uuid}</a></td></tr>
+{/for}
+</table>
+</body></html>

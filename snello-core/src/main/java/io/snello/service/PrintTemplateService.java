@@ -21,12 +21,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.snello.management.AppConstants.PRINT_TEMPLATES;
 
@@ -52,6 +54,17 @@ public class PrintTemplateService {
     /** Upper bound of rows a print may read; protects the server from a forgotten filter. */
     @ConfigProperty(name = "snello.print.max-rows", defaultValue = "50000")
     int maxRows;
+
+    /**
+     * Zone of the template's {@code now}, e.g. {@code Europe/Rome}. Defaults to the server zone, which in a container
+     * is usually UTC: a report "generated 07:44" would then be 08:44 for an Italian reader.
+     */
+    @ConfigProperty(name = "snello.print.timezone")
+    Optional<String> timezone;
+
+    ZoneId zone() {
+        return timezone.filter(z -> !z.isBlank()).map(ZoneId::of).orElse(ZoneId.systemDefault());
+    }
 
     public Map<String, Object> findRow(String uuid) throws Exception {
         Map<String, Object> row = jdbcRepository.fetch(null, PRINT_TEMPLATES, "uuid", uuid);
@@ -136,7 +149,10 @@ public class PrintTemplateService {
         data.put("params", params);
         data.put("template", template.name);
         data.put("count", rows.size());
-        data.put("now", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        ZoneId zone = zone();
+        String now = LocalDateTime.now(zone).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        Log.debugf("print template %s: now=%s zone=%s rows=%d", template.name, now, zone, rows.size());
+        data.put("now", now);
         return data;
     }
 

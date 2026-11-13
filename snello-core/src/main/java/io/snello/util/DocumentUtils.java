@@ -1,5 +1,6 @@
 package io.snello.util;
 
+import io.quarkus.logging.Log;
 import io.snello.model.pojo.DocumentFormData;
 import jakarta.ws.rs.BadRequestException;
 
@@ -62,6 +63,19 @@ public final class DocumentUtils {
                 .build();
 
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        int status = response.statusCode();
+        Log.infof("remote_url download: GET %s -> %d", redact(uri), status);
+
+        // A 4xx/5xx body (e.g. a print template's 400 {"error": ...}) is not the file: storing it would replace the
+        // good document with an error message.
+        if (status < 200 || status >= 300) {
+            String excerpt;
+            try (InputStream in = response.body()) {
+                excerpt = new String(in.readNBytes(300), java.nio.charset.StandardCharsets.UTF_8);
+            }
+            Log.warnf("remote_url download refused: %s answered %d, body=%s", redact(uri), status, excerpt);
+            throw new BadRequestException("remote_url answered HTTP " + status + ": " + excerpt);
+        }
 
         // ricava il mimeType dall'header Content-Type (solo la parte prima del ';')
         String contentType = response.headers().firstValue("Content-Type")
@@ -104,6 +118,12 @@ public final class DocumentUtils {
         // upload straight from the temp file; the caller deletes it through DocumentFormData.cleanup()
         documentFormData.localFile = tmp.toPath();
         documentFormData.localFileTemporary = true;
+    }
+
+    /** Query string and user-info dropped from logs: tokens often travel as {@code ?key=...} or {@code user:pass@host}. */
+    static String redact(URI uri) {
+        return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() > 0 ? ":" + uri.getPort() : "") + uri.getPath()
+                + (uri.getRawQuery() != null ? "?***" : "");
     }
 
     private static Optional<String> extractFilenameFromContentDisposition(String header) {

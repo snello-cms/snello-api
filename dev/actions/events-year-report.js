@@ -4,7 +4,8 @@
 // table "events". The file and its documents row are overwritten each day (one up-to-date report per year,
 // not 365 copies). Needs no Print Template and no `prints` binding, so it runs on the current image.
 
-var now = java.time.LocalDateTime.now();
+// The pod's JVM runs in UTC: take "now" in Rome time
+var now = java.time.LocalDateTime.now(java.time.ZoneId.of('Europe/Rome'));
 var year = now.getYear();                      // integer: safe to inline in SQL
 var uuid = 'events-report-' + year;            // fixed per year -> overwrite
 var fileName = 'events-' + year + '-report.html';
