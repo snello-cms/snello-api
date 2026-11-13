@@ -6,7 +6,7 @@
 
     <groupId>io.snello</groupId>
     <artifactId>snello-parent</artifactId>
-    <version>6.0.14-alpha</version>
+    <version>6.0.15-alpha</version>
     <packaging>pom</packaging>
     <name>snello-parent</name>
     <description>Snello multi-module parent: core + ai + control / query / mcp / all-in-one apps</description>
@@ -27,7 +27,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>4.0.0.Beta3</quarkus.platform.version>
+        <quarkus.platform.version>4.0.0.CR1</quarkus.platform.version>
         <jandex-plugin.version>3.3.1</jandex-plugin.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.6.0</surefire-plugin.version>
