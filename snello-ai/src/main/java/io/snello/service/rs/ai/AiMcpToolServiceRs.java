@@ -5,6 +5,7 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
 import io.snello.management.SnelloPlane;
 import io.snello.service.ApiService;
+import io.snello.service.ai.AiRowDefaults;
 import io.snello.model.ai.pojo.McpToolsUpdatedEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -43,6 +44,12 @@ public class AiMcpToolServiceRs extends AbstractServiceRs {
         if (object.get(NAME) == null) {
             throw new Exception(MSG_NAME_PARAM_IS_EMPTY);
         }
+        AiRowDefaults.blankOnInsert(AI_MCP_TOOL, object, "description");
+    }
+
+    @Override
+    protected void preUpdate(Map<String, Object> object) throws Exception {
+        AiRowDefaults.blankOnUpdate(AI_MCP_TOOL, object, "description");
     }
 
     @Override

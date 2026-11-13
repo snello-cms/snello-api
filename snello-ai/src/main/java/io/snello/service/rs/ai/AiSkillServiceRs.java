@@ -5,6 +5,7 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
 import io.snello.management.SnelloPlane;
 import io.snello.service.ApiService;
+import io.snello.service.ai.AiRowDefaults;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -36,6 +37,7 @@ public class AiSkillServiceRs extends AbstractServiceRs {
         if (object.get(NAME) == null) {
             throw new Exception(MSG_NAME_PARAM_IS_EMPTY);
         }
+        AiRowDefaults.blankOnInsert(AI_SKILL, object, "description", "instructions");
     }
 
     @Override
@@ -43,5 +45,6 @@ public class AiSkillServiceRs extends AbstractServiceRs {
         if (object.get(NAME) == null) {
             throw new Exception(MSG_NAME_PARAM_IS_EMPTY);
         }
+        AiRowDefaults.blankOnUpdate(AI_SKILL, object, "description", "instructions");
     }
 }

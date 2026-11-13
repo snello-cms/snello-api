@@ -83,6 +83,16 @@ public class AguiAgentWorker {
                     aiMs);
         } catch (InvalidRequestException failure) {
             long aiMs = Math.max(0L, System.currentTimeMillis() - aiStarted);
+            if (isApiKeyRejected(failure)) {
+                // a server configuration problem: telling the user to start a new chat would only send them in circles
+                Log.errorf("AI provider rejected the API key for mode=%s model=%s (run %s): check the GEMINI / OPENAI key",
+                        mode, modelId, request.runId());
+                return AguiResponse.error(request, "MODEL_AUTH",
+                        request.useEnglish()
+                                ? "The AI service is not configured correctly (API key rejected). Please contact the administrator."
+                                : "Il servizio AI non è configurato correttamente (chiave API rifiutata). Contatta l'amministratore.",
+                        dispatchWaitMs, aiMs);
+            }
             Log.warnf(failure, "AI rejected AG-UI run %s", request.runId());
             return AguiResponse.error(request, "MODEL_INVALID_REQUEST",
                     request.useEnglish()
@@ -100,5 +110,12 @@ public class AguiAgentWorker {
         } finally {
             activeRun.clear();
         }
+    }
+
+    /** Gemini reports a bad key as a 400 INVALID_ARGUMENT, not as an authentication error. */
+    public static boolean isApiKeyRejected(InvalidRequestException failure) {
+        String message = failure.getMessage();
+        return message != null && (message.contains("API_KEY_INVALID") || message.contains("API key not valid")
+                || message.contains("Incorrect API key"));
     }
 }
