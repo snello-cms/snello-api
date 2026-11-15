@@ -92,7 +92,9 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationAiUiCard,
                 creationAiServiceAccount,
                 creationScheduledActions,
-                creationPrintTemplates
+                creationPrintTemplates,
+                creationLayouts,
+                creationLayoutsIndex
         };
     }
 

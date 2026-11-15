@@ -24,6 +24,7 @@ Architecture (repo root):
 - [Field Definitions](field-definitions.md)
 - [Entity drafts](drafts.md) — `/api/drafts/validate|apply`
 - [Schema introspect](introspect.md) — existing tables → metadata (`/api/introspect/preview|apply`)
+- [Layouts](layouts.md) — SPA list/edit/view layouts (`/api/layouts`)
 - [SelectQuery](select-query.md)
 - [REST Query Params](rest-query-params.md)
 

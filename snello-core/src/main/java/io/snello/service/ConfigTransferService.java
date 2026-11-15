@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import static io.snello.management.AppConstants.ACTIONS;
 import static io.snello.management.AppConstants.CONDITIONS;
+import static io.snello.management.AppConstants.LAYOUTS;
 import static io.snello.management.AppConstants.PRINT_TEMPLATES;
 import static io.snello.management.AppConstants.SCHEDULED_ACTIONS;
 import static io.snello.management.AppConstants.SELECT_QUERY;
@@ -27,12 +28,13 @@ import static io.snello.management.AppConstants.UUID;
 
 /**
  * Config part of the metadata export/import: actions, conditions, select queries, scheduled actions and print
- * templates travel under {@code "config"} next to {@code "metadatas"} (in the JSON body, or in metadatas.json of
- * the ZIP).
+ * templates and layouts travel under {@code "config"} next to {@code "metadatas"} (in the JSON body, or in
+ * metadatas.json of the ZIP).
  * <pre>
- * export body flags: "actions", "conditions", "select_queries", "scheduled_actions", "print_templates" (booleans)
+ * export body flags: "actions", "conditions", "select_queries", "scheduled_actions", "print_templates",
+ *                    "layouts" (booleans)
  * output:            "config": {"actions": [rows], "conditions": [rows], "selectqueries": [rows],
- *                               "scheduledactions": [rows], "printtemplates": [rows]}
+ *                               "scheduledactions": [rows], "printtemplates": [rows], "layouts": [rows]}
  * </pre>
  * Actions and conditions belong to a metadata: they follow the exported metadatas, or export all rows when no
  * metadata is exported (a config-only export, to update a project that already has the metadatas). The other
@@ -53,7 +55,8 @@ public class ConfigTransferService {
             "conditions", CONDITIONS,
             "select_queries", SELECT_QUERY,
             "scheduled_actions", SCHEDULED_ACTIONS,
-            "print_templates", PRINT_TEMPLATES);
+            "print_templates", PRINT_TEMPLATES,
+            "layouts", LAYOUTS);
 
     /** Columns copied on import: unknown keys (a newer or older export) are dropped instead of failing the insert. */
     static final Map<String, List<String>> COLUMNS = Map.of(
@@ -64,18 +67,21 @@ public class ConfigTransferService {
                     "api_protected", "username_field"),
             SCHEDULED_ACTIONS, List.of(UUID, "name", "description", "frequency", "enabled", "body"),
             PRINT_TEMPLATES, List.of(UUID, "name", "description", "export_type", "sql_query", "html_body",
-                    "template_file", "template_file_name", "api_protected", "username_field"));
+                    "template_file", "template_file_name", "api_protected", "username_field"),
+            LAYOUTS, List.of(UUID, "name", "page_type", "metadata_uuid", "metadata_name", "json_data", "updated_at"));
 
-    /** How an imported row finds the row it overwrites. Conditions have no name: their uuid is the identity. */
+    /** How an imported row finds the row it overwrites. Conditions / layouts use uuid as identity. */
     static final Map<String, List<String>> NATURAL_KEYS = Map.of(
             ACTIONS, List.of("name", "metadata_name"),
             CONDITIONS, List.of(UUID),
             SELECT_QUERY, List.of("query_name"),
             SCHEDULED_ACTIONS, List.of("name"),
-            PRINT_TEMPLATES, List.of("name"));
+            PRINT_TEMPLATES, List.of("name"),
+            LAYOUTS, List.of(UUID));
 
     private static final Pattern PRINT_TEMPLATE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
     private static final Set<String> PRINT_TYPES = Set.of("pdf", "html", "csv", "xlsx");
+    private static final Set<String> LAYOUT_PAGE_TYPES = Set.of("list", "edit", "view");
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -260,6 +266,19 @@ public class ConfigTransferService {
                 row.put("export_type", type);
                 if (Boolean.TRUE.equals(row.get("api_protected")) && blank(row.get("username_field"))) {
                     return "api_protected requires username_field";
+                }
+            }
+            case LAYOUTS -> {
+                String pageType = row.get("page_type") == null ? "" : row.get("page_type").toString().trim().toLowerCase();
+                if (!LAYOUT_PAGE_TYPES.contains(pageType)) {
+                    return "page_type must be one of " + LAYOUT_PAGE_TYPES;
+                }
+                row.put("page_type", pageType);
+                if (blank(row.get("metadata_uuid"))) {
+                    return "metadata_uuid is missing";
+                }
+                if (blank(row.get("json_data"))) {
+                    return "json_data is missing";
                 }
             }
             default -> {

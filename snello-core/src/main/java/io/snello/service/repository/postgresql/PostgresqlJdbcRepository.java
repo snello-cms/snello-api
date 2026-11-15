@@ -78,7 +78,9 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 creationAiUiCard,
                 creationAiServiceAccount,
                 creationScheduledActions,
-                creationPrintTemplates
+                creationPrintTemplates,
+                creationLayouts,
+                creationLayoutsIndex
         };
     }
 

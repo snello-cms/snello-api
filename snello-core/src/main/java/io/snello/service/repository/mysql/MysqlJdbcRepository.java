@@ -79,7 +79,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 creationAiUiCard,
                 creationAiServiceAccount,
                 creationScheduledActions,
-                creationPrintTemplates
+                creationPrintTemplates,
+                creationLayouts
         };
     }
 

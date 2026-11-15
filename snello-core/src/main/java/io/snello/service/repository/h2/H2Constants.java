@@ -247,6 +247,24 @@ public class H2Constants {
                 "  PRIMARY KEY (uuid)\n" +
                 ") ;";
 
+        /**
+         * SPA layouts (list / edit / view): identity + filters in columns, page body in {@code json_data}.
+         * Non-unique index supports sibling lookups (view of a list, edit of a view).
+         */
+        public static String creationLayouts = "CREATE TABLE IF NOT EXISTS layouts (\n" +
+                "  uuid varchar(255) NOT NULL,\n" +
+                "  name varchar(255) NOT NULL,\n" +
+                "  page_type varchar(10) NOT NULL,\n" +
+                "  metadata_uuid varchar(255) NOT NULL,\n" +
+                "  metadata_name varchar(255) NOT NULL,\n" +
+                "  json_data VARCHAR(1000000) DEFAULT NULL,\n" +
+                "  updated_at varchar(32) NOT NULL,\n" +
+                "  PRIMARY KEY (uuid)\n" +
+                ") ;";
+
+        public static String creationLayoutsIndex =
+                "CREATE INDEX IF NOT EXISTS idx_layouts_metadata_page ON layouts (metadata_uuid, page_type)";
+
         /** Jobs run by ScheduledActionTimer: a cron (frequency) and a JS body with the same bindings as an Action. */
         public static String creationScheduledActions = "CREATE TABLE IF NOT EXISTS scheduledactions (\n" +
                 "  uuid varchar(255) NOT NULL,\n" +

@@ -248,6 +248,22 @@ public class MysqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+    /**
+     * SPA layouts (list / edit / view): identity + filters in columns, page body in {@code json_data}.
+     * Non-unique KEY supports sibling lookups (view of a list, edit of a view).
+     */
+    public static String creationLayouts = "CREATE TABLE IF NOT EXISTS `layouts` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `name` varchar(255) NOT NULL,\n" +
+            "  `page_type` varchar(10) NOT NULL,\n" +
+            "  `metadata_uuid` varchar(255) NOT NULL,\n" +
+            "  `metadata_name` varchar(255) NOT NULL,\n" +
+            "  `json_data` LONGTEXT,\n" +
+            "  `updated_at` varchar(32) NOT NULL,\n" +
+            "  PRIMARY KEY (`uuid`),\n" +
+            "  KEY `idx_layouts_metadata_page` (`metadata_uuid`, `page_type`)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     /** Jobs run by ScheduledActionTimer: a cron (frequency) and a JS body with the same bindings as an Action. */
     public static String creationScheduledActions = "CREATE TABLE IF NOT EXISTS `scheduledactions` (\n" +
             "  `uuid` varchar(255) NOT NULL,\n" +
