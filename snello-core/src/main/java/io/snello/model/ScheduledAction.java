@@ -1,6 +1,7 @@
 package io.snello.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.snello.model.enums.ActionPhase;
 import io.snello.util.MapReads;
 import io.snello.util.MapWrites;
 
@@ -78,7 +79,7 @@ public class ScheduledAction {
         action.uuid = uuid;
         action.name = name;
         action.description = description;
-        action.phase = "SCHEDULED";
+        action.phase = ActionPhase.SCHEDULED.dbValue();
         action.body = body;
         return action;
     }

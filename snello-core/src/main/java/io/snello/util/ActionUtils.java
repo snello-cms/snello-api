@@ -1,44 +1,36 @@
 package io.snello.util;
 
+import io.snello.model.enums.ActionCondition;
+import io.snello.model.enums.ActionPhase;
+
 import java.util.Map;
 
 public class ActionUtils {
 
-    private static final String PERSIST = "PERSIST";
-    private static final String MERGE = "MERGE";
-    private static final String DELETE = "DELETE";
-    public static final String PHASE_PRE = "PRE";
-    public static final String PHASE_POST = "POST";
+    public static final String PHASE_PRE = ActionPhase.PRE.dbValue();
+    public static final String PHASE_POST = ActionPhase.POST.dbValue();
 
     public static String actionKey(String metadata_name, String condition) {
-        return actionKey(metadata_name, condition, PHASE_POST);
+        return actionKey(metadata_name, condition, ActionPhase.POST.dbValue());
     }
 
     public static String actionKey(String metadata_name, String condition, String phase) {
         return metadata_name + "_" + condition + "_" + normalizePhase(phase);
     }
 
+    /**
+     * Interceptor registry keys only distinguish PRE vs POST: anything that is not PRE
+     * (including {@link ActionPhase#SCHEDULED} and blank) becomes POST.
+     */
     public static String normalizePhase(String phase) {
-        if (PHASE_PRE.equalsIgnoreCase(phase)) {
-            return PHASE_PRE;
-        }
-        return PHASE_POST;
+        return ActionPhase.PRE == ActionPhase.from(phase)
+                ? ActionPhase.PRE.dbValue()
+                : ActionPhase.POST.dbValue();
     }
 
     public static String conditionByMethod(String methodName) {
-        if ("create".equals(methodName)) {
-            return PERSIST;
-        }
-        if ("merge".equals(methodName)) {
-            return MERGE;
-        }
-        if ("update".equals(methodName)) {
-            return MERGE;
-        }
-        if ("delete".equals(methodName)) {
-            return DELETE;
-        }
-        return null;
+        ActionCondition condition = ActionCondition.fromMethod(methodName);
+        return condition == null ? null : condition.dbValue();
     }
 
     /**
@@ -65,10 +57,11 @@ public class ActionUtils {
      * {@code delete(table, id, keyColumn)} -> id, {@code create(table, map, keyColumn)} -> map[keyColumn].
      */
     public static Object rowKey(String condition, Object[] params, Map<String, Object> map, String keyColumn) {
-        if (MERGE.equals(condition) && params.length > 2 && params[2] instanceof String id) {
+        ActionCondition c = ActionCondition.from(condition);
+        if (c == ActionCondition.MERGE && params.length > 2 && params[2] instanceof String id) {
             return id;
         }
-        if (DELETE.equals(condition) && params.length > 1 && params[1] instanceof String id) {
+        if (c == ActionCondition.DELETE && params.length > 1 && params[1] instanceof String id) {
             return id;
         }
         return map == null || keyColumn == null ? null : map.get(keyColumn);

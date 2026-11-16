@@ -14,8 +14,10 @@ public class Action {
     public String name;
     public String description;
     public String metadata_name; // TABLE
-    public String condition; // PERSIST, MERGE, DELETE
-    public String phase; // PRE, POST
+    /** {@link io.snello.model.enums.ActionCondition} DB value. */
+    public String condition;
+    /** {@link io.snello.model.enums.ActionPhase} DB value. */
+    public String phase;
     public String body;
 
     public Action() {

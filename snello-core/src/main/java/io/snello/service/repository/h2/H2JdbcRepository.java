@@ -3,6 +3,7 @@ package io.snello.service.repository.h2;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Condition;
+import io.snello.model.enums.KeyType;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.pojo.ColumnSpec;
 import io.snello.util.ConditionUtils;
@@ -465,11 +466,11 @@ public class H2JdbcRepository implements JdbcRepository {
 
     @Override
     public String keyColumnSql(EntityQueryFacet query, int varcharLength) {
-        return switch (query.table_key_type() == null ? "userdefined" : query.table_key_type()) {
-            case "uuid", "slug" -> escape(query.table_key()) + " VARCHAR(" + varcharLength + ") NOT NULL";
-            case "autoincrement" -> escape(query.table_key()) + " int NOT NULL AUTO_INCREMENT";
+        return switch (KeyType.fromOrUserDefined(query.table_key_type())) {
+            case UUID, SLUG -> escape(query.table_key()) + " VARCHAR(" + varcharLength + ") NOT NULL";
+            case AUTOINCREMENT -> escape(query.table_key()) + " int NOT NULL AUTO_INCREMENT";
             // user-defined: the key column is one of the declared fields
-            default -> null;
+            case USERDEFINED -> null;
         };
     }
 }

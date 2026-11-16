@@ -17,6 +17,7 @@ import io.snello.model.facet.EntityUiFacet;
 import io.snello.model.facet.FieldAiFacet;
 import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;
+import io.snello.model.enums.KeyType;
 import io.snello.model.enums.WidgetType;
 import io.snello.model.pojo.ColumnSpec;
 import io.snello.model.pojo.DraftResult;
@@ -46,7 +47,6 @@ import static io.snello.management.AppConstants.*;
 public class DraftService {
 
     private static final Pattern IDENTIFIER = Pattern.compile("[a-z][a-z0-9_]{0,62}");
-    private static final Set<String> KEY_TYPES = Set.of("uuid", "slug", "autoincrement", "userdefined");
 
     @Inject
     MetadataService metadataService;
@@ -177,10 +177,13 @@ public class DraftService {
             query.table_key = UUID;
         }
         if (query.table_key_type == null || query.table_key_type.isBlank()) {
-            query.table_key_type = "uuid";
+            query.table_key_type = KeyType.UUID.dbValue();
         }
-        if (!KEY_TYPES.contains(query.table_key_type)) {
-            errors.add("query.table_key_type '" + query.table_key_type + "' must be one of " + KEY_TYPES);
+        KeyType keyType = KeyType.from(query.table_key_type);
+        if (keyType == null) {
+            errors.add("query.table_key_type '" + query.table_key_type + "' must be one of " + KeyType.dbValues());
+        } else {
+            query.table_key_type = keyType.dbValue();
         }
         entity.query = query.build();
 
@@ -206,7 +209,8 @@ public class DraftService {
             return fields;
         }
         String key = entity.query.table_key();
-        boolean generatedKey = !"userdefined".equals(entity.query.table_key_type());
+        KeyType keyType = KeyType.fromOrUserDefined(entity.query.table_key_type());
+        boolean generatedKey = keyType.isGenerated();
         Set<String> names = new HashSet<>();
         int index = 0;
         for (FieldDraft fd : draft.fields()) {
@@ -328,10 +332,11 @@ public class DraftService {
 
     private static void checkKeyReferences(EntityModel entity, Set<String> names, List<String> errors) {
         EntityQueryFacet q = entity.query;
-        if ("userdefined".equals(q.table_key_type()) && !names.contains(q.table_key())) {
+        KeyType keyType = KeyType.fromOrUserDefined(q.table_key_type());
+        if (keyType == KeyType.USERDEFINED && !names.contains(q.table_key())) {
             errors.add("query.table_key '" + q.table_key() + "' must be one of the fields for a userdefined key");
         }
-        if ("slug".equals(q.table_key_type())
+        if (keyType == KeyType.SLUG
                 && (q.table_key_addition() == null || !names.contains(q.table_key_addition()))) {
             errors.add("slug key: query.table_key_addition must name the field the slug is built from");
         }

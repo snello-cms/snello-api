@@ -1,6 +1,7 @@
 package io.snello.util;
 
 import io.snello.model.Metadata;
+import io.snello.model.enums.KeyType;
 import io.snello.service.ApiService;
 
 import java.util.Map;
@@ -9,23 +10,15 @@ public class TableKeyUtils {
 
 
     public static boolean isSlug(Metadata metadata) {
-        switch (metadata.table_key_type) {
-            case "slug":
-                return true;
-            default:
-                return false;
-        }
+        return KeyType.from(metadata.table_key_type) == KeyType.SLUG;
     }
 
     public static void generateUUid(Map<String, Object> map, Metadata metadata, ApiService apiService) throws Exception {
-        switch (metadata.table_key_type) {
-            case "uuid":
-                uuid(map, metadata);
-                return;
-            case "slug":
-                slug(map, metadata, apiService);
-                return;
-            default:
+        KeyType type = KeyType.from(metadata.table_key_type);
+        if (type == KeyType.UUID) {
+            uuid(map, metadata);
+        } else if (type == KeyType.SLUG) {
+            slug(map, metadata, apiService);
         }
     }
 

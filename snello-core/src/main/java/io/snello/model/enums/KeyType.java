@@ -1,15 +1,18 @@
 package io.snello.model.enums;
 
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * Metadata {@code table_key_type} / generation hints stored as DB strings.
+ * Metadata {@code table_key_type} values, stored as lowercase strings in DB.
  */
 public enum KeyType {
     UUID("uuid"),
-    VARCHAR("varchar(255)"),
-    AUTO("auto"),
-    SLUG("slug");
+    SLUG("slug"),
+    AUTOINCREMENT("autoincrement"),
+    USERDEFINED("userdefined");
 
     private final String db;
 
@@ -31,9 +34,20 @@ public enum KeyType {
                 return t;
             }
         }
-        if (key.startsWith("varchar")) {
-            return VARCHAR;
-        }
         return null;
+    }
+
+    /** Null/blank → {@link #USERDEFINED} (DDL treats an unknown key as a declared field). */
+    public static KeyType fromOrUserDefined(String raw) {
+        KeyType type = from(raw);
+        return type == null ? USERDEFINED : type;
+    }
+
+    public static Set<String> dbValues() {
+        return Arrays.stream(values()).map(KeyType::dbValue).collect(Collectors.toUnmodifiableSet());
+    }
+
+    public boolean isGenerated() {
+        return this != USERDEFINED;
     }
 }
