@@ -5,7 +5,6 @@ import io.snello.util.MapReads;
 import io.snello.util.MapWrites;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * SPA page layout for a metadata (list / edit / view). Identity and library filters live in columns;
@@ -13,14 +12,6 @@ import java.util.Set;
  */
 @RegisterForReflection
 public class Layout {
-
-    public static final String LIST = "list";
-    public static final String EDIT = "edit";
-    public static final String VIEW = "view";
-    public static final Set<String> PAGE_TYPES = Set.of(LIST, EDIT, VIEW);
-
-    public static final String KIND_LIST = "list";
-    public static final String KIND_WIZARD = "wizard";
 
     public String uuid;
     public String name;
@@ -61,17 +52,6 @@ public class Layout {
         MapWrites.put(map, "json_data", json_data);
         MapWrites.put(map, "updated_at", updated_at);
         return map;
-    }
-
-    /** Expected {@code json_data.kind} for a given {@code page_type}. */
-    public static String expectedKind(String pageType) {
-        if (LIST.equals(pageType)) {
-            return KIND_LIST;
-        }
-        if (EDIT.equals(pageType) || VIEW.equals(pageType)) {
-            return KIND_WIZARD;
-        }
-        return null;
     }
 
     @Override

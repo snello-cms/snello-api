@@ -3,6 +3,8 @@ package io.snello.service;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Metadata;
+import io.snello.model.enums.LayoutPageType;
+import io.snello.model.enums.PrintExportType;
 import io.snello.model.pojo.ConfigImportResult;
 import io.snello.util.MetadataUtils;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,7 +17,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import static io.snello.management.AppConstants.ACTIONS;
@@ -80,8 +81,6 @@ public class ConfigTransferService {
             LAYOUTS, List.of(UUID));
 
     private static final Pattern PRINT_TEMPLATE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
-    private static final Set<String> PRINT_TYPES = Set.of("pdf", "html", "csv", "xlsx");
-    private static final Set<String> LAYOUT_PAGE_TYPES = Set.of("list", "edit", "view");
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -259,21 +258,23 @@ public class ConfigTransferService {
                 if (!PRINT_TEMPLATE_NAME.matcher(row.get("name").toString()).matches()) {
                     return "name must match " + PRINT_TEMPLATE_NAME.pattern();
                 }
-                String type = row.get("export_type") == null ? "" : row.get("export_type").toString().toLowerCase();
-                if (!PRINT_TYPES.contains(type)) {
-                    return "export_type must be one of " + PRINT_TYPES;
+                PrintExportType type = PrintExportType.from(
+                        row.get("export_type") == null ? null : row.get("export_type").toString());
+                if (type == null) {
+                    return "export_type must be one of " + PrintExportType.dbValues();
                 }
-                row.put("export_type", type);
+                row.put("export_type", type.dbValue());
                 if (Boolean.TRUE.equals(row.get("api_protected")) && blank(row.get("username_field"))) {
                     return "api_protected requires username_field";
                 }
             }
             case LAYOUTS -> {
-                String pageType = row.get("page_type") == null ? "" : row.get("page_type").toString().trim().toLowerCase();
-                if (!LAYOUT_PAGE_TYPES.contains(pageType)) {
-                    return "page_type must be one of " + LAYOUT_PAGE_TYPES;
+                LayoutPageType pageType = LayoutPageType.from(
+                        row.get("page_type") == null ? null : row.get("page_type").toString());
+                if (pageType == null) {
+                    return "page_type must be one of " + LayoutPageType.dbValues();
                 }
-                row.put("page_type", pageType);
+                row.put("page_type", pageType.dbValue());
                 if (blank(row.get("metadata_uuid"))) {
                     return "metadata_uuid is missing";
                 }

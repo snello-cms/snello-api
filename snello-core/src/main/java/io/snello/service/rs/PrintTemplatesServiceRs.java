@@ -6,10 +6,12 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.AbstractServiceRs;
 import io.snello.management.SnelloPlane;
 import io.snello.model.PrintTemplate;
+import io.snello.model.enums.PrintExportType;
 import io.snello.model.pojo.PrintOutput;
 import io.snello.service.ApiService;
 import io.snello.service.PrintTemplateService;
 import io.snello.util.MapReads;
+import io.snello.util.PrintTemplateUtils;
 import io.snello.util.SqlSafety;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -104,16 +106,16 @@ public class PrintTemplatesServiceRs extends AbstractServiceRs {
 
     private void validate(Map<String, Object> object) {
         PrintTemplate t = new PrintTemplate(object);
-        String type = t.export_type == null ? null : t.export_type.trim().toLowerCase();
+        PrintExportType type = PrintExportType.from(t.export_type);
         Log.infof("printtemplate validate name=%s type=%s api_protected=%s username_field=%s template_file=%s",
-                t.name, type, t.api_protected, t.username_field, t.template_file_name);
+                t.name, type == null ? null : type.dbValue(), t.api_protected, t.username_field, t.template_file_name);
         if (t.name == null || !NAME.matcher(t.name).matches()) {
             throw new BadRequestException("name is required and may only contain letters, digits, _ and - (it is part of the print URL)");
         }
-        if (type == null || !PrintTemplate.EXPORT_TYPES.contains(type)) {
-            throw new BadRequestException("export_type must be one of " + PrintTemplate.EXPORT_TYPES);
+        if (type == null) {
+            throw new BadRequestException("export_type must be one of " + PrintExportType.dbValues());
         }
-        object.put("export_type", type);
+        object.put("export_type", type.dbValue());
         if (t.sql_query == null || t.sql_query.isBlank()) {
             throw new BadRequestException("sql_query is required");
         }
@@ -123,11 +125,10 @@ public class PrintTemplatesServiceRs extends AbstractServiceRs {
         if (t.username_field != null && !t.username_field.isBlank() && SqlSafety.isUnsafeOwnerColumn(t.username_field)) {
             throw new BadRequestException("username_field must be a plain column name");
         }
-        if ((PrintTemplate.PDF.equals(type) || PrintTemplate.HTML.equals(type))
-            && (t.html_body == null || t.html_body.isBlank())) {
-            throw new BadRequestException(type + " export needs html_body (a Qute template)");
+        if (PrintTemplateUtils.requiresHtmlBody(type) && (t.html_body == null || t.html_body.isBlank())) {
+            throw new BadRequestException(type.dbValue() + " export needs html_body (a Qute template)");
         }
-        if (PrintTemplate.XLSX.equals(type)) {
+        if (PrintTemplateUtils.requiresTemplateFile(type)) {
             if (t.template_file == null || t.template_file.isBlank()) {
                 throw new BadRequestException("xlsx export needs template_file (a JXLS .xlsx template)");
             }

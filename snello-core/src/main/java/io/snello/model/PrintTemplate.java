@@ -6,7 +6,6 @@ import io.snello.util.MapReads;
 import io.snello.util.MapWrites;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A printable report: {@code sql_query} gives the rows, the body turns them into a file.
@@ -20,12 +19,6 @@ import java.util.Set;
  */
 @RegisterForReflection
 public class PrintTemplate {
-
-    public static final String PDF = "pdf";
-    public static final String HTML = "html";
-    public static final String CSV = "csv";
-    public static final String XLSX = "xlsx";
-    public static final Set<String> EXPORT_TYPES = Set.of(PDF, HTML, CSV, XLSX);
 
     public String uuid;
     public String name;

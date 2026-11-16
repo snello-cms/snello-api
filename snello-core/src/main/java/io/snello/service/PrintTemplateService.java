@@ -7,7 +7,9 @@ import io.quarkus.qute.Template;
 import io.quarkus.qute.Variant;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.PrintTemplate;
+import io.snello.model.enums.PrintExportType;
 import io.snello.model.pojo.PrintOutput;
+import io.snello.util.PrintTemplateUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -113,8 +115,11 @@ public class PrintTemplateService {
     public PrintOutput print(PrintTemplate template, MultivaluedMap<String, String> filters, String sort,
                              String csvSeparator) throws Exception {
         long start = System.currentTimeMillis();
-        String type = template.export_type == null ? PrintTemplate.PDF : template.export_type.toLowerCase();
-        Log.infof("PRINT [%s] type=%s filters=%s sort=%s", template.name, type, filters, sort);
+        PrintExportType type = PrintTemplateUtils.resolve(template.export_type);
+        if (type == null) {
+            throw new IllegalArgumentException("unknown export_type " + template.export_type);
+        }
+        Log.infof("PRINT [%s] type=%s filters=%s sort=%s", template.name, type.dbValue(), filters, sort);
         List<Map<String, Object>> rows = apiService.listSelectQuery(template.name, template.asSelectQuery(), filters,
                 sort, maxRows, 0);
         if (rows.size() >= maxRows) {
@@ -122,19 +127,18 @@ public class PrintTemplateService {
         }
         Map<String, Object> data = data(template, rows, filters);
         PrintOutput out = switch (type) {
-            case PrintTemplate.PDF -> new PrintOutput(pdf(html(template, data)), "application/pdf",
+            case PDF -> new PrintOutput(pdf(html(template, data)), "application/pdf",
                     fileName(template, "pdf"), rows.size());
-            case PrintTemplate.HTML -> new PrintOutput(html(template, data).getBytes(StandardCharsets.UTF_8),
+            case HTML -> new PrintOutput(html(template, data).getBytes(StandardCharsets.UTF_8),
                     "text/html; charset=UTF-8", fileName(template, "html"), rows.size());
-            case PrintTemplate.CSV -> new PrintOutput(csv(template, data, rows, csvSeparator).getBytes(StandardCharsets.UTF_8),
+            case CSV -> new PrintOutput(csv(template, data, rows, csvSeparator).getBytes(StandardCharsets.UTF_8),
                     "text/csv; charset=UTF-8", fileName(template, "csv"), rows.size());
-            case PrintTemplate.XLSX -> new PrintOutput(xlsx(template, data),
+            case XLSX -> new PrintOutput(xlsx(template, data),
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName(template, "xlsx"),
                     rows.size());
-            default -> throw new IllegalArgumentException("unknown export_type " + type);
         };
-        Log.infof("PRINT [%s] %s: %d row(s), %d bytes in %d ms", template.name, type, rows.size(), out.bytes().length,
-                System.currentTimeMillis() - start);
+        Log.infof("PRINT [%s] %s: %d row(s), %d bytes in %d ms", template.name, type.dbValue(), rows.size(),
+                out.bytes().length, System.currentTimeMillis() - start);
         return out;
     }
 

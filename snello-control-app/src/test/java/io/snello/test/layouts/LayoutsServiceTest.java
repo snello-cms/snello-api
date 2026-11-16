@@ -4,6 +4,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import io.snello.api.service.JdbcRepository;
+import io.snello.model.enums.LayoutKind;
+import io.snello.model.enums.LayoutPageType;
 import io.snello.service.MetadataService;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
@@ -56,15 +58,15 @@ class LayoutsServiceTest {
     void createListLayoutAndRejectKindMismatch() {
         Map<String, Object> body = Map.of(
                 "name", "layout-test-list",
-                "page_type", "list",
+                "page_type", LayoutPageType.LIST.dbValue(),
                 "metadata_uuid", META_UUID,
-                "json_data", Map.of("version", 1, "kind", "list", "columns", List.of()));
+                "json_data", Map.of("version", 1, "kind", LayoutKind.LIST.dbValue(), "columns", List.of()));
 
         Map<String, Object> created = given().contentType(ContentType.JSON).body(body)
                 .when().post("/api/layouts")
                 .then().statusCode(200)
                 .body("name", equalTo("layout-test-list"))
-                .body("page_type", equalTo("list"))
+                .body("page_type", equalTo(LayoutPageType.LIST.dbValue()))
                 .body("metadata_name", equalTo(META))
                 .body("updated_at", notNullValue())
                 .extract().jsonPath().getMap("");
@@ -74,18 +76,18 @@ class LayoutsServiceTest {
         given().contentType(ContentType.JSON)
                 .body(Map.of(
                         "name", "layout-test-bad",
-                        "page_type", "list",
+                        "page_type", LayoutPageType.LIST.dbValue(),
                         "metadata_uuid", META_UUID,
-                        "json_data", Map.of("version", 1, "kind", "wizard", "pages", List.of())))
+                        "json_data", Map.of("version", 1, "kind", LayoutKind.WIZARD.dbValue(), "pages", List.of())))
                 .when().post("/api/layouts")
                 .then().statusCode(400);
 
         given().contentType(ContentType.JSON)
                 .body(Map.of(
                         "name", "layout-test-missing-meta",
-                        "page_type", "edit",
+                        "page_type", LayoutPageType.EDIT.dbValue(),
                         "metadata_uuid", "no-such-metadata",
-                        "json_data", Map.of("version", 1, "kind", "wizard", "pages", List.of())))
+                        "json_data", Map.of("version", 1, "kind", LayoutKind.WIZARD.dbValue(), "pages", List.of())))
                 .when().post("/api/layouts")
                 .then().statusCode(400);
 
@@ -93,9 +95,9 @@ class LayoutsServiceTest {
         given().contentType(ContentType.JSON)
                 .body(Map.of(
                         "name", "layout-test-list-clone",
-                        "page_type", "list",
+                        "page_type", LayoutPageType.LIST.dbValue(),
                         "metadata_uuid", META_UUID,
-                        "json_data", Map.of("version", 1, "kind", "list", "columns", List.of("a"))))
+                        "json_data", Map.of("version", 1, "kind", LayoutKind.LIST.dbValue(), "columns", List.of("a"))))
                 .when().post("/api/layouts")
                 .then().statusCode(200)
                 .body("name", equalTo("layout-test-list-clone"));
@@ -111,21 +113,21 @@ class LayoutsServiceTest {
         given().contentType(ContentType.JSON)
                 .body(Map.of(
                         "name", "layout-test-edit",
-                        "page_type", "edit",
+                        "page_type", LayoutPageType.EDIT.dbValue(),
                         "metadata_uuid", META_UUID,
                         "json_data", "{\"version\":1,\"kind\":\"wizard\",\"pages\":[]}"))
                 .when().post("/api/layouts")
                 .then().statusCode(200)
-                .body("page_type", equalTo("edit"));
+                .body("page_type", equalTo(LayoutPageType.EDIT.dbValue()));
 
         given().contentType(ContentType.JSON)
                 .body(Map.of(
                         "name", "layout-test-view",
-                        "page_type", "view",
+                        "page_type", LayoutPageType.VIEW.dbValue(),
                         "metadata_uuid", META_UUID,
-                        "json_data", Map.of("version", 1, "kind", "wizard", "pages", List.of())))
+                        "json_data", Map.of("version", 1, "kind", LayoutKind.WIZARD.dbValue(), "pages", List.of())))
                 .when().post("/api/layouts")
                 .then().statusCode(200)
-                .body("page_type", equalTo("view"));
+                .body("page_type", equalTo(LayoutPageType.VIEW.dbValue()));
     }
 }

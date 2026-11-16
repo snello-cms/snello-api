@@ -6,7 +6,10 @@ import io.snello.api.service.JdbcRepository;
 import io.snello.management.SnelloPlane;
 import io.snello.model.Layout;
 import io.snello.model.Metadata;
+import io.snello.model.enums.LayoutKind;
+import io.snello.model.enums.LayoutPageType;
 import io.snello.util.JsonUtils;
+import io.snello.util.LayoutUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -59,11 +62,11 @@ public class LayoutService {
         }
         object.put("name", name);
 
-        String pageType = layout.page_type == null ? null : layout.page_type.trim().toLowerCase();
-        if (pageType == null || !Layout.PAGE_TYPES.contains(pageType)) {
-            throw new BadRequestException("page_type must be one of " + Layout.PAGE_TYPES);
+        LayoutPageType pageType = LayoutPageType.from(layout.page_type);
+        if (pageType == null) {
+            throw new BadRequestException("page_type must be one of " + LayoutPageType.dbValues());
         }
-        object.put("page_type", pageType);
+        object.put("page_type", pageType.dbValue());
 
         String metadataUuid = layout.metadata_uuid == null ? null : layout.metadata_uuid.trim();
         if (metadataUuid == null || metadataUuid.isBlank()) {
@@ -100,21 +103,23 @@ public class LayoutService {
             throw new BadRequestException("json_data must be a JSON object");
         }
         Object kindRaw = body.get("kind");
-        String kind = kindRaw == null ? null : kindRaw.toString().trim().toLowerCase();
-        if (kind == null || kind.isBlank()) {
+        String kindRawStr = kindRaw == null ? null : kindRaw.toString().trim();
+        if (kindRawStr == null || kindRawStr.isBlank()) {
             throw new BadRequestException("json_data.kind is required");
         }
-        String expected = Layout.expectedKind(pageType);
-        if (!expected.equals(kind)) {
-            throw new BadRequestException("page_type '" + pageType + "' requires json_data.kind '" + expected
-                    + "', got '" + kind + "'");
+        LayoutKind kind = LayoutKind.from(kindRawStr);
+        LayoutKind expected = LayoutUtils.expectedKind(pageType);
+        if (kind == null || expected != kind) {
+            throw new BadRequestException("page_type '" + pageType.dbValue() + "' requires json_data.kind '"
+                    + expected.dbValue() + "', got '" + kindRawStr.toLowerCase() + "'");
         }
         if (body.get("version") == null) {
             throw new BadRequestException("json_data.version is required");
         }
         object.put("json_data", json);
         object.put("updated_at", Instant.now().toString());
-        Log.infof("layout prepareWrite name=%s page_type=%s metadata=%s", name, pageType, metadata.table_name);
+        Log.infof("layout prepareWrite name=%s page_type=%s metadata=%s", name, pageType.dbValue(),
+                metadata.table_name);
     }
 
     private Metadata findMetadataByUuid(String uuid) throws Exception {
