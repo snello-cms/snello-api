@@ -1,10 +1,18 @@
-# Local Keycloak on :18180 / API on :18080 (mem H2). For published docs prefer
-# docker-compose-aio-sso.yaml (ports 8080/8180, file H2 for both). See docs/all-in-one.md.
+# All-in-one + bundled Keycloak (dev-file H2) for local SSO.
+# Realms imported from ../dev/keycloak (same dump as the full stack).
 #
-#   ./mvnw -pl snello-all-in-one-app -am package -Dmaven.test.skip=true
-#   docker compose -f compose-allinone-local.yml up -d --build
+# Ports:
+#   snello-all-in-one → http://127.0.0.1:8080
+#   keycloak          → http://127.0.0.1:8180
 #
-name: snello-allinone-local
+# Prerequisites:
+#   ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#
+#   docker compose -f docker-compose/docker-compose-aio-sso.yaml up -d --build
+#
+# Docs: ../docs/all-in-one.md
+#
+name: snello-aio-sso
 
 services:
   keycloak:
@@ -15,42 +23,46 @@ services:
       KC_HTTP_PORT: "8080"
       KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: "true"
+      # Persist Keycloak's embedded H2 (dev-file) under /opt/keycloak/data
+      KC_DB: dev-file
     command:
       - start-dev
+      - --db=dev-file
       - --import-realm
       - --http-port=8080
       - --hostname-strict=false
     ports:
-      - "18180:8080"
+      - "8180:8080"
     volumes:
-      - ./dev/keycloak:/opt/keycloak/data/import:ro
+      - snello-aio-keycloak-data:/opt/keycloak/data
+      - ../dev/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 5s
       timeout: 5s
       retries: 40
-      start_period: 30s
+      start_period: 40s
 
   snello-all-in-one:
-    image: snellocms/snello-all-in-one:local
+    image: snellocms/snello-all-in-one:alpha
     build:
-      context: ./snello-all-in-one-app
+      context: ../snello-all-in-one-app
       dockerfile: src/main/docker/Dockerfile.jvm
     depends_on:
       keycloak:
         condition: service_healthy
     ports:
-      - "18080:8080"
+      - "8080:8080"
     environment:
       SNELLO_DB_KIND: h2
-      SNELLO_JDBC_URL: jdbc:h2:mem:snello;DB_CLOSE_DELAY=-1;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+      SNELLO_JDBC_URL: jdbc:h2:file:/data/snello;DB_CLOSE_DELAY=-1;AUTO_SERVER=FALSE;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
       SNELLO_FS_BASE_PATH: /data/files
-      # Same docker network → issuer matches tokens minted against http://keycloak:8080/...
+      # Same Docker network → issuer must match tokens minted against http://keycloak:8080/...
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
       QUARKUS_OIDC_CLIENT_ID: snello-api
       QUARKUS_OIDC_APPLICATION_TYPE: service
       QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: resource_access/snello-api/roles
-      # Point named tenant at same realm so static init does not hit sso.example placeholders
+      # Named tenant → same realm (avoids sso.example placeholders)
       QUARKUS_OIDC_SNELLO_AUTH_SERVER_URL: http://keycloak:8080/realms/snello
       QUARKUS_OIDC_SNELLO_CLIENT_ID: snello-api
       SNELLO_KEYCLOAK_ADMIN_SERVER_URL: http://keycloak:8080
@@ -65,7 +77,8 @@ services:
       GEMINI_MODEL_QUICK: ${GEMINI_MODEL_QUICK:-gemini-2.0-flash}
       GEMINI_MODEL_PRO: ${GEMINI_MODEL_PRO:-gemini-2.0-pro}
       SNELLO_AI_MCP_BASE_URL: ${SNELLO_AI_MCP_BASE_URL:-http://127.0.0.1:8080}
-      QUARKUS_LOG_CATEGORY__IO_QUARKUS_OIDC__LEVEL: DEBUG
+    volumes:
+      - snello-aio-data:/data
     healthcheck:
       test:
         [
@@ -76,3 +89,7 @@ services:
       timeout: 5s
       retries: 40
       start_period: 50s
+
+volumes:
+  snello-aio-data:
+  snello-aio-keycloak-data:

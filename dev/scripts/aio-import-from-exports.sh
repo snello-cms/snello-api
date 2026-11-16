@@ -3,7 +3,7 @@
 # using a Keycloak token minted on the compose-allinone-local network.
 #
 # Prerequisites:
-#   docker compose -f compose-allinone-local.yml up -d --build
+#   docker compose -f docker-compose/compose-allinone-local.yml up -d --build
 #   exports in dev/exports/
 set -euo pipefail
 

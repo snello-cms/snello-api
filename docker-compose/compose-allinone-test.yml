@@ -1,6 +1,6 @@
 # All-in-one IT stack: H2 API image only (OIDC off so import/tests need no SSO).
 # Generate the metadata fixture first (see dev/scripts/generate-metadatas-export.sh),
-# then: docker compose -f compose-allinone-test.yml up -d --build
+# then: docker compose -f docker-compose/compose-allinone-test.yml up -d --build
 #
 # Host port 18080 avoids clash with local control (:8080) / query (:8081).
 name: snello-allinone-test
@@ -9,7 +9,7 @@ services:
   snello-all-in-one:
     image: snellocms/snello-all-in-one:test
     build:
-      context: ./snello-all-in-one-app
+      context: ../snello-all-in-one-app
       dockerfile: src/main/docker/Dockerfile.jvm
     ports:
       - "18080:8080"

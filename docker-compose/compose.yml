@@ -1,7 +1,7 @@
 # Full local stack: dependencies + snello-control 6.x alpha image.
 # Usage (images are built from the local modules, so package them first):
 #   ./mvnw package -DskipTests
-#   docker compose up -d --build
+#   docker compose -f docker-compose/compose.yml up -d --build
 name: snello
 
 services:
@@ -15,7 +15,7 @@ services:
       - "5432:5432"
     volumes:
       - snello-pgdata:/var/lib/postgresql
-      - ./dev/db:/seed:ro
+      - ../dev/db:/seed:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -47,7 +47,7 @@ services:
     ports:
       - "8180:8080"
     volumes:
-      - ./dev/keycloak:/opt/keycloak/data/import:ro
+      - ../dev/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       # no curl in the image: plain HTTP over bash /dev/tcp against the management port
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
@@ -91,7 +91,7 @@ services:
   snello-control:
     image: snellocms/snello-control:alpha
     build:
-      context: ./snello-control-app
+      context: ../snello-control-app
       dockerfile: src/main/docker/Dockerfile.jvm
     depends_on:
       postgresql:
@@ -125,7 +125,7 @@ services:
   snello-query:
     image: snellocms/snello-query:alpha
     build:
-      context: ./snello-query-app
+      context: ../snello-query-app
       dockerfile: src/main/docker/Dockerfile.jvm
     depends_on:
       postgresql:

@@ -6,13 +6,13 @@
 
 ## Diagnosis (current state)
 
-Today [`Metadata`](src/main/java/io/snello/model/Metadata.java) and [`FieldDefinition`](src/main/java/io/snello/model/FieldDefinition.java) are bags of public fields mapped 1:1 onto `metadatas` / `fielddefinitions`. The runtime consumes them in a mixed way:
+Today [`Metadata`](../snello-core/src/main/java/io/snello/model/Metadata.java) and [`FieldDefinition`](../snello-core/src/main/java/io/snello/model/FieldDefinition.java) are bags of public fields mapped 1:1 onto `metadatas` / `fielddefinitions`. The runtime consumes them in a mixed way:
 
-- **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
-- **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … served by [`DataListServiceRs`](src/main/java/io/snello/service/rs/DataListServiceRs.java), almost never used server-side
+- **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](../snello-core/src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
+- **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … served by [`DataListServiceRs`](../snello-core/src/main/java/io/snello/service/rs/DataListServiceRs.java), almost never used server-side
 - **AI**: flower-style stack — skills + MCP tools + optional SQL `ai_tools` (hardcoded `SnelloCmsTools` removed)
 
-The Quarkus monolith has a single deployable; the metadata “cache” is a `Map` in [`MetadataService`](src/main/java/io/snello/service/MetadataService.java) invalidated by CDI events.
+The Quarkus monolith has a single deployable; the metadata “cache” is a `Map` in [`MetadataService`](../snello-core/src/main/java/io/snello/service/MetadataService.java) invalidated by CDI events.
 
 ## Guiding principle
 
@@ -156,14 +156,14 @@ Assumption: **AI becomes the primary writer** of metadata; the admin UI becomes 
 - Automatic derivations (reduce AI load):
   - from `semantic_type` / `sql_type` → default UI `type`/`input_type`
   - from `show_in_list`/`searchable` → recompose `select_fields` / search hints
-  - validation: column name, reserved words ([`MetadataUtils`](src/main/java/io/snello/util/MetadataUtils.java)), coherent joins
+  - validation: column name, reserved words ([`MetadataUtils`](../snello-core/src/main/java/io/snello/util/MetadataUtils.java)), coherent joins
 - MCP layer (new module/runtime): read tools (`list_entities`, `describe_entity`, `query_rows`) and write tools (`propose_entity`, `apply_entity`) with DDL dry-run
 
 AI target output: mandatory “query + AI” profile; UI auto-suggested with optional human/AI override.
 
 ## 3. Runtime split: control vs query
 
-**Chosen default:** Maven multi-module under [`snello-parent`](pom.xml):
+**Chosen default:** Maven multi-module under [`snello-parent`](../pom.xml):
 
 ```text
 snello-parent
@@ -212,7 +212,7 @@ Locked choices for this image:
 - **SSO:** external OIDC (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); optional Keycloak admin bootstrap via `SNELLO_KEYCLOAK_ADMIN_*`
 - **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — no MinIO required
 - **API surface:** full control plane, not query-only
-- **Not a production HA target:** production stays control + query replicas + external MySQL/PostgreSQL; all-in-one is the convenience/distribution channel (`compose-allinone.yml`)
+- **Not a production HA target:** production stays control + query replicas + external MySQL/PostgreSQL; all-in-one is the convenience/distribution channel (`docker-compose/compose-allinone.yml`)
 
 ### Query nodes + cache + replica
 
@@ -257,7 +257,7 @@ Internal order, after the models:
 1. **Facets + facade** (no new columns; fix fromMap; enums; catalog views) — **done** (datalist facet APIs + `EntityCatalog` query/ui/ai)
 2. **AiFacet JSON + draft schema + tool rewrite** — **done** (`ai_profile`, drafts, tools)
 3. **Build profile `query` + Dockerfile + multi-replica compose** — **done** (control/query apps + read-only JDBC interceptor on query)
-4. **All-in-one image** — **done** (H2 + FS + external SSO; no SPA yet — `snello-all-in-one-app` / `compose-allinone.yml`)
+4. **All-in-one image** — **done** (H2 + FS + external SSO; no SPA yet — `snello-all-in-one-app` / `docker-compose/compose-allinone.yml`)
 5. **MCP image** (if an external protocol beyond current LangChain4j is needed) — shell module exists; protocol TBD
 6. **Unified SqlQueryBuilder** + identifier-quoting hardening — **done** (`SqlQueryBuilder` + thin dialect facades; MySQL backticks)
 

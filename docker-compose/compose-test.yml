@@ -9,10 +9,10 @@ services:
       POSTGRES_USER: snello
       POSTGRES_PASSWORD: snello
     ports:
-      # Host 5433 so tests can run while local compose.yml postgres occupies 5432
+      # Host 5433 so tests can run while local docker-compose/compose.yml postgres occupies 5432
       - "5433:5432"
     volumes:
-      - ./dev/db:/seed:ro
+      - ../dev/db:/seed:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |

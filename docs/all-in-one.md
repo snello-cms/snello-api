@@ -100,7 +100,7 @@ curl -s http://127.0.0.1:8080/openapi | head -c 200
 
 ## 2. Run with Docker Compose — external SSO
 
-File: [`docker-compose-aio.yaml`](../docker-compose-aio.yaml)
+File: [`docker-compose/docker-compose-aio.yaml`](../docker-compose/docker-compose-aio.yaml)
 
 - One service: `snello-all-in-one`
 - Named volume `snello-aio-data` → `/data` (H2 file + documents)
@@ -114,7 +114,7 @@ export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
 # export GEMINI_API_KEY=...
 # export OPENAI_API_KEY=...   # only if SNELLO_AITYPE=openai
 
-docker compose -f docker-compose-aio.yaml up -d --build
+docker compose -f docker-compose/docker-compose-aio.yaml up -d --build
 ```
 
 API: http://127.0.0.1:8080
@@ -122,15 +122,15 @@ API: http://127.0.0.1:8080
 Stop / wipe data:
 
 ```bash
-docker compose -f docker-compose-aio.yaml down      # keep volume
-docker compose -f docker-compose-aio.yaml down -v   # delete H2 + files
+docker compose -f docker-compose/docker-compose-aio.yaml down      # keep volume
+docker compose -f docker-compose/docker-compose-aio.yaml down -v   # delete H2 + files
 ```
 
 ---
 
 ## 3. Run with Docker Compose — bundled Keycloak (H2)
 
-File: [`docker-compose-aio-sso.yaml`](../docker-compose-aio-sso.yaml)
+File: [`docker-compose/docker-compose-aio-sso.yaml`](../docker-compose/docker-compose-aio-sso.yaml)
 
 | Service | Image | Persistence | Host port |
 |---|---|---|---|
@@ -142,7 +142,7 @@ Realm JSON is imported from [`dev/keycloak/`](../dev/keycloak/) (`realm-snello.j
 OIDC inside the compose network uses `http://keycloak:8080/realms/snello` so the token `iss` matches what Quarkus validates.
 
 ```bash
-docker compose -f docker-compose-aio-sso.yaml up -d --build
+docker compose -f docker-compose/docker-compose-aio-sso.yaml up -d --build
 ```
 
 | URL | Purpose |
@@ -165,8 +165,8 @@ docker run --rm --network "$COMPOSE_NET" curlimages/curl:8.12.1 -sf \
 Stop / wipe:
 
 ```bash
-docker compose -f docker-compose-aio-sso.yaml down
-docker compose -f docker-compose-aio-sso.yaml down -v   # wipe Snello H2 + Keycloak H2
+docker compose -f docker-compose/docker-compose-aio-sso.yaml down
+docker compose -f docker-compose/docker-compose-aio-sso.yaml down -v   # wipe Snello H2 + Keycloak H2
 ```
 
 ---
@@ -199,8 +199,8 @@ See also [Backup](backup.md) and [README — All-in-one dump IT](../README.md#al
 
 | File | Role |
 |---|---|
-| `docker-compose-aio.yaml` | **preferred** — external SSO + H2 volume |
-| `docker-compose-aio-sso.yaml` | **preferred** — Keycloak (dev-file H2) + all-in-one |
-| `compose-allinone.yml` | older alias of external-SSO layout |
-| `compose-allinone-local.yml` | local Keycloak on `:18180` / API on `:18080` (mem H2) |
-| `compose-allinone-test.yml` | CI / Failsafe (OIDC off) |
+| `docker-compose/docker-compose-aio.yaml` | **preferred** — external SSO + H2 volume |
+| `docker-compose/docker-compose-aio-sso.yaml` | **preferred** — Keycloak (dev-file H2) + all-in-one |
+| `docker-compose/compose-allinone.yml` | older alias of external-SSO layout |
+| `docker-compose/compose-allinone-local.yml` | local Keycloak on `:18180` / API on `:18080` (mem H2) |
+| `docker-compose/compose-allinone-test.yml` | CI / Failsafe (OIDC off) |

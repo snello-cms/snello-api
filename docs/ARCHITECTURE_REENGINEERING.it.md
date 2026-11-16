@@ -6,13 +6,13 @@
 
 ## Diagnosi (stato attuale)
 
-Oggi [`Metadata`](src/main/java/io/snello/model/Metadata.java) e [`FieldDefinition`](src/main/java/io/snello/model/FieldDefinition.java) sono bag di proprietà pubbliche mappate 1:1 su `metadatas` / `fielddefinitions`. Il runtime le consuma in modo misto:
+Oggi [`Metadata`](../snello-core/src/main/java/io/snello/model/Metadata.java) e [`FieldDefinition`](../snello-core/src/main/java/io/snello/model/FieldDefinition.java) sono bag di proprietà pubbliche mappate 1:1 su `metadatas` / `fielddefinitions`. Il runtime le consuma in modo misto:
 
-- **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
-- **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … serviti da [`DataListServiceRs`](src/main/java/io/snello/service/rs/DataListServiceRs.java), quasi mai usati server-side
+- **Query/DDL**: `table_name`, `table_key*`, `select_fields`, `order_by`, `alias_*`, `creation_query`, `type`/`input_type`/`sql_definition`/`join_*` via [`ApiService`](../snello-core/src/main/java/io/snello/service/ApiService.java) + `*JdbcRepository`
+- **UI (SPA)**: `label`, `options`, `group_name`, `tab_*`, `icon`, `show_in_list`, … serviti da [`DataListServiceRs`](../snello-core/src/main/java/io/snello/service/rs/DataListServiceRs.java), quasi mai usati server-side
 - **AI**: stack flower-style — skills + MCP tools + SQL `ai_tools` opzionali (`SnelloCmsTools` hardcoded rimosso)
 
-Il monolitico Quarkus ha un solo deployable; la “cache” metadati è una `Map` in [`MetadataService`](src/main/java/io/snello/service/MetadataService.java) invalidata da eventi CDI.
+Il monolitico Quarkus ha un solo deployable; la “cache” metadati è una `Map` in [`MetadataService`](../snello-core/src/main/java/io/snello/service/MetadataService.java) invalidata da eventi CDI.
 
 ## Principio guida
 
@@ -156,14 +156,14 @@ Assunzione: **l’AI diventa il writer principale** di metadati; l’UI admin di
 - Derivazioni automatiche (riducono carico sull’AI):
   - da `semantic_type` / `sql_type` → default `type`/`input_type` UI
   - da `show_in_list`/`searchable` → ricomposizione `select_fields` / search hints
-  - validazione: nome colonna, reserved words ([`MetadataUtils`](src/main/java/io/snello/util/MetadataUtils.java)), join coerenti
+  - validazione: nome colonna, reserved words ([`MetadataUtils`](../snello-core/src/main/java/io/snello/util/MetadataUtils.java)), join coerenti
 - Layer MCP (nuovo modulo/runtime): tools read (`list_entities`, `describe_entity`, `query_rows`) e write (`propose_entity`, `apply_entity`) con dry-run DDL
 
 Output target per AI: profilo “query + AI” obbligatorio; UI auto-suggerita e override umano/AI opzionale.
 
 ## 3. Separazione runtime: control vs query
 
-**Default scelto:** Maven multi-module sotto [`snello-parent`](pom.xml):
+**Default scelto:** Maven multi-module sotto [`snello-parent`](../pom.xml):
 
 ```text
 snello-parent
@@ -212,7 +212,7 @@ Scelte fissate per questa immagine:
 - **SSO:** OIDC esterno (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); bootstrap admin Keycloak opzionale via `SNELLO_KEYCLOAK_ADMIN_*`
 - **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — MinIO non richiesto
 - **Superficie API:** full control plane, non query-only
-- **Non è target HA di produzione:** la produzione resta control + query replicas + MySQL/PostgreSQL esterno; all-in-one è il canale di comodità (`compose-allinone.yml`)
+- **Non è target HA di produzione:** la produzione resta control + query replicas + MySQL/PostgreSQL esterno; all-in-one è il canale di comodità (`docker-compose/compose-allinone.yml`)
 
 ### Nodi query + cache + replica
 
@@ -257,7 +257,7 @@ Ordine interno, dopo i model:
 1. **Facet + facade** — **fatto** (datalist facet + `EntityCatalog` query/ui/ai)
 2. **AiFacet JSON + draft schema + tool rewrite** — **fatto**
 3. **Build profile `query` + Dockerfile + compose multi-replica** — **fatto** (+ JDBC read-only sul query plane)
-4. **Immagine all-in-one** — **fatto** (H2 + FS + SSO esterno; senza SPA — `snello-all-in-one-app` / `compose-allinone.yml`)
+4. **Immagine all-in-one** — **fatto** (H2 + FS + SSO esterno; senza SPA — `snello-all-in-one-app` / `docker-compose/compose-allinone.yml`)
 5. **Immagine MCP** — shell presente; protocollo TBD
 6. **SqlQueryBuilder unificato** — **fatto** (`SqlQueryBuilder` + facade dialetti)
 

@@ -41,7 +41,7 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 
 Alpha patch bumps (`6.0.x-alpha`) advance the Maven / Docker app tag on each meaningful drop while the git branch stays `6.0.0-alpha`. Target after feature freeze: `6.1.0-alpha` (or beta).
 
-Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REENGINEERING.md) · [IT](ARCHITECTURE_REENGINEERING.it.md).
+Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](docs/ARCHITECTURE_REENGINEERING.md) · [IT](docs/ARCHITECTURE_REENGINEERING.it.md).
 
 ## Planes & facets (6.x)
 
@@ -63,7 +63,7 @@ Open follow-ups: full MCP protocol, SPA facet consumers, optional PG identifier 
 ## Documentation
 
 - [Documentation Index](docs/index.md)
-- [All-in-one](docs/all-in-one.md) — Docker / `docker-compose-aio.yaml` / `docker-compose-aio-sso.yaml`
+- [All-in-one](docs/all-in-one.md) — Docker / `docker-compose/docker-compose-aio.yaml` / `docker-compose/docker-compose-aio-sso.yaml`
 - [OpenAPI](docs/openapi.md) · [Backup](docs/backup.md) · [Drafts](docs/drafts.md)
 - [Metadata](docs/metadata.md)
 - [Field Definitions](docs/field-definitions.md)
@@ -79,12 +79,12 @@ Open follow-ups: full MCP protocol, SPA facet consumers, optional PG identifier 
 ./mvnw -pl snello-control-app -am quarkus:dev
 ```
 
-Quarkus Compose Dev Services starts dependencies from `compose-devservices.yml` (PostgreSQL, Keycloak, MinIO/Silo).
+Quarkus Compose Dev Services starts dependencies from `docker-compose/compose-devservices.yml` (PostgreSQL, Keycloak, MinIO/Silo).
 
 Stop local dependencies:
 
 ```bash
-docker compose -f compose-devservices.yml down
+docker compose -f docker-compose/compose-devservices.yml down
 ```
 
 ## Docker images
@@ -130,10 +130,10 @@ Or with Compose — see **[docs/all-in-one.md](docs/all-in-one.md)** for the ful
 ```bash
 # External SSO + persistent H2 volume
 export QUARKUS_OIDC_AUTH_SERVER_URL=https://your-sso/realms/snello
-docker compose -f docker-compose-aio.yaml up -d --build
+docker compose -f docker-compose/docker-compose-aio.yaml up -d --build
 
 # Bundled Keycloak (dev-file H2) + all-in-one (file H2)
-docker compose -f docker-compose-aio-sso.yaml up -d --build
+docker compose -f docker-compose/docker-compose-aio-sso.yaml up -d --build
 ```
 
 Useful env vars:
@@ -155,19 +155,19 @@ Useful env vars:
 
 | File | Purpose |
 |---|---|
-| `compose-devservices.yml` | Quarkus `%dev` dependencies |
-| `compose-test.yml` | Quarkus test dependencies (PostgreSQL) |
-| `compose.yml` | Full stack: deps + `snello-control` + `snello-query` (`:alpha`) |
-| `docker-compose-aio.yaml` | **All-in-one** + external SSO + volume `/data` (H2) — [docs](docs/all-in-one.md) |
-| `docker-compose-aio-sso.yaml` | **All-in-one** + Keycloak (`dev-file` H2) + volume `/data` — [docs](docs/all-in-one.md) |
-| `compose-allinone.yml` | Legacy external-SSO layout (prefer `docker-compose-aio.yaml`) |
-| `compose-allinone-local.yml` | Local Keycloak on `:18180` / API `:18080` |
-| `compose-allinone-test.yml` | All-in-one IT on `:18080` (OIDC off; dump import tests) |
+| `docker-compose/compose-devservices.yml` | Quarkus `%dev` dependencies |
+| `docker-compose/compose-test.yml` | Quarkus test dependencies (PostgreSQL) |
+| `docker-compose/compose.yml` | Full stack: deps + `snello-control` + `snello-query` (`:alpha`) |
+| `docker-compose/docker-compose-aio.yaml` | **All-in-one** + external SSO + volume `/data` (H2) — [docs](docs/all-in-one.md) |
+| `docker-compose/docker-compose-aio-sso.yaml` | **All-in-one** + Keycloak (`dev-file` H2) + volume `/data` — [docs](docs/all-in-one.md) |
+| `docker-compose/compose-allinone.yml` | Legacy external-SSO layout (prefer `docker-compose/docker-compose-aio.yaml`) |
+| `docker-compose/compose-allinone-local.yml` | Local Keycloak on `:18180` / API `:18080` |
+| `docker-compose/compose-allinone-test.yml` | All-in-one IT on `:18080` (OIDC off; dump import tests) |
 
 ```bash
 # Full local stack (control + query + deps)
 ./mvnw package -DskipTests
-docker compose up -d --build
+docker compose -f docker-compose/compose.yml up -d --build
 ```
 
 Pinned service images (current):
@@ -177,9 +177,9 @@ Pinned service images (current):
 - `pgsty/silo:RELEASE.2026-09-16T00-00-00Z` (MinIO-compatible; official `minio/minio` is no longer publicly pullable)
 - `amazon/aws-cli:2.31.38` (bucket bootstrap)
 
-DB seed / restore scripts live under `dev/db/` (mounted as `/seed` by `compose.yml`; restore runs only on first Postgres volume init). Keycloak realm imports under `dev/keycloak/`.
+DB seed / restore scripts live under `dev/db/` (mounted as `/seed` by `docker-compose/compose.yml`; restore runs only on first Postgres volume init). Keycloak realm imports under `dev/keycloak/`.
 
-Local stack ports after `docker compose up -d --build`:
+Local stack ports after `docker compose -f docker-compose/compose.yml up -d --build`:
 
 | Service | Port |
 |---|---|
@@ -189,7 +189,7 @@ Local stack ports after `docker compose up -d --build`:
 | Keycloak | `8180` |
 | MinIO / Silo | `9000` / `9001` |
 
-To re-run DB restore from scratch: `docker compose down -v` then `up --build` again.
+To re-run DB restore from scratch: `docker compose -f docker-compose/compose.yml down -v` then `docker compose -f docker-compose/compose.yml up --build` again.
 
 ## Control plane APIs (`snello-control`)
 
@@ -357,7 +357,7 @@ Chunked row export/import. **Does not** touch schema — use `POST /api/metadata
 
 ZIP layout: `manifest.json` (`kind=snello-backup-data`) + `data/{table_name}/0001.json` …
 
-Seed exports used by local all-in-one + Keycloak (`compose-allinone-local.yml`): `dev/exports/metadatas-from-pg.json` + `dev/exports/snello-backup-data.zip`, imported with `./dev/scripts/aio-import-from-exports.sh`.
+Seed exports used by local all-in-one + Keycloak (`docker-compose/compose-allinone-local.yml`): `dev/exports/metadatas-from-pg.json` + `dev/exports/snello-backup-data.zip`, imported with `./dev/scripts/aio-import-from-exports.sh`.
 
 ### Slug primary keys
 
@@ -380,7 +380,7 @@ More detail: [Metadata](docs/metadata.md), [Field Definitions](docs/field-defini
 ./mvnw -pl snello-control-app -Dtest=io.snello.test.openapi.OpenApiJsonTest test
 ```
 
-`compose-test.yml` maps Postgres to host port **5433** so tests can run while the full stack occupies `5432`.
+`docker-compose/compose-test.yml` maps Postgres to host port **5433** so tests can run while the full stack occupies `5432`.
 
 ### All-in-one dump → export → import IT
 
@@ -399,9 +399,9 @@ REGENERATE_EXPORT=1 ./dev/scripts/run-aio-import-tests.sh
 
 | Piece | Role |
 |---|---|
-| `compose-test.yml` + dump | source DB for export |
+| `docker-compose/compose-test.yml` + dump | source DB for export |
 | `dev/scripts/generate-metadatas-export.sh` | boots control against dump, writes `metadatas-from-dump.json` |
-| `compose-allinone-test.yml` | all-in-one on `:18080` (OIDC off for deterministic IT) |
+| `docker-compose/compose-allinone-test.yml` | all-in-one on `:18080` (OIDC off for deterministic IT) |
 | `AllInOneDumpImportIT` | RestAssured black-box import + kayaks facet checks |
 
 Fixture path: `snello-all-in-one-app/src/test/resources/fixtures/metadatas-from-dump.json`.

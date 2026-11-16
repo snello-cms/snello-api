@@ -13,7 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - snello-pgdata:/var/lib/postgresql
-      - ./dev/db:/seed:ro
+      - ../dev/db:/seed:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -45,7 +45,7 @@ services:
     ports:
       - "8180:8080"
     volumes:
-      - ./dev/keycloak:/opt/keycloak/data/import:ro
+      - ../dev/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 10s

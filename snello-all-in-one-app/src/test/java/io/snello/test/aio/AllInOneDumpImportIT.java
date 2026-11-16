@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Black-box IT against a running {@code snello-all-in-one} container.
  * <p>
- * Prerequisites: {@code compose-allinone-test.yml} up, fixture JSON from the
+ * Prerequisites: {@code docker-compose/compose-allinone-test.yml} up, fixture JSON from the
  * dump export ({@code metadatas-from-dump.json}). Orchestrated by
  * {@code dev/scripts/run-aio-import-tests.sh}.
  */

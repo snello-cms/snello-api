@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Full round-trip plan:
 #   1) (optional) regenerate metadatas-from-dump.json from compose-test dump
-#   2) build + start snello-all-in-one (compose-allinone-test.yml)
+#   2) build + start snello-all-in-one (docker-compose/compose-allinone-test.yml)
 #   3) run Failsafe IT against http://127.0.0.1:18080
 #
 # Usage (repo root):
@@ -30,8 +30,8 @@ echo "[aio-it] packaging all-in-one"
 ./mvnw -pl snello-all-in-one-app -am package -Dmaven.test.skip=true -q
 
 echo "[aio-it] recreating compose-allinone-test (fresh H2)"
-docker compose -f compose-allinone-test.yml down -v >/dev/null 2>&1 || true
-docker compose -f compose-allinone-test.yml up -d --build
+docker compose -f docker-compose/compose-allinone-test.yml down -v >/dev/null 2>&1 || true
+docker compose -f docker-compose/compose-allinone-test.yml up -d --build
 
 echo "[aio-it] waiting for ${AIO_BASE} ..."
 for i in $(seq 1 90); do
@@ -49,4 +49,4 @@ echo "[aio-it] running Failsafe IT"
   -Daio.baseUrl="${AIO_BASE}" \
   -Daio.fixture="${FIXTURE}"
 
-echo "[aio-it] done (stack left up: docker compose -f compose-allinone-test.yml down)"
+echo "[aio-it] done (stack left up: docker compose -f docker-compose/compose-allinone-test.yml down)"

@@ -2,7 +2,7 @@
 # Dump → JSON export via control API (POST /api/metadatas/export {"all":true}).
 #
 # Steps:
-#   1. Start Postgres with the that dump (compose-test.yml → host :5433)
+#   1. Start Postgres with the that dump (docker-compose/compose-test.yml → host :5433)
 #   2. Boot snello-control against that DB with OIDC off
 #   3. Export all metadatas to the all-in-one IT fixture
 #
@@ -30,15 +30,15 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[export] ensuring compose-test postgres on :${PG_PORT}"
-docker compose -f compose-test.yml up -d
+docker compose -f docker-compose/compose-test.yml up -d
 echo "[export] waiting for postgres..."
 for i in $(seq 1 60); do
-  if docker compose -f compose-test.yml exec -T postgresql pg_isready -U snello -d snello >/dev/null 2>&1; then
+  if docker compose -f docker-compose/compose-test.yml exec -T postgresql pg_isready -U snello -d snello >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
-docker compose -f compose-test.yml exec -T postgresql pg_isready -U snello -d snello
+docker compose -f docker-compose/compose-test.yml exec -T postgresql pg_isready -U snello -d snello
 
 echo "[export] packaging control (skip tests)"
 ./mvnw -pl snello-control-app -am package -Dmaven.test.skip=true -q

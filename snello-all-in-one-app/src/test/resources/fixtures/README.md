@@ -6,7 +6,7 @@
 ./dev/scripts/generate-metadatas-export.sh
 ```
 
-That script restores `compose-test.yml`, boots control against the dump, and calls:
+That script restores `docker-compose/compose-test.yml`, boots control against the dump, and calls:
 
 ```http
 POST /api/metadatas/export

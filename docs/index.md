@@ -2,17 +2,17 @@
 
 Functional and technical documentation for Snello **6.x** (`6.0.15-alpha`).
 
-Architecture (repo root):
+Architecture:
 
-- [ARCHITECTURE_REENGINEERING.md](../ARCHITECTURE_REENGINEERING.md)
-- [ARCHITECTURE_REENGINEERING.it.md](../ARCHITECTURE_REENGINEERING.it.md)
+- [ARCHITECTURE_REENGINEERING.md](ARCHITECTURE_REENGINEERING.md)
+- [ARCHITECTURE_REENGINEERING.it.md](ARCHITECTURE_REENGINEERING.it.md)
 - [README — Planes & facets](../README.md#planes--facets-6x)
 
 ## Index
 
 ### Runtimes & ops
 
-- [All-in-one](all-in-one.md) — Docker / Compose (`docker-compose-aio.yaml`, `docker-compose-aio-sso.yaml`)
+- [All-in-one](all-in-one.md) — Docker / Compose under [`docker-compose/`](../docker-compose/) (`docker-compose-aio.yaml`, `docker-compose-aio-sso.yaml`)
 - [OpenAPI](openapi.md) — `GET /openapi` JSON
 - [Backup (data ZIP)](backup.md) — `GET/POST /api/backup/data`
 
@@ -40,7 +40,7 @@ Architecture (repo root):
 
 ## Where to Start
 
-1. Pick a runtime: full stack (`compose.yml`), or [All-in-one](all-in-one.md).
+1. Pick a runtime: full stack (`docker-compose/compose.yml`), or [All-in-one](all-in-one.md).
 2. Model entities with [Metadata](metadata.md) + [Field Definitions](field-definitions.md), or [Drafts](drafts.md).
 3. For SPA reads, prefer **datalist facet** endpoints over flat `/api/fielddefinitions`.
 4. Discover the live API surface: [OpenAPI](openapi.md).
