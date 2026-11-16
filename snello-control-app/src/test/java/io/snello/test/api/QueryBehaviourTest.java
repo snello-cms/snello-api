@@ -130,4 +130,14 @@ class QueryBehaviourTest {
         // filters are still ignored without with_params
         assertEquals("5", get("/api/qb_all?hull=kayak").header("x-total-count"));
     }
+
+    @Test
+    void orFilterGroupsReturnExpectedRows() {
+        // (hull = kayak OR hull = canoe) AND (len > 4) → b2 kayak/5, b3 canoe/6
+        assertEquals(List.of("b2", "b3"),
+                values(get("/api/" + TABLE + "?or1.hull=kayak&or1.hull=canoe&or2.len_gt=4&_limit=50"), "uuid"));
+        // (len < 4 OR len > 6) → b1 (3), b4 (7)
+        assertEquals(List.of("b1", "b4"),
+                values(get("/api/" + TABLE + "?or1.len_lt=4&or1.len_gt=6&_limit=50"), "uuid"));
+    }
 }

@@ -186,7 +186,9 @@ No explicit cast is needed in the query parameter.
 
 ## Combining multiple filters
 
-All filter parameters are combined with `AND`.
+### Default (unprefixed): AND
+
+Keys without a group prefix are combined with `AND` (unchanged from earlier behaviour).
 
 ```
 GET /api/datalist/metadata/products?category=electronics&price_gte=100&price_lte=500&status_ne=discontinued&name_ilike=pro
@@ -199,6 +201,28 @@ WHERE category = 'electronics'
   AND status != 'discontinued'
   AND name ILIKE '%pro%'
 ```
+
+### Filter groups: `orN` / `andN`
+
+Prefix a field (with its usual suffix) with `or{n}.` or `and{n}.` to put it in a parenthesized group:
+
+- Same `n` → predicates inside one `( … )`, joined with `OR` or `AND` respectively.
+- Different `n` → separate groups.
+- Between the default group and each `orN` / `andN` group: always `AND`.
+- Nested prefixes (e.g. `or1.and1.field`) are **not** supported in v1 and return `400`.
+
+```
+GET /api/kayaks?or1.length_gt=600&or1.width_lt=41&or2.level=advanced&or2.level=intermediate
+```
+→
+```sql
+WHERE (length > ? OR width < ?)
+  AND (level = ? OR level = ?)
+```
+
+Repeated query keys (multiple values for the same `orN.field` / `andN.field`) each become a predicate joined with the group operator. For same-field OR you can also use the compact `_in` form (`level_in=advanced,intermediate`) when that fits the query.
+
+Invalid group prefixes (e.g. `or0.field`) that are not plain identifiers are rejected with `400`.
 
 ---
 
