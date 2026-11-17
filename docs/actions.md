@@ -8,7 +8,7 @@ through the API.
 | `metadata_name` | table the action belongs to |
 | `condition` | `PERSIST` (create), `MERGE` (update), `DELETE` |
 | `phase` | `PRE`: runs before the write, synchronously; `POST` (default): runs after it, asynchronously |
-| `body` | the script (`text`; databases created before it was `varchar(1000)`: run `dev/db/actions-body-text-migration.sql`) |
+| `body` | the script (`text`, H2 `VARCHAR(1000000)`; older `varchar(1000)` columns are widened at startup) |
 
 Only one phase runs per table + condition: if both a PRE and a POST action exist, PRE wins.
 

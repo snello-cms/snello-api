@@ -49,7 +49,9 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE IF EXISTS fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile TEXT",
                 // row-level security for select queries (same contract as metadatas)
                 "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS api_protected BOOLEAN NOT NULL DEFAULT FALSE",
-                "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS username_field varchar(255) DEFAULT NULL"
+                "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS username_field varchar(255) DEFAULT NULL",
+                // action scripts were capped at varchar(1000)
+                "ALTER TABLE IF EXISTS actions ALTER COLUMN body TYPE text"
         };
     }
 
