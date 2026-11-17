@@ -1,5 +1,5 @@
 // Admin > Actions — metadata_name: events, condition: PERSIST, phase: POST.
-// Stored body must stay under 1000 chars (actions.body is varchar(1000)): paste from the line below.
+// (actions.body was varchar(1000) before dev/db/actions-body-text-migration.sql)
 // new event mail; env SNELLO_NOTIFY_EVENTS_TO / SNELLO_PUBLIC_URL override TO / BASE
 var TO = 'fiorenzo@example.com', BASE = 'https://api.sne.lol';
 var env = java.lang.System.getenv();

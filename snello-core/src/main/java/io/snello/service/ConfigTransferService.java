@@ -3,12 +3,12 @@ package io.snello.service;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.model.Metadata;
-import io.snello.model.enums.LayoutPageType;
 import io.snello.model.enums.PrintExportType;
 import io.snello.model.pojo.ConfigImportResult;
 import io.snello.util.MetadataUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static io.snello.management.AppConstants.ACTIONS;
@@ -37,9 +38,10 @@ import static io.snello.management.AppConstants.UUID;
  * output:            "config": {"actions": [rows], "conditions": [rows], "selectqueries": [rows],
  *                               "scheduledactions": [rows], "printtemplates": [rows], "layouts": [rows]}
  * </pre>
- * Actions and conditions belong to a metadata: they follow the exported metadatas, or export all rows when no
- * metadata is exported (a config-only export, to update a project that already has the metadatas). The other
- * three always export all rows.
+ * Actions, conditions and layouts belong to a metadata: they follow the exported metadatas, or export all rows
+ * when no metadata is exported (a config-only export, to update a project that already has the metadatas). The
+ * other three always export all rows. On import, conditions and layouts are re-pointed to the local metadata by
+ * {@code metadata_name}, and layouts go through the same validation as {@code POST /api/layouts}.
  * <p>
  * Import overwrites by natural key (see {@link #NATURAL_KEYS}): an existing row keeps its uuid and gets the
  * exported values, a missing row is inserted. Scheduled actions are imported disabled, so a copied job never
@@ -80,6 +82,9 @@ public class ConfigTransferService {
             PRINT_TEMPLATES, List.of("name"),
             LAYOUTS, List.of(UUID));
 
+    /** Tables whose rows belong to a metadata (by {@code metadata_name}): they follow the exported metadatas. */
+    static final Set<String> METADATA_SCOPED = Set.of(ACTIONS, CONDITIONS, LAYOUTS);
+
     private static final Pattern PRINT_TEMPLATE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
 
     @Inject
@@ -111,7 +116,7 @@ public class ConfigTransferService {
             }
             String table = flag.getValue();
             List<Map<String, Object>> rows = jdbcRepository.list("SELECT * FROM " + table);
-            boolean scoped = (table.equals(ACTIONS) || table.equals(CONDITIONS)) && !tableNames.isEmpty();
+            boolean scoped = METADATA_SCOPED.contains(table) && !tableNames.isEmpty();
             if (scoped) {
                 rows = rows.stream().filter(r -> tableNames.contains(String.valueOf(r.get("metadata_name")))).toList();
             }
@@ -269,17 +274,22 @@ public class ConfigTransferService {
                 }
             }
             case LAYOUTS -> {
-                LayoutPageType pageType = LayoutPageType.from(
-                        row.get("page_type") == null ? null : row.get("page_type").toString());
-                if (pageType == null) {
-                    return "page_type must be one of " + LayoutPageType.dbValues();
+                // page_type / kind / json_data are checked by LayoutService.normalize below (LayoutPageType enum)
+                String name = row.get("metadata_name") == null ? null : row.get("metadata_name").toString();
+                Metadata metadata = metadataOrNull(name);
+                if (metadata == null) {
+                    return "metadata '" + name + "' does not exist here";
                 }
-                row.put("page_type", pageType.dbValue());
-                if (blank(row.get("metadata_uuid"))) {
-                    return "metadata_uuid is missing";
+                // like conditions: the metadata may have another uuid here, the layout follows it by name
+                if (!metadata.uuid.equals(row.get("metadata_uuid"))) {
+                    Log.infof("config import: layout %s metadata_uuid %s -> %s (by name %s)", row.get(UUID),
+                            row.get("metadata_uuid"), metadata.uuid, name);
+                    row.put("metadata_uuid", metadata.uuid);
                 }
-                if (blank(row.get("json_data"))) {
-                    return "json_data is missing";
+                try {
+                    LayoutService.normalize(row, metadata); // the same rules as POST/PUT /api/layouts
+                } catch (BadRequestException e) {
+                    return e.getMessage();
                 }
             }
             default -> {

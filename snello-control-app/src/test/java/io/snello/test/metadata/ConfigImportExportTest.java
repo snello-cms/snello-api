@@ -57,6 +57,14 @@ class ConfigImportExportTest {
                 "last_status", "OK"));
         insert("printtemplates", Map.of("uuid", "cfg-pt-1", "name", "cfg-xfer-print", "export_type", "csv",
                 "sql_query", "SELECT 1 AS n", "api_protected", false));
+        insert("layouts", Map.of("uuid", "cfg-lay-1", "name", "cfg-lay list", "page_type", "list",
+                "metadata_uuid", metadataUuid, "metadata_name", TABLE,
+                "json_data", "{\"version\":1,\"kind\":\"list\",\"columns\":[]}",
+                "updated_at", "2026-11-01T10:00:00Z"));
+        insert("layouts", Map.of("uuid", "cfg-lay-2", "name", "cfg-lay other", "page_type", "edit",
+                "metadata_uuid", "cfg-other-uuid", "metadata_name", OTHER_TABLE,
+                "json_data", "{\"version\":1,\"kind\":\"wizard\",\"pages\":[]}",
+                "updated_at", "2026-11-01T10:00:00Z"));
     }
 
     @AfterEach
@@ -66,6 +74,7 @@ class ConfigImportExportTest {
         jdbc.executeQuery("DELETE FROM selectqueries WHERE query_name LIKE 'cfg_xfer%'");
         jdbc.executeQuery("DELETE FROM scheduledactions WHERE name LIKE 'test-cfg-%'");
         jdbc.executeQuery("DELETE FROM printtemplates WHERE name LIKE 'cfg-xfer%'");
+        jdbc.executeQuery("DELETE FROM layouts WHERE name LIKE 'cfg-lay%'");
         jdbc.executeQuery("DELETE FROM fielddefinitions WHERE metadata_name = '" + TABLE + "'");
         jdbc.executeQuery("DELETE FROM metadatas WHERE table_name = '" + TABLE + "'");
     }
@@ -82,6 +91,7 @@ class ConfigImportExportTest {
         body.put("select_queries", true);
         body.put("scheduled_actions", true);
         body.put("print_templates", true);
+        body.put("layouts", true);
         return body;
     }
 
@@ -113,6 +123,29 @@ class ConfigImportExportTest {
         assertFalse(job.containsKey("next_run"), "scheduler state is not exported");
         assertFalse(job.containsKey("last_status"));
         assertTrue(rows(config, "printtemplates").stream().anyMatch(p -> "cfg-xfer-print".equals(p.get("name"))));
+        List<Map<String, Object>> layouts = rows(config, "layouts");
+        assertTrue(layouts.stream().anyMatch(l -> "cfg-lay-1".equals(l.get("uuid"))));
+        assertTrue(layouts.stream().noneMatch(l -> "cfg-lay-2".equals(l.get("uuid"))),
+                "layouts of metadatas not exported must stay out");
+    }
+
+    @Test
+    void importedLayoutFollowsTheLocalMetadataByName() throws Exception {
+        Map<String, Object> config = exportConfig(Map.of("metadatas", List.of(metadataUuid), "layouts", true));
+        Map<String, Object> layout = new HashMap<>(rows(config, "layouts").getFirst());
+        // exported from a project where the metadata had another uuid
+        layout.put("metadata_uuid", "uuid-in-the-source-project");
+        jdbc.executeQuery("DELETE FROM layouts WHERE uuid = 'cfg-lay-1'");
+
+        Map<String, Object> result = given().contentType(ContentType.JSON)
+                .body(Map.of("config", Map.of("layouts", List.of(layout))))
+                .post("/api/metadatas/import").then().statusCode(200).extract().jsonPath().getMap("config");
+        assertResult(result, "layouts", 1, 0);
+
+        Map<String, Object> row = jdbc.fetch(null, "layouts", "uuid", "cfg-lay-1");
+        assertEquals(metadataUuid, row.get("metadata_uuid"), "re-pointed to the local metadata");
+        assertEquals(TABLE, row.get("metadata_name"));
+        given().get("/api/layouts/cfg-lay-1").then().statusCode(200);
     }
 
     @Test
@@ -144,6 +177,7 @@ class ConfigImportExportTest {
         assertResult(result, "scheduledactions", 0, 1);
         assertResult(result, "actions", 0, 1); // only cfg-act was exported, and it exists
         assertResult(result, "conditions", 0, 1);
+        assertResult(result, "layouts", 0, 1); // only cfg-lay-1 was exported, and it exists
 
         Map<String, Object> job = jdbc.fetch(null, "scheduledactions", "uuid", "cfg-job-1");
         assertEquals("log.info('job');", job.get("body"));
@@ -163,7 +197,15 @@ class ConfigImportExportTest {
                 "conditions", List.of(Map.of("uuid", "cfg-cond-x", "metadata_name", "cfg_missing_table",
                         "condition", "c", "sub_query", "1=1")),
                 "scheduledactions", List.of(Map.of("name", "test-cfg-bad", "frequency", "every day")),
-                "printtemplates", List.of(Map.of("name", "cfg-xfer bad", "export_type", "csv")));
+                "printtemplates", List.of(Map.of("name", "cfg-xfer bad", "export_type", "csv")),
+                // a list page with a wizard body, and a layout of a metadata that is not here
+                "layouts", List.of(
+                        Map.of("uuid", "cfg-lay-x", "name", "cfg-lay bad kind", "page_type", "list",
+                                "metadata_uuid", metadataUuid, "metadata_name", TABLE,
+                                "json_data", "{\"version\":1,\"kind\":\"wizard\",\"pages\":[]}"),
+                        Map.of("uuid", "cfg-lay-y", "name", "cfg-lay no metadata", "page_type", "list",
+                                "metadata_uuid", "nope", "metadata_name", "cfg_missing_table",
+                                "json_data", "{\"version\":1,\"kind\":\"list\",\"columns\":[]}")));
         Map<String, Object> result = given().contentType(ContentType.JSON)
                 .body(Map.of("config", config))
                 .post("/api/metadatas/import").then().statusCode(200).extract().jsonPath().getMap("config");
@@ -173,6 +215,10 @@ class ConfigImportExportTest {
             assertEquals(0, r.get("created"), table);
             assertEquals(1, ((List<?>) r.get("errors")).size(), table + " " + r);
         }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> layouts = (Map<String, Object>) result.get("layouts");
+        assertEquals(0, layouts.get("created"));
+        assertEquals(2, ((List<?>) layouts.get("errors")).size(), "layouts " + layouts);
     }
 
     @Test

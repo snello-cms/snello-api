@@ -19,7 +19,7 @@ public class H2Constants {
                         "  metadata_name varchar(255) NOT NULL,\n" +
                         "  condition varchar(255) ,\n" +
                         "  phase varchar(10) DEFAULT 'POST',\n" +
-                        "  body varchar(1000) ,\n" +
+                        "  body text ,\n" +
                         "  PRIMARY KEY (uuid)\n" +
                         " ) ;";
 
