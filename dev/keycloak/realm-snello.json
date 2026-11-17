@@ -97,6 +97,15 @@
       "groups": [
         "/lovers"
       ]
+    },
+    {
+      "username": "service-account-snello-flow",
+      "enabled": true,
+      "serviceAccountClientId": "snello-flow",
+      "realmRoles": [
+        "default-roles-snello",
+        "Manager"
+      ]
     }
   ],
   "clients": [
@@ -154,6 +163,20 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "snello-flow",
+      "name": "Quarkus Flow runner",
+      "description": "Service account of the Quarkus Flow runner (client_credentials, realm role Manager). Dev-only secret.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "snello-flow-dev-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false
     }
   ],
   "groups": [

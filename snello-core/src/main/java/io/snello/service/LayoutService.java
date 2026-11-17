@@ -55,6 +55,22 @@ public class LayoutService {
         if (object == null) {
             throw new BadRequestException("body is required");
         }
+        Object rawUuid = object.get("metadata_uuid");
+        String uuid = rawUuid == null ? null : rawUuid.toString().trim();
+        Metadata metadata = uuid == null || uuid.isBlank() ? null : findMetadataByUuid(uuid);
+        Log.infof("layout prepareWrite uuid=%s metadata_uuid=%s resolved=%s", object.get("uuid"), uuid,
+                metadata == null ? null : metadata.table_name);
+        normalize(object, metadata);
+    }
+
+    /**
+     * The write rules of a layout row, shared by the REST write and the config import (which resolves the
+     * metadata itself, by name, and must not depend on this control-plane bean).
+     *
+     * @param metadata the metadata {@code metadata_uuid} points to, or null when it does not exist here
+     * @throws BadRequestException with the reason the row is invalid
+     */
+    public static void normalize(Map<String, Object> object, Metadata metadata) {
         Layout layout = new Layout(object);
         String name = layout.name == null ? null : layout.name.trim();
         if (name == null || name.isBlank()) {
@@ -72,8 +88,7 @@ public class LayoutService {
         if (metadataUuid == null || metadataUuid.isBlank()) {
             throw new BadRequestException("metadata_uuid is required");
         }
-        Metadata metadata = findMetadataByUuid(metadataUuid);
-        if (metadata == null) {
+        if (metadata == null || !metadataUuid.equals(metadata.uuid)) {
             throw new BadRequestException("metadata_uuid '" + metadataUuid + "' does not exist");
         }
         object.put("metadata_uuid", metadataUuid);
@@ -118,8 +133,8 @@ public class LayoutService {
         }
         object.put("json_data", json);
         object.put("updated_at", Instant.now().toString());
-        Log.infof("layout prepareWrite name=%s page_type=%s metadata=%s", name, pageType.dbValue(),
-                metadata.table_name);
+        Log.infof("layout normalize name=%s page_type=%s kind=%s metadata=%s", name, pageType.dbValue(),
+                kind.dbValue(), metadata.table_name);
     }
 
     private Metadata findMetadataByUuid(String uuid) throws Exception {
