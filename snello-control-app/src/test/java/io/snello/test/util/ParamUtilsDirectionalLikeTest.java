@@ -71,8 +71,11 @@ class ParamUtilsDirectionalLikeTest {
 
             ParamUtils.where(Map.of("account" + suffix, List.of("MS.OCEA")), where, in);
 
-            String operator = suffix.startsWith("_i") ? "ILIKE" : "LIKE";
-            assertEquals("account " + operator + " ?", compact(where.toString()));
+            if (suffix.startsWith("_i")) {
+                assertEquals("lower(account) LIKE lower(?)", compact(where.toString()));
+            } else {
+                assertEquals("account LIKE ?", compact(where.toString()));
+            }
             assertEquals(List.of("%MS.OCEA%"), in);
         }
 

@@ -6,6 +6,7 @@
 #   SNELLO_DB_KIND=postgresql ./snello-optimize.sh /deployments/quarkus-app/quarkus-run.jar
 #   SNELLO_DB_KIND=mysql ./snello-optimize.sh
 #   SNELLO_DB_KIND=h2 ./snello-optimize.sh
+#   SNELLO_DB_KIND=mssql ./snello-optimize.sh
 set -euo pipefail
 
 JAR="${1:-${JAVA_APP_JAR:-/deployments/quarkus-app/quarkus-run.jar}}"

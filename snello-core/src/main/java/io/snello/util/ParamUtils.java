@@ -40,6 +40,7 @@ public class ParamUtils {
     public static final String LIKE = "_like";
     public static final String ILIKE = "_ilike";
     public static final String _CNT = " LIKE ";
+    /** Legacy token; case-insensitive filters now use {@code lower(col) LIKE lower(?)} for all dialects. */
     public static final String _ICNT = " ILIKE ";
 
     public static final String CONTSS = "_containss";
@@ -308,17 +309,17 @@ public class ParamUtils {
         }
         if (key.endsWith(ILIKE)) {
             join(where, joinOp);
-            where.append(key.substring(0, key.length() - ILIKE.length()));
-            where.append(_ICNT);
-            where.append(" ? ").append(SPACE);
+            where.append("lower(").append(key.substring(0, key.length() - ILIKE.length())).append(")");
+            where.append(_CNT);
+            where.append(" lower(?) ").append(SPACE);
             in.add(_LIKE + value + _LIKE);
             return;
         }
         if (key.endsWith(ICNT)) {
             join(where, joinOp);
-            where.append(key.substring(0, key.length() - ICNT.length()));
-            where.append(_ICNT);
-            where.append(" ? ").append(SPACE);
+            where.append("lower(").append(key.substring(0, key.length() - ICNT.length())).append(")");
+            where.append(_CNT);
+            where.append(" lower(?) ").append(SPACE);
             in.add(_LIKE + value + _LIKE);
             return;
         }

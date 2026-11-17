@@ -4,6 +4,7 @@ import io.agroal.api.AgroalDataSource;
 import io.quarkus.logging.Log;
 import io.snello.api.service.JdbcRepository;
 import io.snello.service.repository.h2.H2JdbcRepository;
+import io.snello.service.repository.mssql.MssqlJdbcRepository;
 import io.snello.service.repository.mysql.MysqlJdbcRepository;
 import io.snello.service.repository.postgresql.PostgresqlJdbcRepository;
 import jakarta.enterprise.inject.Produces;
@@ -39,7 +40,8 @@ public class DbProducer {
             case "mysql" -> new MysqlJdbcRepository(dataSource);
             case "postgresql" -> new PostgresqlJdbcRepository(dataSource);
             case "h2" -> new H2JdbcRepository(dataSource);
-            default -> throw new Exception("no dbtype: " + dbtype + " (expected mysql|postgresql|h2)");
+            case "mssql" -> new MssqlJdbcRepository(dataSource);
+            default -> throw new Exception("no dbtype: " + dbtype + " (expected mysql|postgresql|h2|mssql)");
         };
     }
 }

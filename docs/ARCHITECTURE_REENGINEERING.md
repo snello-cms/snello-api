@@ -174,7 +174,7 @@ snello-parent
   snello-all-in-one-app → image snello-all-in-one
 ```
 
-DB-facing apps ship as Quarkus **mutable-jar** and specialize the JDBC driver with Keycloak-style **re-augmentation** (`snello-optimize.sh` / `quarkus.launch.rebuild`, driven by `SNELLO_DB_KIND`). Native builds (control) fix `db-kind` at compile time instead.
+DB-facing apps ship as Quarkus **mutable-jar** and specialize the JDBC driver with Keycloak-style **re-augmentation** (`snello-optimize.sh` / `quarkus.launch.rebuild`, driven by `SNELLO_DB_KIND=postgresql|mysql|h2|mssql`). Native builds (control) fix `db-kind` at compile time instead.
 
 | Image | Capabilities | Facet dependencies |
 |---|---|---|

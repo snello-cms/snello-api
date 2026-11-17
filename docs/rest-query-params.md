@@ -78,7 +78,7 @@ GET /api/datalist/metadata/orders?status_ne=cancelled
 |---|---|---|---|
 | `_contains` | `LIKE` | `%value%` | Contains substring (case-sensitive) |
 | `_like` | `LIKE` | `%value%` | Alias of `_contains` |
-| `_ilike` | `ILIKE` | `%value%` | Contains substring (case-insensitive, PostgreSQL) |
+| `_ilike` | `lower(field) LIKE lower(?)` | `%value%` | Contains substring (case-insensitive; all dialects) |
 | `_containss` | `LIKE lower()` | `%lower(value)%` | Contains lowercase substring (lowercases both sides) |
 | `_rlike` | `lower(field) LIKE lower(?)` | `value%` | Starts with value (case-insensitive) |
 | `_llike` | `lower(field) LIKE lower(?)` | `%value` | Ends with value (case-insensitive) |
@@ -87,7 +87,7 @@ GET /api/datalist/metadata/orders?status_ne=cancelled
 **Examples:**
 
 For `_rlike` and `_llike`, right/left refers to the position of the `%` wildcard.
-Both sides are lowercased by the database for case-insensitive matching on PostgreSQL, MySQL, and H2.
+Both sides are lowercased by the database for case-insensitive matching on PostgreSQL, MySQL, H2, and SQL Server.
 These filters previously used case-sensitive `LIKE` without lowercasing; wildcard directions are unchanged.
 
 ```
@@ -98,7 +98,7 @@ GET /api/datalist/metadata/articles?title_contains=spring
 ```
 GET /api/datalist/metadata/users?email_ilike=gmail
 ```
-→ `WHERE email ILIKE '%gmail%'`
+→ `WHERE lower(email) LIKE lower(?)`, with bound parameter `%gmail%`
 
 ```
 GET /api/datalist/metadata/products?code_rlike=SKU
@@ -199,7 +199,7 @@ WHERE category = 'electronics'
   AND price >= 100
   AND price <= 500
   AND status != 'discontinued'
-  AND name ILIKE '%pro%'
+  AND lower(name) LIKE lower('%pro%')
 ```
 
 ### Filter groups: `orN` / `andN`
@@ -238,7 +238,7 @@ Invalid group prefixes (e.g. `or0.field`) that are not plain identifiers are rej
 | `_gte` | `field >= ?` | |
 | `_contains` | `field LIKE '%?%'` | Case-sensitive |
 | `_like` | `field LIKE '%?%'` | Alias of `_contains` |
-| `_ilike` | `field ILIKE '%?%'` | Case-insensitive (PostgreSQL) |
+| `_ilike` | `lower(field) LIKE lower(?)` | Case-insensitive (all dialects) |
 | `_containss` | `lower(field) LIKE '%lower(?)%'` | Both sides lowercased |
 | `_rlike` | `lower(field) LIKE lower(?)` | Starts with; bind `value%`; case-insensitive |
 | `_llike` | `lower(field) LIKE lower(?)` | Ends with; bind `%value`; case-insensitive |

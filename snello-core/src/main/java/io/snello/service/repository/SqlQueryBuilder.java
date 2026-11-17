@@ -30,7 +30,7 @@ import static io.snello.management.DbConstants._WHERE_;
 
 /**
  * Shared SQL DML builder + ResultSet helpers for all JDBC dialects.
- * Dialects differ only by identifier quote ({@code `} for MySQL, {@code "} for H2, empty for PG).
+ * Dialects differ by identifier quoting ({@code `} MySQL, {@code "} H2, {@code []} MSSQL, empty PG).
  */
 public final class SqlQueryBuilder {
 
@@ -38,21 +38,34 @@ public final class SqlQueryBuilder {
     public static final SqlQueryBuilder MYSQL = new SqlQueryBuilder("`");
     /** H2: quote identifiers so reserved names like {@code YEAR} are valid column names. */
     public static final SqlQueryBuilder H2 = new SqlQueryBuilder("\"");
+    /** SQL Server bracket identifiers: {@code [name]}, with {@code ]} escaped as {@code ]]}. */
+    public static final SqlQueryBuilder MSSQL = new SqlQueryBuilder("[", "]");
 
     private static final String INSERT_INTO = "INSERT INTO ";
     private static final String SELECT_FROM = " SELECT * FROM ";
 
-    private final String quote;
+    private final String openQuote;
+    private final String closeQuote;
 
     public SqlQueryBuilder(String quote) {
-        this.quote = quote == null ? "" : quote;
+        this(quote, quote);
+    }
+
+    public SqlQueryBuilder(String openQuote, String closeQuote) {
+        this.openQuote = openQuote == null ? "" : openQuote;
+        this.closeQuote = closeQuote == null ? "" : closeQuote;
     }
 
     public String escape(String name) {
         if (name == null) {
             return null;
         }
-        return quote + name + quote;
+        String body = name;
+        if (!closeQuote.isEmpty() && !closeQuote.equals(openQuote)) {
+            // bracket mode: escape embedded closers (SQL Server ] → ]])
+            body = name.replace(closeQuote, closeQuote + closeQuote);
+        }
+        return openQuote + body + closeQuote;
     }
 
     public List<Map<String, Object>> list(ResultSet rs) throws Exception {

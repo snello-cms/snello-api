@@ -64,7 +64,7 @@ class ParamUtilsWhereInTest {
 
         ParamUtils.where(params, where, in);
 
-        assertEquals("caption ILIKE ?", compact(where.toString()));
+        assertEquals("lower(caption) LIKE lower(?)", compact(where.toString()));
         assertEquals(List.of("%bike%"), in);
     }
 

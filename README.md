@@ -30,7 +30,7 @@ snello-parent
   snello-all-in-one-app  →  snellocms/snello-all-in-one
 ```
 
-DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augmentation**: set `SNELLO_DB_KIND=postgresql|mysql|h2` so the entrypoint runs `snello-optimize.sh` once, then starts.
+DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augmentation**: set `SNELLO_DB_KIND=postgresql|mysql|h2|mssql` so the entrypoint runs `snello-optimize.sh` once, then starts. Full JDBC setup (including **SQL Server**): [docs/databases.md](docs/databases.md).
 
 ## Branches / versions
 
@@ -56,13 +56,14 @@ Same flat DB tables (`metadatas` / `fielddefinitions`); concerns split in Java a
 
 **Query plane JDBC:** connections are forced read-only (`quarkus.datasource.jdbc.additional-jdbc-properties.readOnly=true` + `ReadOnlyConnectionInterceptor`). Point `QUARKUS_DATASOURCE_JDBC_URL` at a replica when you have one. Metadata snapshots refresh on an interval (`SNELLO_METADATA_REFRESH_INTERVAL`, default `30s` / compose `10s`).
 
-**Catalog / facets:** `EntityCatalog` exposes `queryView` / `uiView` / `aiView`. List/fetch use the query view; the SPA should prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`. Typed enums (`WidgetType`, `InputType`, `KeyType`, `SearchOp`, `SemanticType`) back widget/SQL mapping. SQL list/count/CRUD fragments go through a shared `SqlQueryBuilder` (thin H2/MySQL/PostgreSQL facades).
+**Catalog / facets:** `EntityCatalog` exposes `queryView` / `uiView` / `aiView`. List/fetch use the query view; the SPA should prefer datalist facet endpoints (below) over flat `/api/fielddefinitions`. Typed enums (`WidgetType`, `InputType`, `KeyType`, `SearchOp`, `SemanticType`) back widget/SQL mapping. SQL list/count/CRUD fragments go through a shared `SqlQueryBuilder` (thin H2/MySQL/PostgreSQL/MSSQL facades).
 
 Open follow-ups: full MCP protocol, SPA facet consumers, optional PG identifier quoting.
 
 ## Documentation
 
 - [Documentation Index](docs/index.md)
+- [Databases](docs/databases.md) — PostgreSQL / MySQL / H2 / **SQL Server**
 - [All-in-one](docs/all-in-one.md) — Docker / `docker-compose/docker-compose-aio.yaml` / `docker-compose/docker-compose-aio-sso.yaml`
 - [OpenAPI](docs/openapi.md) · [Backup](docs/backup.md) · [Drafts](docs/drafts.md)
 - [Metadata](docs/metadata.md)

@@ -4,6 +4,7 @@ import io.snello.api.service.JdbcRepository;
 import io.snello.model.FieldDefinition;
 import io.snello.model.pojo.ColumnKind;
 import io.snello.service.repository.h2.H2JdbcRepository;
+import io.snello.service.repository.mssql.MssqlJdbcRepository;
 import io.snello.service.repository.mysql.MysqlJdbcRepository;
 import io.snello.service.repository.postgresql.PostgresqlJdbcRepository;
 import io.snello.util.ColumnSpecs;
@@ -28,10 +29,10 @@ class FieldDefinitionUtilsTypeCoverageTest {
         fieldDefinition.type = type;
         assertEquals(ColumnKind.MEDIUM_TEXT, ColumnSpecs.of(fieldDefinition).kind());
         for (JdbcRepository repo : new JdbcRepository[]{new H2JdbcRepository(NO_DB), new MysqlJdbcRepository(NO_DB),
-                new PostgresqlJdbcRepository(NO_DB)}) {
+                new PostgresqlJdbcRepository(NO_DB), new MssqlJdbcRepository(NO_DB)}) {
             String sql = repo.fieldDefinition2Sql(fieldDefinition);
             assertNotNull(sql, repo.getClass().getSimpleName());
-            assertTrue(sql.toLowerCase().contains("varchar"), sql);
+            assertTrue(sql.toLowerCase().contains("varchar") || sql.toLowerCase().contains("nvarchar"), sql);
         }
     }
 }
