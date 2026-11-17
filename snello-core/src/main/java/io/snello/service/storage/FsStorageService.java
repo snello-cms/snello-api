@@ -131,9 +131,13 @@ public class FsStorageService implements StorageService {
     private Path verifyPath(String table_name) throws Exception {
         Path path = Path.of(basePath(table_name));
         if (Files.exists(path)) {
-            Log.info("path already existent: " + path);
+            Log.debug("path already existent: " + path);
         } else {
-            path = Files.createDirectory(path);
+            // createDirectories, not createDirectory: two parallel first uploads to a table both see "missing" and
+            // createDirectory fails for the second (FileAlreadyExistsException -> 500); createDirectories accepts an
+            // existing directory and also creates missing parents
+            path = Files.createDirectories(path);
+            Log.infof("storage directory created: %s", path);
         }
         return path;
     }
