@@ -70,7 +70,9 @@ public class H2JdbcRepository implements JdbcRepository {
                 "ALTER TABLE metadatas ALTER COLUMN alias_condition SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE metadatas ALTER COLUMN creation_query SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE metadatas ALTER COLUMN order_by SET DATA TYPE VARCHAR(1000000)",
-                "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)"
+                "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)",
+                // action scripts were capped at varchar(1000)
+                "ALTER TABLE actions ALTER COLUMN body SET DATA TYPE VARCHAR(1000000)"
         };
     }
 

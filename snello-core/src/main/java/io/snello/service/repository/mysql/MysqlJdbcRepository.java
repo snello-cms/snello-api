@@ -51,7 +51,9 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE metadatas ADD COLUMN username_field varchar(255) DEFAULT NULL",
                 // row-level security for select queries (same contract as metadatas)
                 "ALTER TABLE selectqueries ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",
-                "ALTER TABLE selectqueries ADD COLUMN username_field varchar(255) DEFAULT NULL"
+                "ALTER TABLE selectqueries ADD COLUMN username_field varchar(255) DEFAULT NULL",
+                // action scripts were capped at varchar(1000)
+                "ALTER TABLE actions MODIFY body TEXT"
         };
     }
 
