@@ -51,7 +51,9 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE metadatas ADD api_protected bit NOT NULL CONSTRAINT DF_metadatas_api_protected DEFAULT 0",
                 "ALTER TABLE metadatas ADD username_field nvarchar(255) NULL",
                 "ALTER TABLE selectqueries ADD api_protected bit NOT NULL CONSTRAINT DF_selectqueries_api_protected DEFAULT 0",
-                "ALTER TABLE selectqueries ADD username_field nvarchar(255) NULL"
+                "ALTER TABLE selectqueries ADD username_field nvarchar(255) NULL",
+                // action scripts outgrew 1000 chars (Quarkus Flow starters, HTTP calls): idempotent, re-runs are no-ops
+                "ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL"
         };
     }
 
@@ -82,6 +84,8 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 creationAiServiceAccount,
                 creationScheduledActions,
                 creationPrintTemplates,
+                creationWorkflowPages,
+                creationHumanTasks,
                 creationLayouts,
                 creationLayoutsIndex
         };

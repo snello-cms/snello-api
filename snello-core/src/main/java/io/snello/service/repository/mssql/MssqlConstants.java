@@ -26,7 +26,7 @@ public class MssqlConstants {
             "  [metadata_name] nvarchar(255) NOT NULL,\n" +
             "  [condition] nvarchar(255) NULL,\n" +
             "  [phase] nvarchar(10) DEFAULT N'POST',\n" +
-            "  [body] nvarchar(1000) NULL,\n" +
+            "  [body] nvarchar(max) NULL,\n" +
             "  PRIMARY KEY ([uuid])\n" +
             ")";
 
@@ -275,6 +275,48 @@ public class MssqlConstants {
             "  [template_file_name] nvarchar(255) NULL,\n" +
             "  [api_protected] bit NOT NULL DEFAULT 0,\n" +
             "  [username_field] nvarchar(255) NULL,\n" +
+            "  PRIMARY KEY ([uuid])\n" +
+            ")";
+
+    /** Workflow pages: HTML/JS served at /p/{name} with the snello-page.js client (human task review pages). */
+    public static String creationWorkflowPages =
+            "IF OBJECT_ID(N'workflowpages', N'U') IS NULL\n" +
+            "CREATE TABLE [workflowpages] (\n" +
+            "  [uuid] nvarchar(255) NOT NULL,\n" +
+            "  [name] nvarchar(255) NOT NULL,\n" +
+            "  [title] nvarchar(255) NULL,\n" +
+            "  [description] nvarchar(1000) NULL,\n" +
+            "  [workflow_namespace] nvarchar(100) NULL,\n" +
+            "  [workflow_name] nvarchar(100) NULL,\n" +
+            "  [roles] nvarchar(1000) NULL,\n" +
+            "  [body] nvarchar(max) NULL,\n" +
+            "  PRIMARY KEY ([uuid])\n" +
+            ")";
+
+    /** Human tasks: a decision a workflow waits for (OPEN -> decided -> CLOSED by the workflow), see /api/humantasks. */
+    public static String creationHumanTasks =
+            "IF OBJECT_ID(N'humantasks', N'U') IS NULL\n" +
+            "CREATE TABLE [humantasks] (\n" +
+            "  [uuid] nvarchar(255) NOT NULL,\n" +
+            "  [title] nvarchar(500) NULL,\n" +
+            "  [description] nvarchar(max) NULL,\n" +
+            "  [page_name] nvarchar(255) NULL,\n" +
+            "  [workflow_namespace] nvarchar(100) NULL,\n" +
+            "  [workflow_name] nvarchar(100) NULL,\n" +
+            "  [workflow_version] nvarchar(50) NULL,\n" +
+            "  [instance_id] nvarchar(64) NULL,\n" +
+            "  [record_table] nvarchar(255) NULL,\n" +
+            "  [record_key] nvarchar(255) NULL,\n" +
+            "  [decisions] nvarchar(1000) NULL,\n" +
+            "  [roles] nvarchar(1000) NULL,\n" +
+            "  [status] nvarchar(20) NOT NULL,\n" +
+            "  [decision] nvarchar(100) NULL,\n" +
+            "  [decision_comment] nvarchar(max) NULL,\n" +
+            "  [decided_by] nvarchar(255) NULL,\n" +
+            "  [decided_at] datetime2 NULL,\n" +
+            "  [created_at] datetime2 NULL,\n" +
+            "  [closed_at] datetime2 NULL,\n" +
+            "  [data] nvarchar(max) NULL,\n" +
             "  PRIMARY KEY ([uuid])\n" +
             ")";
 

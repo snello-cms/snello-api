@@ -8,3 +8,5 @@ ALTER TABLE actions ALTER COLUMN body TYPE text;
 -- ALTER TABLE actions ALTER COLUMN body SET DATA TYPE VARCHAR(1000000);
 -- MySQL
 -- ALTER TABLE actions MODIFY body TEXT;
+-- SQL Server
+-- ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL;

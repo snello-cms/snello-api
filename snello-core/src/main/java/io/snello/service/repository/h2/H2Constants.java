@@ -232,6 +232,44 @@ public class H2Constants {
                         "  PRIMARY KEY (uuid)\n" +
                         ") ;";
 
+        /** Workflow pages: HTML/JS served at /p/{name} with the snello-page.js client (human task review pages). */
+        public static String creationWorkflowPages = "CREATE TABLE IF NOT EXISTS workflowpages (\n" +
+                "  uuid varchar(255) NOT NULL,\n" +
+                "  name varchar(255) NOT NULL,\n" +
+                "  title varchar(255) DEFAULT NULL,\n" +
+                "  description varchar(1000) DEFAULT NULL,\n" +
+                "  workflow_namespace varchar(100) DEFAULT NULL,\n" +
+                "  workflow_name varchar(100) DEFAULT NULL,\n" +
+                "  roles varchar(1000) DEFAULT NULL,\n" +
+                "  body VARCHAR(1000000) DEFAULT NULL,\n" +
+                "  PRIMARY KEY (uuid)\n" +
+                ") ;";
+
+        /** Human tasks: a decision a workflow waits for (OPEN -> decided -> CLOSED by the workflow), see /api/humantasks. */
+        public static String creationHumanTasks = "CREATE TABLE IF NOT EXISTS humantasks (\n" +
+                "  uuid varchar(255) NOT NULL,\n" +
+                "  title varchar(500) DEFAULT NULL,\n" +
+                "  description VARCHAR(1000000) DEFAULT NULL,\n" +
+                "  page_name varchar(255) DEFAULT NULL,\n" +
+                "  workflow_namespace varchar(100) DEFAULT NULL,\n" +
+                "  workflow_name varchar(100) DEFAULT NULL,\n" +
+                "  workflow_version varchar(50) DEFAULT NULL,\n" +
+                "  instance_id varchar(64) DEFAULT NULL,\n" +
+                "  record_table varchar(255) DEFAULT NULL,\n" +
+                "  record_key varchar(255) DEFAULT NULL,\n" +
+                "  decisions varchar(1000) DEFAULT NULL,\n" +
+                "  roles varchar(1000) DEFAULT NULL,\n" +
+                "  status varchar(20) NOT NULL,\n" +
+                "  decision varchar(100) DEFAULT NULL,\n" +
+                "  decision_comment VARCHAR(1000000) DEFAULT NULL,\n" +
+                "  decided_by varchar(255) DEFAULT NULL,\n" +
+                "  decided_at TIMESTAMP DEFAULT NULL,\n" +
+                "  created_at TIMESTAMP DEFAULT NULL,\n" +
+                "  closed_at TIMESTAMP DEFAULT NULL,\n" +
+                "  data VARCHAR(1000000) DEFAULT NULL,\n" +
+                "  PRIMARY KEY (uuid)\n" +
+                ") ;";
+
         /** Print templates: a query + a Qute/CSV body or a JXLS xlsx (template_file, base64), rendered to pdf/html/csv/xlsx. */
         public static String creationPrintTemplates = "CREATE TABLE IF NOT EXISTS printtemplates (\n" +
                 "  uuid varchar(255) NOT NULL,\n" +

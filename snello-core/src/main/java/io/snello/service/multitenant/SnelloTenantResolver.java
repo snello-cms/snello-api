@@ -2,6 +2,7 @@ package io.snello.service.multitenant;
 
 import io.quarkus.logging.Log;
 import io.quarkus.oidc.TenantResolver;
+import io.quarkus.oidc.runtime.OidcUtils;
 import io.snello.util.JwtUtils;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,9 +31,11 @@ public class SnelloTenantResolver implements TenantResolver {
             Log.info("issuer: " + issuer + ", tenant resolved as: " + tenant);
             return tenant;
         }
-        // Quarkus OIDC: null selects the default (root) tenant config, not a named "default" tenant.
-        Log.info("issuer: " + issuer + ", tenant resolved as: <default>");
-        return null;
+        // Return the default tenant id explicitly, never null: on null Quarkus falls back to its path-based resolver,
+        // which picks any path segment equal to a tenant id. With a tenant named "snello", a URL such as
+        // /api/flow/definitions/snello/new-event/1.0.0 was then verified against the lovers realm -> 401.
+        Log.info("issuer: " + issuer + ", tenant resolved as: " + OidcUtils.DEFAULT_TENANT_ID);
+        return OidcUtils.DEFAULT_TENANT_ID;
     }
 
 
