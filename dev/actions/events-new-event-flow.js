@@ -1,6 +1,6 @@
 // Admin > Actions — metadata_name: events, condition: PERSIST, phase: POST (replaces events-new-event-mail:
 // only one POST action per table + condition runs).
-// Hands the new event to the Quarkus Flow workflow snello:new-event (quarkus-flow/workflows/snello-new-event.yaml),
+// Hands the new event to the Quarkus Flow workflow snello:new-event (snello-flows/workflows/snello-new-event.yaml),
 // which reads the event, mails it through the Brevo HTTP API and retries 5xx/429.
 // snello config: snello.http.allow-private=true (the runner is a local / in-cluster address),
 // ideally with snello.http.allowed-hosts=<runner host>. Runner URL: env SNELLO_FLOW_URL or FLOW below.
