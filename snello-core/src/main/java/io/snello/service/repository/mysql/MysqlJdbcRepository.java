@@ -84,6 +84,7 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 creationScheduledActions,
                 creationPrintTemplates,
                 creationWorkflowPages,
+                creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts
         };

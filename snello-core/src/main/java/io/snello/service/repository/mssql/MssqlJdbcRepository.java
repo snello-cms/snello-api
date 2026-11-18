@@ -85,6 +85,7 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 creationScheduledActions,
                 creationPrintTemplates,
                 creationWorkflowPages,
+                creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
                 creationLayoutsIndex

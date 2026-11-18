@@ -83,6 +83,7 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 creationScheduledActions,
                 creationPrintTemplates,
                 creationWorkflowPages,
+                creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
                 creationLayoutsIndex

@@ -31,6 +31,7 @@ public class MetadataUtils {
             case SCHEDULED_ACTIONS:
             case PRINT_TEMPLATES:
             case WORKFLOW_PAGES:
+            case WORKFLOW_DEFINITIONS:
             case HUMAN_TASKS:
             case LAYOUTS:
             case AI_TOOLS:
