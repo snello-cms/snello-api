@@ -5,31 +5,75 @@ on:
     branches: [ main, '6.0.0-alpha' ]
   pull_request:
     branches: [ main, '6.0.0-alpha' ]
+  # Manual run (Actions > Run workflow), and remote run by snello-admin CI after it publishes a new admin image:
+  #   gh workflow run build_jvm.yml -R snello-cms/snello-api --ref 6.0.0-alpha \
+  #     -f images=snello-all-in-one -f admin_image=snellocms/snello-admin:sha-<short>
+  # Only the all-in-one image contains the admin (Dockerfile.jvm copies it from SNELLO_ADMIN_IMAGE).
+  workflow_dispatch:
+    inputs:
+      images:
+        description: 'Images to build: all, or a comma separated list (snello-control,snello-query,snello-mcp,snello-all-in-one)'
+        required: false
+        default: 'all'
+      admin_image:
+        description: 'Admin image for snello-all-in-one (default in Dockerfile.jvm: snellocms/snello-admin:edge)'
+        required: false
+        default: ''
+      reason:
+        description: 'Why this run was started (shown in the log)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
   packages: write
+
+# One build per branch at a time, queued in start order: a run started earlier can no longer finish later and
+# overwrite :alpha with an older admin (the race of 2026-11-18). PR runs have their own group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   DOCKERHUB_OWNER: snellocms
   GHCR_OWNER: ${{ github.repository_owner }}
 
 jobs:
+  # Which images to build: all of them, except on a manual / remote run that names some (inputs.images).
+  select:
+    name: Select images
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.pick.outputs.include }}
+    steps:
+      - id: pick
+        env:
+          IMAGES: ${{ inputs.images || 'all' }}
+          REASON: ${{ inputs.reason }}
+          ADMIN_IMAGE: ${{ inputs.admin_image }}
+        run: |
+          ALL='[{"image":"snello-control","module":"snello-control-app"},{"image":"snello-query","module":"snello-query-app"},{"image":"snello-mcp","module":"snello-mcp-app"},{"image":"snello-all-in-one","module":"snello-all-in-one-app"}]'
+          echo "event=${GITHUB_EVENT_NAME} ref=${GITHUB_REF_NAME} images=${IMAGES} admin_image=${ADMIN_IMAGE:-<Dockerfile default>} reason=${REASON:-<none>}"
+          if [ "${IMAGES}" = "all" ]; then
+            INCLUDE="${ALL}"
+          else
+            INCLUDE=$(jq -c --arg wanted "${IMAGES}" \
+              '($wanted | split(",") | map(gsub("\\s"; ""))) as $w | [.[] | select(.image as $i | $w | index($i))]' <<< "${ALL}")
+          fi
+          if [ "$(jq length <<< "${INCLUDE}")" = "0" ]; then
+            echo "::error::no known image in '${IMAGES}'"; exit 1
+          fi
+          echo "building: $(jq -r 'map(.image) | join(", ")' <<< "${INCLUDE}")"
+          echo "include=${INCLUDE}" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build ${{ matrix.image }} JVM image
+    needs: select
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - image: snello-control
-            module: snello-control-app
-          - image: snello-query
-            module: snello-query-app
-          - image: snello-mcp
-            module: snello-mcp-app
-          - image: snello-all-in-one
-            module: snello-all-in-one-app
+        include: ${{ fromJSON(needs.select.outputs.include) }}
 
     steps:
       - name: Git Checkout
@@ -92,14 +136,14 @@ jobs:
         run: mvn -pl ${{ matrix.module }} -am clean package -DskipTests=true
 
       - name: Login to DockerHub
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Login to GitHub Container Registry
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -113,8 +157,10 @@ jobs:
           context: ./${{ matrix.module }}
           platforms: linux/amd64,linux/arm64
           file: ./${{ matrix.module }}/src/main/docker/Dockerfile.jvm
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.image_tags.outputs.tags }}
+          # pinned admin for the all-in-one image (remote run from snello-admin CI); empty = Dockerfile default (edge)
+          build-args: ${{ inputs.admin_image && format('SNELLO_ADMIN_IMAGE={0}', inputs.admin_image) || '' }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
