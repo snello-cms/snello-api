@@ -24,6 +24,8 @@ class AdminSpaStaticTest {
         assertTrue(AdminSpaStatic.isReservedPath("/api/metadatas"));
         assertTrue(AdminSpaStatic.isReservedPath("/openapi"));
         assertTrue(AdminSpaStatic.isReservedPath("/q/health"));
+        assertTrue(AdminSpaStatic.isReservedPath("/p/task"));
+        assertTrue(AdminSpaStatic.isReservedPath("/p/_/snello-page.js"));
         assertTrue(AdminSpaStatic.isReservedPath("/agui"));
         assertFalse(AdminSpaStatic.isReservedPath("/"));
         assertFalse(AdminSpaStatic.isReservedPath("/dashboard"));

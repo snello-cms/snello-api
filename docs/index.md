@@ -26,6 +26,7 @@ Architecture:
 - [Entity drafts](drafts.md) — `/api/drafts/validate|apply`
 - [Schema introspect](introspect.md) — existing tables → metadata (`/api/introspect/preview|apply`)
 - [Layouts](layouts.md) — SPA list/edit/view layouts (`/api/layouts`)
+- [Human tasks and workflow pages](human-tasks.md) — `/api/humantasks`, `/api/workflowpages`, pages at `/p/{name}`
 - [SelectQuery](select-query.md)
 - [REST Query Params](rest-query-params.md)
 

@@ -74,7 +74,9 @@ public class AdminSpaStatic {
                 || path.startsWith("/q/")
                 || "/q".equals(path)
                 || path.startsWith("/openapi")
-                || path.startsWith("/agui");
+                || path.startsWith("/agui")
+                // workflow pages (PublicPagesRs): /p/{name}, /p/_/snello-page.js
+                || path.startsWith("/p/");
     }
 
     static boolean isSpaFallbackPath(String path) {

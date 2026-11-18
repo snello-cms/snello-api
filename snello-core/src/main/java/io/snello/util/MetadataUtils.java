@@ -30,6 +30,8 @@ public class MetadataUtils {
             case SELECT_QUERY:
             case SCHEDULED_ACTIONS:
             case PRINT_TEMPLATES:
+            case WORKFLOW_PAGES:
+            case HUMAN_TASKS:
             case LAYOUTS:
             case AI_TOOLS:
             case HISTORY_SESSION:

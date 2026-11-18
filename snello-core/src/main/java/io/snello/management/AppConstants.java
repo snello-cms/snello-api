@@ -25,6 +25,11 @@ public class AppConstants {
     public static final String PRINT_TEMPLATES = "printtemplates";
     public static final String LAYOUTS = "layouts";
     public static final String MAIL = "mail";
+    /** Quarkus Flow monitoring: runner definitions and instances, flow-bridge task positions. */
+    public static final String FLOW = "flow";
+    /** Workflow pages (HTML/JS served at /p/{name}) and the human tasks they show. */
+    public static final String WORKFLOW_PAGES = "workflowpages";
+    public static final String HUMAN_TASKS = "humantasks";
     public static final String AI_TOOLS = "ai_tools";
     public static final String HISTORY_SESSION = "history_session";
     public static final String HISTORY_EVENT = "history_event";
@@ -63,6 +68,11 @@ public class AppConstants {
     public static final String PRINT_TEMPLATES_PATH = API_PATH + BASE_PATH + PRINT_TEMPLATES;
     public static final String LAYOUTS_PATH = API_PATH + BASE_PATH + LAYOUTS;
     public static final String MAIL_PATH = API_PATH + BASE_PATH + MAIL;
+    public static final String FLOW_PATH = API_PATH + BASE_PATH + FLOW;
+    public static final String WORKFLOW_PAGES_PATH = API_PATH + BASE_PATH + WORKFLOW_PAGES;
+    public static final String HUMAN_TASKS_PATH = API_PATH + BASE_PATH + HUMAN_TASKS;
+    /** Public URL of workflow pages: /p/{name}?task={uuid} (outside /api: a page, not an API). */
+    public static final String PUBLIC_PAGES_PATH = "/p";
 
     public static final String _0 = "0";
     public static final String _10 = "10";
