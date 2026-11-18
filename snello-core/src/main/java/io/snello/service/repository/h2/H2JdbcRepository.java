@@ -97,6 +97,7 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationScheduledActions,
                 creationPrintTemplates,
                 creationWorkflowPages,
+                creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
                 creationLayoutsIndex

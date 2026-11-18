@@ -234,6 +234,24 @@ public class MysqlConstants {
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     /** Workflow pages: HTML/JS served at /p/{name} with the snello-page.js client (human task review pages). */
+    /** Workflow definitions: one row per namespace:name:version (immutable once DEPLOYED). */
+    public static String creationWorkflowDefinitions = "CREATE TABLE IF NOT EXISTS `workflowdefinitions` (\n" +
+            "  uuid varchar(255) NOT NULL,\n" +
+            "  namespace varchar(100) NOT NULL,\n" +
+            "  name varchar(100) NOT NULL,\n" +
+            "  version varchar(50) NOT NULL,\n" +
+            "  title varchar(255) DEFAULT NULL,\n" +
+            "  summary varchar(1000) DEFAULT NULL,\n" +
+            "  yaml LONGTEXT DEFAULT NULL,\n" +
+            "  status varchar(20) NOT NULL,\n" +
+            "  message varchar(2000) DEFAULT NULL,\n" +
+            "  created_at datetime DEFAULT NULL,\n" +
+            "  created_by varchar(255) DEFAULT NULL,\n" +
+            "  deployed_at datetime DEFAULT NULL,\n" +
+            "  deployed_by varchar(255) DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationWorkflowPages = "CREATE TABLE IF NOT EXISTS `workflowpages` (\n" +
             "  uuid varchar(255) NOT NULL,\n" +
             "  name varchar(255) NOT NULL,\n" +

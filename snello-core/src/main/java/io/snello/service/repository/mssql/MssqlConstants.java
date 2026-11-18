@@ -279,6 +279,26 @@ public class MssqlConstants {
             ")";
 
     /** Workflow pages: HTML/JS served at /p/{name} with the snello-page.js client (human task review pages). */
+    /** Workflow definitions: one row per namespace:name:version (immutable once DEPLOYED). */
+    public static String creationWorkflowDefinitions =
+            "IF OBJECT_ID(N'workflowdefinitions', N'U') IS NULL\n" +
+            "CREATE TABLE [workflowdefinitions] (\n" +
+            "  [uuid] nvarchar(255) NOT NULL,\n" +
+            "  [namespace] nvarchar(100) NOT NULL,\n" +
+            "  [name] nvarchar(100) NOT NULL,\n" +
+            "  [version] nvarchar(50) NOT NULL,\n" +
+            "  [title] nvarchar(255) NULL,\n" +
+            "  [summary] nvarchar(1000) NULL,\n" +
+            "  [yaml] nvarchar(max) NULL,\n" +
+            "  [status] nvarchar(20) NOT NULL,\n" +
+            "  [message] nvarchar(2000) NULL,\n" +
+            "  [created_at] datetime2 NULL,\n" +
+            "  [created_by] nvarchar(255) NULL,\n" +
+            "  [deployed_at] datetime2 NULL,\n" +
+            "  [deployed_by] nvarchar(255) NULL,\n" +
+            "  PRIMARY KEY ([uuid])\n" +
+            ")";
+
     public static String creationWorkflowPages =
             "IF OBJECT_ID(N'workflowpages', N'U') IS NULL\n" +
             "CREATE TABLE [workflowpages] (\n" +

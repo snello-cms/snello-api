@@ -30,6 +30,8 @@ public class AppConstants {
     /** Workflow pages (HTML/JS served at /p/{name}) and the human tasks they show. */
     public static final String WORKFLOW_PAGES = "workflowpages";
     public static final String HUMAN_TASKS = "humantasks";
+    /** Workflow definitions (Serverless Workflow YAML) edited in the admin and deployed to the runner via flow-bridge. */
+    public static final String WORKFLOW_DEFINITIONS = "workflowdefinitions";
     public static final String AI_TOOLS = "ai_tools";
     public static final String HISTORY_SESSION = "history_session";
     public static final String HISTORY_EVENT = "history_event";
@@ -71,6 +73,7 @@ public class AppConstants {
     public static final String FLOW_PATH = API_PATH + BASE_PATH + FLOW;
     public static final String WORKFLOW_PAGES_PATH = API_PATH + BASE_PATH + WORKFLOW_PAGES;
     public static final String HUMAN_TASKS_PATH = API_PATH + BASE_PATH + HUMAN_TASKS;
+    public static final String WORKFLOW_DEFINITIONS_PATH = API_PATH + BASE_PATH + WORKFLOW_DEFINITIONS;
     /** Public URL of workflow pages: /p/{name}?task={uuid} (outside /api: a page, not an API). */
     public static final String PUBLIC_PAGES_PATH = "/p";
 
