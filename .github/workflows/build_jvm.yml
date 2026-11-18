@@ -96,7 +96,9 @@ jobs:
 
       - name: Extract Maven project version
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # quiet when it works; on failure rerun without -q so the log shows why (e.g. a plugin download)
+          VERSION=$(mvn -B -ntp help:evaluate -Dexpression=project.version -q -DforceStdout) \
+            || { mvn -B help:evaluate -Dexpression=project.version -e; exit 1; }
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Resolve image tags
