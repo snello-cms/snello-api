@@ -6,6 +6,7 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.pojo.FlowProxyResponse;
 import io.snello.service.flow.FlowClient;
+import io.snello.service.flow.RunnerWorkflowYaml;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -34,6 +35,7 @@ import static io.snello.management.AppConstants.FLOW_PATH;
  * <pre>
  * GET  /api/flow/definitions                                  workflows loaded by the runner
  * GET  /api/flow/definitions/{ns}/{name}/{version}            one workflow (JSON), to draw its diagram
+ * GET  /api/flow/definitions/{ns}/{name}/{version}/yaml       the same as YAML (text/plain), read-only view in the admin
  * GET  /api/flow/active                                       runner: instances active in memory
  * GET  /api/flow/instances?namespace=&name=&version=&status=&limit=   flow-bridge: instances with their current task
  * GET  /api/flow/instances/{id}                               flow-bridge: one instance, every task position seen
@@ -79,6 +81,35 @@ public class FlowServiceRs {
         check("version", version, VERSION);
         Log.infof("GET flow definition %s:%s:%s", namespace, name, version);
         return respond(flowClient.runner("GET", "/q/flow/definitions/" + namespace + "/" + name + "/" + version));
+    }
+
+    /**
+     * The same workflow as YAML (text/plain), for the admin's read-only view of workflows loaded on the runner but not
+     * written in the admin (the git-managed ones the k8s init container copies into the workflows folder).
+     */
+    @GET
+    @Path("/definitions/{namespace}/{name}/{version}/yaml")
+    @RolesAllowed({"Admin", "admin", "Manager", "manager"})
+    public Response definitionYaml(@PathParam("namespace") String namespace, @PathParam("name") String name,
+                                   @PathParam("version") String version) {
+        check("namespace", namespace, NAME);
+        check("name", name, NAME);
+        check("version", version, VERSION);
+        Log.infof("GET flow definition yaml %s:%s:%s", namespace, name, version);
+        FlowProxyResponse r = flowClient.runner("GET", "/q/flow/definitions/" + namespace + "/" + name + "/" + version);
+        if (r.status() != 200) {
+            Log.infof("flow definition yaml %s:%s:%s: runner answered %d", namespace, name, version, r.status());
+            return respond(r);
+        }
+        try {
+            String yaml = RunnerWorkflowYaml.fromRunnerJson(r.body());
+            Log.infof("flow definition yaml %s:%s:%s: %d chars", namespace, name, version, yaml.length());
+            return Response.ok(yaml, MediaType.TEXT_PLAIN_TYPE.withCharset("UTF-8")).build();
+        } catch (Exception e) {
+            Log.warnf(e, "flow definition yaml %s:%s:%s: runner JSON not convertible", namespace, name, version);
+            return Response.status(502).entity(Map.of("error", "runner answered with an unreadable workflow"))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
     }
 
     @GET
