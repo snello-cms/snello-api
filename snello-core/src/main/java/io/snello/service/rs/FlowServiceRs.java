@@ -5,7 +5,10 @@ import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.pojo.FlowProxyResponse;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.snello.service.HumanTaskService;
 import io.snello.service.flow.FlowClient;
+import io.snello.service.flow.RunnerWorkflowYaml;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -34,10 +37,11 @@ import static io.snello.management.AppConstants.FLOW_PATH;
  * <pre>
  * GET  /api/flow/definitions                                  workflows loaded by the runner
  * GET  /api/flow/definitions/{ns}/{name}/{version}            one workflow (JSON), to draw its diagram
+ * GET  /api/flow/definitions/{ns}/{name}/{version}/yaml       the same as YAML (text/plain), read-only view in the admin
  * GET  /api/flow/active                                       runner: instances active in memory
  * GET  /api/flow/instances?namespace=&name=&version=&status=&limit=   flow-bridge: instances with their current task
  * GET  /api/flow/instances/{id}                               flow-bridge: one instance, every task position seen
- * POST /api/flow/instances/{ns}/{name}/{version}/{id}/{suspend|resume|cancel}
+ * POST /api/flow/instances/{ns}/{name}/{version}/{id}/{suspend|resume|cancel}   cancel also cancels its OPEN human tasks
  * </pre>
  * Answers are the runner's / flow-bridge's JSON as they came (503 with {"error"} if not configured or unreachable).
  * Path values are checked against the DSL naming rules before they become part of a runner URL.
@@ -61,6 +65,12 @@ public class FlowServiceRs {
     @Inject
     FlowClient flowClient;
 
+    @Inject
+    HumanTaskService humanTasks;
+
+    @Inject
+    SecurityIdentity identity;
+
     @GET
     @Path("/definitions")
     @RolesAllowed({"Admin", "admin", "Manager", "manager"})
@@ -79,6 +89,35 @@ public class FlowServiceRs {
         check("version", version, VERSION);
         Log.infof("GET flow definition %s:%s:%s", namespace, name, version);
         return respond(flowClient.runner("GET", "/q/flow/definitions/" + namespace + "/" + name + "/" + version));
+    }
+
+    /**
+     * The same workflow as YAML (text/plain), for the admin's read-only view of workflows loaded on the runner but not
+     * written in the admin (the git-managed ones the k8s init container copies into the workflows folder).
+     */
+    @GET
+    @Path("/definitions/{namespace}/{name}/{version}/yaml")
+    @RolesAllowed({"Admin", "admin", "Manager", "manager"})
+    public Response definitionYaml(@PathParam("namespace") String namespace, @PathParam("name") String name,
+                                   @PathParam("version") String version) {
+        check("namespace", namespace, NAME);
+        check("name", name, NAME);
+        check("version", version, VERSION);
+        Log.infof("GET flow definition yaml %s:%s:%s", namespace, name, version);
+        FlowProxyResponse r = flowClient.runner("GET", "/q/flow/definitions/" + namespace + "/" + name + "/" + version);
+        if (r.status() != 200) {
+            Log.infof("flow definition yaml %s:%s:%s: runner answered %d", namespace, name, version, r.status());
+            return respond(r);
+        }
+        try {
+            String yaml = RunnerWorkflowYaml.fromRunnerJson(r.body());
+            Log.infof("flow definition yaml %s:%s:%s: %d chars", namespace, name, version, yaml.length());
+            return Response.ok(yaml, MediaType.TEXT_PLAIN_TYPE.withCharset("UTF-8")).build();
+        } catch (Exception e) {
+            Log.warnf(e, "flow definition yaml %s:%s:%s: runner JSON not convertible", namespace, name, version);
+            return Response.status(502).entity(Map.of("error", "runner answered with an unreadable workflow"))
+                    .type(MediaType.APPLICATION_JSON).build();
+        }
     }
 
     @GET
@@ -131,8 +170,18 @@ public class FlowServiceRs {
             throw new BadRequestException("action must be one of " + ACTIONS);
         }
         Log.infof("POST flow %s instance %s of %s:%s:%s", action, id, namespace, name, version);
-        return respond(flowClient.runner("POST",
-                "/q/flow/exec/" + namespace + "/" + name + "/" + version + "/" + id + "/" + action));
+        FlowProxyResponse r = flowClient.runner("POST",
+                "/q/flow/exec/" + namespace + "/" + name + "/" + version + "/" + id + "/" + action);
+        // a cancelled instance never closes its human tasks: do it now, so their pages stop offering a decision
+        // (304 = already cancelled: tidy up anyway). Suspend needs nothing here: decide/undo check the instance.
+        if ("cancel".equals(action) && (r.status() / 100 == 2 || r.status() == 304)) {
+            try {
+                humanTasks.cancelOpenOfInstance(id, "workflow cancelled by " + identity.getPrincipal().getName(), identity);
+            } catch (Exception e) {
+                Log.warnf(e, "flow cancel %s: open human tasks not cancelled (their pages cancel them on next load)", id);
+            }
+        }
+        return respond(r);
     }
 
     private static String check(String what, String value, Pattern pattern) {

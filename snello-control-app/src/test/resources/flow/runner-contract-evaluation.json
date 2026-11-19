@@ -1,0 +1,586 @@
+{
+  "document" : {
+    "dsl" : "1.0.0",
+    "namespace" : "contracts",
+    "name" : "contract-evaluation",
+    "version" : "1.0.0",
+    "title" : "Rent contract evaluation",
+    "summary" : "Started by the snello Action rent-contracts-post-persist with {\"contract\": {...}, \"idCardUrl\": \"...\"}. Opens a snello human task (decisions ACCEPT / REFUSE, page /p/rent-contract-review), mails the reviewer its link, waits for the decision (polling the task; a decision counts only if still unchanged after the grace period, which is what makes UNDO work), closes the task, approves or refuses the contract, mails the applicant (cc the reviewer) and closes the instance row."
+  },
+  "input" : {
+    "schema" : {
+      "format" : "json",
+      "document" : {
+        "type" : "object",
+        "required" : [ "contract" ],
+        "properties" : {
+          "contract" : {
+            "type" : "object",
+            "required" : [ "uuid", "name", "surname", "email" ]
+          },
+          "idCardUrl" : {
+            "type" : [ "string", "null" ]
+          }
+        }
+      }
+    }
+  },
+  "use" : {
+    "authentications" : {
+      "snelloService" : {
+        "oauth2" : {
+          "authority" : "https://accounts.kayak.love/realms/alphasnello",
+          "grant" : "client_credentials",
+          "client" : {
+            "id" : "${ $secret.snelloAuth.clientId }",
+            "secret" : "${ $secret.snelloAuth.clientSecret }",
+            "authentication" : "client_secret_post"
+          },
+          "endpoints" : {
+            "token" : "/protocol/openid-connect/token",
+            "revocation" : "/oauth2/revoke",
+            "introspection" : "/oauth2/introspect"
+          }
+        }
+      }
+    },
+    "retries" : {
+      "snelloRetry" : {
+        "delay" : {
+          "days" : 0,
+          "hours" : 0,
+          "minutes" : 0,
+          "seconds" : 5,
+          "milliseconds" : 0
+        },
+        "backoff" : {
+          "exponential" : { }
+        },
+        "limit" : {
+          "attempt" : {
+            "count" : 5
+          }
+        }
+      }
+    },
+    "secrets" : [ "snello", "snelloAuth", "contracts" ]
+  },
+  "do" : [ {
+    "init" : {
+      "export" : {
+        "as" : "${ $output }"
+      },
+      "set" : {
+        "contract" : "${ .contract }",
+        "idCardUrl" : "${ .idCardUrl }"
+      }
+    }
+  }, {
+    "createTask" : {
+      "export" : {
+        "as" : "${ . + {taskId: $output.uuid, reviewUrl: $output.url} }"
+      },
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/humantasks\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "title" : "${ \"Rent contract: \" + $context.contract.name + \" \" + $context.contract.surname }",
+              "description" : "${ \"Asset: \" + ($context.contract.asset_request // \"-\") }",
+              "page_name" : "rent-contract-review",
+              "workflow_namespace" : "contracts",
+              "workflow_name" : "contract-evaluation",
+              "workflow_version" : "1.0.0",
+              "instance_id" : "${ $workflow.id }",
+              "record_table" : "rent_contracts",
+              "record_key" : "${ $context.contract.uuid }",
+              "decisions" : "ACCEPT,REFUSE",
+              "roles" : "Admin,Manager"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "mailReviewer" : {
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/mail/send\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "to" : "${ $secret.contracts.reviewer | split(\",\") | map(gsub(\"^\\\\s+|\\\\s+$\"; \"\")) }",
+              "subject" : "${ \"Rent contract to review: \" + $context.contract.name + \" \" + $context.contract.surname }",
+              "html" : "${ \"A new rent request is waiting for your review.<br><br>\"\n   + \"<b>\" + ($context.contract.name | @html) + \" \" + ($context.contract.surname | @html) + \"</b> &lt;\"\n   + ($context.contract.email | @html) + \"&gt;<br>\"\n   + \"Asset: \" + (($context.contract.asset_request // \"-\") | @html) + \"<br><br>\"\n   + \"<a href=\\\"\" + ($context.reviewUrl | @html) + \"\\\">Review the contract and ACCEPT or REFUSE</a><br>\"\n   + (if $context.idCardUrl then \"<a href=\\\"\" + ($context.idCardUrl | @html) + \"\\\">Download the ID card</a><br>\" else \"\" end)\n   + \"<br><small>workflow contracts:contract-evaluation, instance \" + ($workflow.id | @html) + \"</small>\" }"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "storeReviewUrl" : {
+      "try" : [ {
+        "put" : {
+          "call" : "http",
+          "with" : {
+            "method" : "put",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/rent_contracts_workflow_instances/\" + ($context.contract.uuid | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "review_url" : "${ \"<a href=\\\"\" + ($context.reviewUrl | @html) + \"\\\" target=\\\"_blank\\\">\"\n   + ($context.reviewUrl | @html) + \"</a>\" }"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 and .status != 404 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "waitDecision" : {
+      "wait" : {
+        "days" : 0,
+        "hours" : 0,
+        "minutes" : 0,
+        "seconds" : 20,
+        "milliseconds" : 0
+      }
+    }
+  }, {
+    "readDecision" : {
+      "export" : {
+        "as" : "${ . + {seen: {decision: $output.decision, at: $output.decided_at}} }"
+      },
+      "try" : [ {
+        "get" : {
+          "call" : "http",
+          "with" : {
+            "method" : "get",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/humantasks/\" + ($context.taskId | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "route" : {
+      "switch" : [ {
+        "decided" : {
+          "when" : "${ .decision == \"ACCEPT\" or .decision == \"REFUSE\" }",
+          "then" : "graceForUndo"
+        }
+      }, {
+        "stillWaiting" : {
+          "then" : "waitDecision"
+        }
+      } ]
+    }
+  }, {
+    "graceForUndo" : {
+      "wait" : {
+        "days" : 0,
+        "hours" : 0,
+        "minutes" : 0,
+        "seconds" : 30,
+        "milliseconds" : 0
+      }
+    }
+  }, {
+    "confirmDecision" : {
+      "try" : [ {
+        "get" : {
+          "call" : "http",
+          "with" : {
+            "method" : "get",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/humantasks/\" + ($context.taskId | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "branch" : {
+      "switch" : [ {
+        "accepted" : {
+          "when" : "${ .decision == \"ACCEPT\" and .decision == $context.seen.decision and .decided_at == $context.seen.at }",
+          "then" : "closeTaskApproved"
+        }
+      }, {
+        "refused" : {
+          "when" : "${ .decision == \"REFUSE\" and .decision == $context.seen.decision and .decided_at == $context.seen.at }",
+          "then" : "closeTaskRefused"
+        }
+      }, {
+        "changed" : {
+          "then" : "waitDecision"
+        }
+      } ]
+    }
+  }, {
+    "closeTaskApproved" : {
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/humantasks/\" + ($context.taskId | @uri) + \"/close\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "note" : "contract approved"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "approveContract" : {
+      "try" : [ {
+        "put" : {
+          "call" : "http",
+          "with" : {
+            "method" : "put",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/rent_contracts/\" + ($context.contract.uuid | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "status" : "APPROUVED"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "mailApproved" : {
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/mail/send\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "to" : "${ [$context.contract.email] }",
+              "cc" : "${ $secret.contracts.cc | split(\",\") | map(gsub(\"^\\\\s+|\\\\s+$\"; \"\")) }",
+              "subject" : "Your rent contract is approved",
+              "html" : "${ \"Dear \" + ($context.contract.name | @html) + \" \" + ($context.contract.surname | @html)\n   + \",<br><br>your contract is approved. You will receive more info in one day.\" }"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "closeApproved" : {
+      "then" : "end",
+      "try" : [ {
+        "put" : {
+          "call" : "http",
+          "with" : {
+            "method" : "put",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/rent_contracts_workflow_instances/\" + ($context.contract.uuid | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "final_status" : "APPROUVED"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "closeTaskRefused" : {
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/humantasks/\" + ($context.taskId | @uri) + \"/close\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "note" : "contract refused"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "refuseContract" : {
+      "try" : [ {
+        "put" : {
+          "call" : "http",
+          "with" : {
+            "method" : "put",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/rent_contracts/\" + ($context.contract.uuid | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "status" : "REFUSED"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "mailRefused" : {
+      "try" : [ {
+        "post" : {
+          "call" : "http",
+          "with" : {
+            "method" : "post",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/mail/send\" }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "to" : "${ [$context.contract.email] }",
+              "cc" : "${ $secret.contracts.cc | split(\",\") | map(gsub(\"^\\\\s+|\\\\s+$\"; \"\")) }",
+              "subject" : "Your rent contract is refused",
+              "html" : "${ \"Dear \" + ($context.contract.name | @html) + \" \" + ($context.contract.surname | @html)\n   + \",<br><br>your contract is refused. Call us to receive more info: \" + ($secret.contracts.phone | @html) }"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  }, {
+    "closeRefused" : {
+      "then" : "end",
+      "try" : [ {
+        "put" : {
+          "call" : "http",
+          "with" : {
+            "method" : "put",
+            "endpoint" : {
+              "uri" : "${ $secret.snello.apiUrl + \"/api/rent_contracts_workflow_instances/\" + ($context.contract.uuid | @uri) }",
+              "authentication" : {
+                "use" : "snelloService"
+              }
+            },
+            "headers" : {
+              "content-type" : "application/json"
+            },
+            "body" : {
+              "final_status" : "REFUSED"
+            },
+            "redirect" : false
+          }
+        }
+      } ],
+      "catch" : {
+        "errors" : {
+          "with" : {
+            "type" : "https://serverlessworkflow.io/spec/1.0.0/errors/communication",
+            "status" : 0
+          }
+        },
+        "exceptWhen" : "${ .status >= 400 and .status < 500 and .status != 429 }",
+        "retry" : "snelloRetry"
+      }
+    }
+  } ]
+}

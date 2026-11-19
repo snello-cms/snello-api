@@ -10,6 +10,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 /**
  * Serves the snello-admin SPA from a filesystem directory baked into the all-in-one image
@@ -24,6 +25,12 @@ public class AdminSpaStatic {
 
     /** Before Quarkus REST / default static so unmatched UI paths never become JSON 404s first. */
     private static final int STATIC_ORDER = -2_000;
+
+    static final String NO_CACHE = "no-cache";
+    static final String IMMUTABLE = "public, max-age=31536000, immutable";
+    /** {@code <name>-<8 char hash>.js|css} as written by the Angular application builder (the hash may contain - and _). */
+    private static final Pattern HASHED_BUNDLE =
+            Pattern.compile("^(main|chunk|polyfills|styles|scripts|runtime|worker)-[A-Za-z0-9_-]{8}\\.(js|mjs|css)$");
 
     @ConfigProperty(name = "snello.admin-ui.path", defaultValue = "/deployments/admin-ui")
     String adminUiPath;
@@ -43,10 +50,16 @@ public class AdminSpaStatic {
                 .setAlwaysAsyncFS(true);
 
         router.get().order(STATIC_ORDER).handler(ctx -> {
-            if (isReservedPath(ctx.request().path())) {
+            String path = ctx.request().path();
+            if (isReservedPath(path)) {
                 ctx.next();
                 return;
             }
+            // StaticHandler's default (public, immutable, max-age=86400) also hit index.html: after a deploy the
+            // browser kept the old index -> old main-*.js -> lazy chunk-*.js no longer in the image -> 404
+            // ("error loading dynamically imported module"). Overridden when the headers are written.
+            String cacheControl = cacheControl(path);
+            ctx.addHeadersEndHandler(v -> ctx.response().putHeader("Cache-Control", cacheControl));
             files.handle(ctx);
         });
 
@@ -60,10 +73,28 @@ public class AdminSpaStatic {
             }
             ctx.response()
                     .putHeader("Content-Type", "text/html; charset=UTF-8")
+                    .putHeader("Cache-Control", NO_CACHE)
                     .sendFile(indexPath);
         });
 
-        Log.infof("snello-admin SPA mounted from %s", adminUiPath);
+        Log.infof("snello-admin SPA mounted from %s (hashed bundles cached 1 year, index.html and the rest revalidated)",
+                adminUiPath);
+    }
+
+    /**
+     * Angular build outputs ({@code main-RIDEINPC.js}, {@code chunk-B-wx2uKE.js}, {@code styles-…css}, {@code media/…})
+     * carry a content hash in the name, so they never change: cache for good. Everything else ({@code index.html},
+     * {@code assets/…}, {@code favicon.ico}) is revalidated on every load (cheap 304 via Last-Modified).
+     */
+    static String cacheControl(String path) {
+        if (path == null) {
+            return NO_CACHE;
+        }
+        if (path.startsWith("/media/")) {
+            return IMMUTABLE;
+        }
+        String leaf = path.substring(path.lastIndexOf('/') + 1);
+        return HASHED_BUNDLE.matcher(leaf).matches() ? IMMUTABLE : NO_CACHE;
     }
 
     static boolean isReservedPath(String path) {
