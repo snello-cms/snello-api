@@ -4,7 +4,7 @@
  *   await snello.ready()                    Keycloak login (public client from window.SNELLO_PAGE), token refresh
  *   await snello.api.get('rent_contracts/' + id)          REST on /api with the viewer's token
  *   snello.api.post / put / del (path, body);  snello.api.blob(path) -> Blob (protected files, prints)
- *   const ctx = await snello.context()      {task, record, fields, workflow, user} of ?task=...
+ *   const ctx = await snello.context()      {task, record, fields, workflow, user, hold?} of ?task=... (hold: why decisions are paused, e.g. workflow suspended)
  *   await snello.decide('APPROVE', comment) / snello.undo()
  *   snello.renderTask(el)                   generic page: record fields + decision bar (what /p/task shows)
  *   snello.renderDecisions(el)              only the decision bar (status, comment, buttons, UNDO): put it at the end
@@ -213,19 +213,24 @@
       const t = ctx.task;
       // the 10 s refresh must not wipe a comment being typed or swap buttons under the cursor: redraw only when the
       // task changed, and carry an unsent comment over
-      const key = [t.status, t.decision, t.decided_at, t.decision_comment].join('|');
+      const hold = t.status === 'OPEN' ? (ctx.hold || '') : '';
+      const key = [t.status, t.decision, t.decided_at, t.decision_comment, hold].join('|');
       if (key === drawn) return;
       drawn = key;
       const typing = el.querySelector('.sp-comment');
       const pending = typing ? typing.value : '';
       const hadFocus = typing && document.activeElement === typing;
-      const open = t.status === 'OPEN';
+      // suspended workflow: snello refuses decide/undo, so no buttons, just why
+      const open = t.status === 'OPEN' && !hold;
       const decisions = String(t.decisions || '').split(',').filter(Boolean);
       el.innerHTML = '<div class="sp-card">'
         + '<div><span class="sp-status sp-' + esc(t.status) + '">' + esc(t.status) + '</span> '
         + (t.decision ? 'decision <b>' + esc(t.decision) + '</b> by ' + esc(t.decided_by) + ' <span class="sp-muted sp-small">' + fmt(t.decided_at) + '</span>' : '<span class="sp-muted">waiting for a decision</span>')
         + '</div>'
         + (t.decision_comment ? '<div class="sp-small" style="margin-top:6px">' + esc(t.decision_comment) + '</div>' : '')
+        + (hold ? '<div class="sp-note">' + esc(hold) + '</div>' : '')
+        + (t.status === 'CANCELLED' ? '<div class="sp-note">No decision is needed any more: this task was cancelled'
+            + (t.instance_id ? ' together with its workflow' : '') + '.</div>' : '')
         + (open && t.decision ? '<div class="sp-note sp-small">' + (t.instance_id
             ? 'The workflow applies the decision shortly: until then you can UNDO it.'
             : 'You can UNDO it until the task is closed.') + '</div>' : '')

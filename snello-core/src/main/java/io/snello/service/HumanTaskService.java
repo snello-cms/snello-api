@@ -38,8 +38,12 @@ import static io.snello.management.AppConstants.PUBLIC_PAGES_PATH;
  *           undo: clears it again, as long as the task is OPEN (the workflow applies a decision only if it is still
  *           unchanged after its grace period: that is the UNDO window)
  * CLOSED    the workflow applied the decision; no more changes
- * CANCELLED the workflow (or an admin) dropped it
+ * CANCELLED the workflow (or an admin) dropped it; also set here when the task's workflow instance ended without
+ *           closing it (cancelled / faulted / completed): nobody can act on that decision any more
  * </pre>
+ * While the instance is SUSPENDED the task stays OPEN but decide / undo answer 409 ("on hold") until it is resumed.
+ * The instance status comes from flow-bridge; when it is unknown (no instance, bridge down or not tracking it) the
+ * task rules alone apply, so a bridge outage never blocks a decision.
  * The page decides nothing: every rule is checked here, so a modified page cannot approve what its user may not.
  */
 @ApplicationScoped
@@ -48,6 +52,9 @@ public class HumanTaskService {
     public static final String OPEN = "OPEN";
     public static final String CLOSED = "CLOSED";
     public static final String CANCELLED = "CANCELLED";
+    /** instance statuses after which an OPEN task can no longer be acted on by its workflow */
+    private static final Set<String> WORKFLOW_ENDED = Set.of("CANCELLED", "FAULTED", "COMPLETED");
+    private static final String WORKFLOW_SUSPENDED = "SUSPENDED";
     private static final Set<String> MANAGERS = Set.of("Admin", "admin", "Manager", "manager");
     private static final Pattern TOKEN = Pattern.compile("[A-Za-z0-9_-]{1,100}");
     private static final Pattern PAGE = Pattern.compile("[a-z0-9][a-z0-9-]{0,99}");
@@ -131,7 +138,7 @@ public class HumanTaskService {
     public Map<String, Object> decide(String uuid, String decision, String comment, SecurityIdentity who) throws Exception {
         Map<String, Object> t = load(uuid);
         requireViewer(t, who);
-        requireOpen(t);
+        t = requireActionable(t, "decide");
         List<String> allowed = split(t.get("decisions"));
         if (decision == null || !allowed.contains(decision)) {
             Log.infof("human task %s: decision '%s' by %s not in %s -> 400", uuid, decision, name(who), allowed);
@@ -150,7 +157,7 @@ public class HumanTaskService {
     public Map<String, Object> undo(String uuid, SecurityIdentity who) throws Exception {
         Map<String, Object> t = load(uuid);
         requireViewer(t, who);
-        requireOpen(t);
+        t = requireActionable(t, "undo");
         Map<String, Object> upd = new LinkedHashMap<>();
         upd.put("decision", null);
         upd.put("decision_comment", null);
@@ -185,6 +192,16 @@ public class HumanTaskService {
         Map<String, Object> t = load(uuid);
         requireViewer(t, who);
         Map<String, Object> ctx = new LinkedHashMap<>();
+        Map<String, Object> workflow = workflowOf(t);
+        if (workflow != null) {
+            ctx.put("workflow", workflow);
+        }
+        String wfStatus = workflow == null ? null : str(workflow.get("status"));
+        t = cancelIfWorkflowEnded(t, wfStatus);
+        if (OPEN.equals(t.get("status")) && WORKFLOW_SUSPENDED.equals(wfStatus)) {
+            // the page shows it and keeps the buttons off; decide/undo refuse it anyway
+            ctx.put("hold", "The workflow is suspended: decisions are on hold until it is resumed.");
+        }
         ctx.put("task", withUrl(t));
         String table = str(t.get("record_table"));
         String key = str(t.get("record_key"));
@@ -207,18 +224,12 @@ public class HumanTaskService {
                 ctx.put("recordTitle", m.description);
             }
         }
-        if (t.get("instance_id") != null) {
-            var r = flowClient.bridge("GET", "/instances/" + t.get("instance_id"));
-            if (r.status() == 200) {
-                ctx.put("workflow", json.readValue(r.body(), Map.class));
-            }
-        }
         Map<String, Object> user = new LinkedHashMap<>();
         user.put("name", name(who));
         user.put("roles", who.getRoles());
         ctx.put("user", user);
-        Log.infof("human task %s context for %s: record=%s/%s workflow=%s", uuid, name(who), table, key,
-                ctx.containsKey("workflow"));
+        Log.infof("human task %s context for %s: record=%s/%s workflow=%s task=%s%s", uuid, name(who), table, key,
+                wfStatus, t.get("status"), ctx.containsKey("hold") ? " (on hold)" : "");
         return ctx;
     }
 
@@ -245,6 +256,84 @@ public class HumanTaskService {
                     t.get("roles"));
             throw new ForbiddenException("not one of this task's roles");
         }
+    }
+
+    /**
+     * Cancels the OPEN tasks of an instance (an admin cancelled it from the monitor): the cancelled workflow can never
+     * close them itself. Returns how many were cancelled.
+     */
+    public int cancelOpenOfInstance(String instanceId, String note, SecurityIdentity who) throws Exception {
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
+        params.add("instance_id", instanceId);
+        params.add("status", OPEN);
+        List<Map<String, Object>> open = apiService.list(HUMAN_TASKS, params, null, 100, 0);
+        for (Map<String, Object> t : open) {
+            close(str(t.get("uuid")), CANCELLED, note, who);
+        }
+        Log.infof("instance %s: %d open human task(s) cancelled by %s", instanceId, open.size(), name(who));
+        return open.size();
+    }
+
+    /** The task's instance as flow-bridge sees it, or null when unknown (no instance, bridge down / not tracking it). */
+    private Map<String, Object> workflowOf(Map<String, Object> t) {
+        Object instance = t.get("instance_id");
+        if (instance == null) {
+            return null;
+        }
+        try {
+            var r = flowClient.bridge("GET", "/instances/" + instance);
+            if (r.status() == 200) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> w = json.readValue(r.body(), Map.class);
+                return w;
+            }
+            Log.infof("human task %s: instance %s unknown to flow-bridge (%d): task rules only", t.get("uuid"), instance,
+                    r.status());
+        } catch (Exception e) {
+            Log.warnf("human task %s: flow-bridge not readable for instance %s (%s): task rules only", t.get("uuid"),
+                    instance, e.getMessage());
+        }
+        return null;
+    }
+
+    /** An OPEN task whose instance has ended can never be applied: mark it CANCELLED (once) and return it reloaded. */
+    private Map<String, Object> cancelIfWorkflowEnded(Map<String, Object> t, String wfStatus) throws Exception {
+        if (!OPEN.equals(t.get("status")) || wfStatus == null || !WORKFLOW_ENDED.contains(wfStatus)) {
+            return t;
+        }
+        String uuid = str(t.get("uuid"));
+        Log.infof("human task %s: instance %s is %s while the task is OPEN -> CANCELLED", uuid, t.get("instance_id"),
+                wfStatus);
+        Map<String, Object> upd = new LinkedHashMap<>();
+        upd.put("status", CANCELLED);
+        upd.put("closed_at", now());
+        String prev = t.get("decision_comment") == null ? "" : t.get("decision_comment") + "\n";
+        upd.put("decision_comment", prev + "[cancelled] workflow " + wfStatus.toLowerCase() + ": no decision needed any more");
+        apiService.merge(HUMAN_TASKS, upd, uuid, "uuid");
+        return load(uuid);
+    }
+
+    /** decide / undo: task OPEN, its workflow not ended (else the task is cancelled now) and not suspended. */
+    private Map<String, Object> requireActionable(Map<String, Object> t, String what) throws Exception {
+        if (!OPEN.equals(t.get("status"))) {
+            requireOpen(t);
+        }
+        Map<String, Object> workflow = workflowOf(t);
+        String wfStatus = workflow == null ? null : str(workflow.get("status"));
+        Map<String, Object> now = cancelIfWorkflowEnded(t, wfStatus);
+        if (!OPEN.equals(now.get("status"))) {
+            Log.infof("human task %s: %s refused, workflow %s -> 409", t.get("uuid"), what, wfStatus);
+            throw conflict("the workflow is " + wfStatus.toLowerCase() + ": this decision is no longer needed");
+        }
+        if (WORKFLOW_SUSPENDED.equals(wfStatus)) {
+            Log.infof("human task %s: %s refused, workflow suspended -> 409", t.get("uuid"), what);
+            throw conflict("the workflow is suspended: decisions are on hold until it is resumed");
+        }
+        return now;
+    }
+
+    private static WebApplicationException conflict(String msg) {
+        return new WebApplicationException(Response.status(Response.Status.CONFLICT).entity(Map.of("msg", msg)).build());
     }
 
     private static void requireOpen(Map<String, Object> t) {

@@ -5,6 +5,8 @@ import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.management.SnelloPlane;
 import io.snello.model.pojo.FlowProxyResponse;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.snello.service.HumanTaskService;
 import io.snello.service.flow.FlowClient;
 import io.snello.service.flow.RunnerWorkflowYaml;
 import jakarta.annotation.security.RolesAllowed;
@@ -39,7 +41,7 @@ import static io.snello.management.AppConstants.FLOW_PATH;
  * GET  /api/flow/active                                       runner: instances active in memory
  * GET  /api/flow/instances?namespace=&name=&version=&status=&limit=   flow-bridge: instances with their current task
  * GET  /api/flow/instances/{id}                               flow-bridge: one instance, every task position seen
- * POST /api/flow/instances/{ns}/{name}/{version}/{id}/{suspend|resume|cancel}
+ * POST /api/flow/instances/{ns}/{name}/{version}/{id}/{suspend|resume|cancel}   cancel also cancels its OPEN human tasks
  * </pre>
  * Answers are the runner's / flow-bridge's JSON as they came (503 with {"error"} if not configured or unreachable).
  * Path values are checked against the DSL naming rules before they become part of a runner URL.
@@ -62,6 +64,12 @@ public class FlowServiceRs {
 
     @Inject
     FlowClient flowClient;
+
+    @Inject
+    HumanTaskService humanTasks;
+
+    @Inject
+    SecurityIdentity identity;
 
     @GET
     @Path("/definitions")
@@ -162,8 +170,18 @@ public class FlowServiceRs {
             throw new BadRequestException("action must be one of " + ACTIONS);
         }
         Log.infof("POST flow %s instance %s of %s:%s:%s", action, id, namespace, name, version);
-        return respond(flowClient.runner("POST",
-                "/q/flow/exec/" + namespace + "/" + name + "/" + version + "/" + id + "/" + action));
+        FlowProxyResponse r = flowClient.runner("POST",
+                "/q/flow/exec/" + namespace + "/" + name + "/" + version + "/" + id + "/" + action);
+        // a cancelled instance never closes its human tasks: do it now, so their pages stop offering a decision
+        // (304 = already cancelled: tidy up anyway). Suspend needs nothing here: decide/undo check the instance.
+        if ("cancel".equals(action) && (r.status() / 100 == 2 || r.status() == 304)) {
+            try {
+                humanTasks.cancelOpenOfInstance(id, "workflow cancelled by " + identity.getPrincipal().getName(), identity);
+            } catch (Exception e) {
+                Log.warnf(e, "flow cancel %s: open human tasks not cancelled (their pages cancel them on next load)", id);
+            }
+        }
+        return respond(r);
     }
 
     private static String check(String what, String value, Pattern pattern) {
