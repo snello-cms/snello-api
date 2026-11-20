@@ -1,0 +1,126 @@
+# All-in-one on an external database: one profile per database, each with its own DB server and the matching image
+# tag (built here with --build-arg SNELLO_DB_KIND, published by CI as alpha-postgresql / alpha-mysql / alpha-mssql).
+# Docs: ../docs/all-in-one.md#external-database-tags   Test of all three: ../dev/test-aio-external-db.sh
+#
+# Build the jar first:  ./mvnw -pl snello-all-in-one-app -am package -DskipTests
+#   docker compose -f docker-compose/compose-allinone-external-db.yml --profile postgresql up -d --build   # :18081
+#   docker compose -f docker-compose/compose-allinone-external-db.yml --profile mysql up -d --build        # :18082
+#   docker compose -f docker-compose/compose-allinone-external-db.yml --profile mssql up -d --build        # :18083
+#   docker compose -f docker-compose/compose-allinone-external-db.yml --profile '*' down -v
+#
+# SSO: by default the local dev Keycloak (dev stack, http://localhost:8180, realm snello), reached from the containers
+# through host.docker.internal; tokens issued to the host keep iss=localhost:8180, hence QUARKUS_OIDC_TOKEN_ISSUER.
+# Point both at your SSO for anything else. DB passwords here are throwaway test values.
+name: snello-aio-external-db
+
+x-aio-env: &aio-env
+  QUARKUS_OIDC_AUTH_SERVER_URL: ${QUARKUS_OIDC_AUTH_SERVER_URL:-http://host.docker.internal:8180/realms/snello}
+  QUARKUS_OIDC_TOKEN_ISSUER: ${QUARKUS_OIDC_TOKEN_ISSUER:-http://localhost:8180/realms/snello}
+  QUARKUS_OIDC_CLIENT_ID: ${QUARKUS_OIDC_CLIENT_ID:-snello-api}
+  # quarkus.oidc.tenant-enabled is the DEFAULT tenant's switch (not "multi-tenancy"): the image's default false turns
+  # token checks off for it, and every write is a 401
+  QUARKUS_OIDC_TENANT_ENABLED: "true"
+  SNELLO_MAIL_MOCK: "true"
+
+services:
+  # ---------------- PostgreSQL ----------------
+  pg:
+    profiles: [postgresql]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: snello
+      POSTGRES_USER: snello
+      POSTGRES_PASSWORD: snello-test
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snello -d snello"]
+      interval: 3s
+      retries: 30
+
+  aio-postgresql:
+    profiles: [postgresql]
+    image: snellocms/snello-all-in-one:local-postgresql
+    build:
+      context: ../snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+      args: {SNELLO_DB_KIND: postgresql}
+    depends_on: {pg: {condition: service_healthy}}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["18081:8080"]
+    environment:
+      <<: *aio-env
+      SNELLO_JDBC_URL: jdbc:postgresql://pg:5432/snello
+      SNELLO_DB_USERNAME: snello
+      SNELLO_DB_PASSWORD: snello-test
+    volumes: [aio-pg-files:/data]
+
+  # ---------------- MySQL ----------------
+  mysql:
+    profiles: [mysql]
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: snello
+      MYSQL_USER: snello
+      MYSQL_PASSWORD: snello-test
+      MYSQL_ROOT_PASSWORD: snello-test-root
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -usnello -psnello-test --silent"]
+      interval: 3s
+      retries: 40
+
+  aio-mysql:
+    profiles: [mysql]
+    image: snellocms/snello-all-in-one:local-mysql
+    build:
+      context: ../snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+      args: {SNELLO_DB_KIND: mysql}
+    depends_on: {mysql: {condition: service_healthy}}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["18082:8080"]
+    environment:
+      <<: *aio-env
+      SNELLO_JDBC_URL: jdbc:mysql://mysql:3306/snello
+      SNELLO_DB_USERNAME: snello
+      SNELLO_DB_PASSWORD: snello-test
+    volumes: [aio-mysql-files:/data]
+
+  # ---------------- SQL Server ----------------
+  mssql:
+    profiles: [mssql]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Snello_Test_2026!
+    volumes: [mssql-data:/var/opt/mssql]
+    healthcheck:
+      # also creates the empty database snello expects
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Snello_Test_2026!' -Q \"IF DB_ID('snello') IS NULL CREATE DATABASE snello\""]
+      interval: 5s
+      retries: 40
+
+  aio-mssql:
+    profiles: [mssql]
+    image: snellocms/snello-all-in-one:local-mssql
+    build:
+      context: ../snello-all-in-one-app
+      dockerfile: src/main/docker/Dockerfile.jvm
+      args: {SNELLO_DB_KIND: mssql}
+    depends_on: {mssql: {condition: service_healthy}}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["18083:8080"]
+    environment:
+      <<: *aio-env
+      SNELLO_JDBC_URL: jdbc:sqlserver://mssql:1433;databaseName=snello;encrypt=true;trustServerCertificate=true
+      SNELLO_DB_USERNAME: sa
+      SNELLO_DB_PASSWORD: Snello_Test_2026!
+    volumes: [aio-mssql-files:/data]
+
+volumes:
+  pg-data:
+  mysql-data:
+  mssql-data:
+  aio-pg-files:
+  aio-mysql-files:
+  aio-mssql-files:

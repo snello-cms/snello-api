@@ -1,8 +1,14 @@
 ####
-# Snello all-in-one — JVM mutable-jar (H2 + snello-admin SPA).
+# Snello all-in-one — JVM mutable-jar (snello-admin SPA + H2 or an external database).
 #
-# Full control API + local H2 + filesystem docs + admin UI.
+# Full control API + database + filesystem docs + admin UI.
 # Point OIDC at an external SSO.
+#
+# Database: build arg SNELLO_DB_KIND = h2 (default, file under /data) | postgresql | mysql | mssql. The jar is
+# re-augmented for it during the build, so the container starts directly (no rebuild at every new container).
+# CI publishes one tag per kind: <version>, alpha (h2) and <version>-postgresql, alpha-postgresql, ... -mysql, -mssql.
+#   docker build --build-arg SNELLO_DB_KIND=postgresql -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm \
+#     -t snellocms/snello-all-in-one:alpha-postgresql snello-all-in-one-app
 #
 # Two ways to ship the admin:
 #   1) CI / Docker-only (this file): multi-stage COPY from snellocms/snello-admin into
@@ -26,14 +32,25 @@
 #     -e QUARKUS_OIDC_CLIENT_ID=snello-api \
 #     -e SNELLO_AITYPE=ai-gemini -e GEMINI_API_KEY=... \
 #     snellocms/snello-all-in-one:alpha
+#
+# Run on an external database (empty database, snello creates its tables at first start):
+#   docker run --rm -p 8080:8080 -v snello-files:/data \
+#     -e SNELLO_JDBC_URL=jdbc:postgresql://db.example:5432/snello \
+#     -e SNELLO_DB_USERNAME=snello -e SNELLO_DB_PASSWORD=... \
+#     -e QUARKUS_OIDC_AUTH_SERVER_URL=... -e QUARKUS_OIDC_CLIENT_ID=snello-api \
+#     snellocms/snello-all-in-one:alpha-postgresql
+#   mysql:  jdbc:mysql://db.example:3306/snello
+#   mssql:  jdbc:sqlserver://db.example:1433;databaseName=snello;encrypt=true;trustServerCertificate=false
 ###
 ARG SNELLO_ADMIN_IMAGE=snellocms/snello-admin:edge
 FROM ${SNELLO_ADMIN_IMAGE} AS snello-admin
 
 FROM registry.access.redhat.com/ubi10/openjdk-25-runtime:1.24
 
+ARG SNELLO_DB_KIND=h2
+
 ENV LANGUAGE='en_US:en'
-ENV SNELLO_DB_KIND=h2
+ENV SNELLO_DB_KIND=${SNELLO_DB_KIND}
 ENV JAVA_APP_JAR=/deployments/quarkus-app/quarkus-run.jar
 ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV SNELLO_ADMIN_UI_PATH=/deployments/admin-ui
@@ -51,6 +68,9 @@ RUN chmod +x /deployments/snello-optimize.sh /deployments/snello-entrypoint.sh \
  && chown -R 185:0 /data /deployments/admin-ui
 
 USER 185
+# re-augment for SNELLO_DB_KIND now: writes the .snello-optimized-<kind> marker, the entrypoint then skips it
+RUN /deployments/snello-optimize.sh /deployments/quarkus-app/quarkus-run.jar
+
 EXPOSE 8080
 VOLUME ["/data"]
 

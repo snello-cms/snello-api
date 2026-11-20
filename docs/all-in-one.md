@@ -1,17 +1,41 @@
 # All-in-one runtime
 
-`snello-all-in-one` is a **single JVM image** with the full **control-plane** API, embedded **H2**, **filesystem** document storage, and the **snello-admin** SPA (same origin as `/api`).
+`snello-all-in-one` is a **single JVM image** with the full **control-plane** API, embedded **H2** (or an external **PostgreSQL / MySQL / SQL Server**, see below), **filesystem** document storage, and the **snello-admin** SPA (same origin as `/api`).
 
 | Included | Not included |
 |---|---|
 | Full REST API (CRUD, metadata/DDL, documents, auth admin, AI `/api/ai/*`, drafts, backup, OpenAPI) | Separate history/NATS services |
-| Embedded **snello-admin** UI (`GET /`, client routes → `index.html`) | PostgreSQL / MySQL |
+| Embedded **snello-admin** UI (`GET /`, client routes → `index.html`) | The database server itself (external DB tags connect to yours) |
 | AG-UI WebSocket `WS /agui` (`snello-ai`) | MinIO / S3 (optional; unused when `snello.storagetype=fs`) |
 | H2 database (file under `/data` by default) | — |
 | Filesystem docs (`SNELLO_FS_BASE_PATH`) | — |
 | OIDC (external or bundled Keycloak) | — |
 
 Image: `snellocms/snello-all-in-one:alpha` (or `:local` after a local build).
+
+## External database tags
+
+| Tag | Database | `SNELLO_JDBC_URL` example |
+|---|---|---|
+| `alpha` / `<version>` | H2 file under `/data` (default) | — |
+| `alpha-postgresql` / `<version>-postgresql` | PostgreSQL | `jdbc:postgresql://db:5432/snello` |
+| `alpha-mysql` / `<version>-mysql` | MySQL 8 | `jdbc:mysql://db:3306/snello` |
+| `alpha-mssql` / `<version>-mssql` | SQL Server / Azure SQL | `jdbc:sqlserver://db:1433;databaseName=snello;encrypt=true;trustServerCertificate=false` |
+
+Each tag is the same image re-augmented at `docker build` for that driver (`--build-arg SNELLO_DB_KIND=…`), so it starts
+directly. Give it an **empty database** plus `SNELLO_JDBC_URL`, `SNELLO_DB_USERNAME`, `SNELLO_DB_PASSWORD`: the system
+tables are created at first start. Without `SNELLO_JDBC_URL` (or with an H2 URL) the entrypoint stops with an error.
+`/data` still holds the documents (`SNELLO_FS_BASE_PATH`), so keep the volume.
+
+```bash
+docker run --rm -p 8080:8080 -v snello-files:/data \
+  -e SNELLO_JDBC_URL=jdbc:postgresql://db:5432/snello \
+  -e SNELLO_DB_USERNAME=snello -e SNELLO_DB_PASSWORD=... \
+  -e QUARKUS_OIDC_AUTH_SERVER_URL=https://sso.example/realms/snello \
+  snellocms/snello-all-in-one:alpha-postgresql
+```
+
+Local build of one: `docker build --build-arg SNELLO_DB_KIND=mysql -f snello-all-in-one-app/src/main/docker/Dockerfile.jvm -t snello-aio:mysql snello-all-in-one-app`.
 
 Build the jar first (needed for `--build` and for `docker build`):
 
@@ -64,7 +88,8 @@ Useful env vars:
 | `QUARKUS_OIDC_CLIENT_ID` | `snello-api` |
 | `QUARKUS_OIDC_APPLICATION_TYPE` | `service` (bearer tokens) |
 | `QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH` | `resource_access/snello-api/roles` |
-| `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral |
+| `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral; **required** on the `-postgresql` / `-mysql` / `-mssql` tags |
+| `SNELLO_DB_USERNAME` / `SNELLO_DB_PASSWORD` | `sa` / empty (H2); the external database's user |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
 | `SNELLO_AITYPE` | `ai-gemini` (default in compose) or `openai` |
