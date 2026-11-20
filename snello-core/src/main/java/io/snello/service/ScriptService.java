@@ -27,6 +27,9 @@ public class ScriptService {
     MailService mailService;
 
     @Inject
+    GroupDirectory groupDirectory;
+
+    @Inject
     JdbcRepository jdbcRepository;
 
     @Inject
@@ -82,6 +85,7 @@ public class ScriptService {
         bindings.put("db", jdbcRepository);
         bindings.put("documents", documentsService);
         bindings.put("mail", mailService);
+        bindings.put("groups", groupDirectory);
         bindings.put("http", httpCallService);
         bindings.put("prints", printTemplateService);
         // JBoss logger per script: category snello.script.<action name>, so log lines say which action wrote them.

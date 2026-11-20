@@ -5,6 +5,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.snello.api.service.MailService;
+import io.snello.service.AuthService;
 import io.snello.management.SnelloPlane;
 import io.snello.model.pojo.MailSendRequest;
 import jakarta.annotation.security.RolesAllowed;
@@ -49,6 +50,9 @@ public class MailServiceRs {
     @Inject
     SecurityIdentity identity;
 
+    @Inject
+    AuthService authService;
+
     @ConfigProperty(name = "snello.mail.send.max-recipients", defaultValue = "20")
     int maxRecipients;
 
@@ -63,10 +67,14 @@ public class MailServiceRs {
         List<String> to = clean("to", request.to);
         List<String> cc = clean("cc", request.cc);
         List<String> bcc = clean("bcc", request.bcc);
+        addGroups("toGroups", request.toGroups, to);
+        addGroups("ccGroups", request.ccGroups, cc);
+        addGroups("bccGroups", request.bccGroups, bcc);
         Log.infof("MAIL api send requested by %s: subject='%s' to=%d cc=%d bcc=%d htmlLength=%d", caller,
                 request.subject, to.size(), cc.size(), bcc.size(), request.html == null ? 0 : request.html.length());
         if (to.isEmpty()) {
-            throw new BadRequestException("to: at least one recipient is required");
+            throw new BadRequestException("to / toGroups: at least one recipient is required"
+                    + (request.toGroups == null || request.toGroups.isEmpty() ? "" : " (the groups have no member with an e-mail)"));
         }
         if (request.subject == null || request.subject.isBlank()) {
             throw new BadRequestException("subject is required");
@@ -88,6 +96,26 @@ public class MailServiceRs {
         }
         Log.infof("MAIL api send done for %s: subject='%s' recipients=%d", caller, request.subject, total);
         return Response.ok(Map.of("sent", true, "recipients", total)).build();
+    }
+
+    /** Adds the e-mails of each Keycloak group's members to {@code into} (no duplicates). */
+    private void addGroups(String field, List<String> groups, List<String> into) {
+        if (groups == null) {
+            return;
+        }
+        for (String g : groups) {
+            if (g == null || g.isBlank()) {
+                continue;
+            }
+            List<String> emails = authService.groupEmails(g);
+            int before = into.size();
+            for (String e : emails) {
+                if (!into.contains(e)) {
+                    into.add(e);
+                }
+            }
+            Log.infof("MAIL api %s '%s' -> %d addresses (%d new)", field, g.trim(), emails.size(), into.size() - before);
+        }
     }
 
     private static List<String> clean(String field, List<String> addresses) {

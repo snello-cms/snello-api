@@ -484,6 +484,54 @@ public class AuthService {
         }
     }
 
+    /**
+     * E-mail addresses of the enabled members of a Keycloak group, for mail "to a group of persons". {@code group} is
+     * the group name ("Reviewers") or its path for a subgroup ("Office/Reviewers"). Members without an e-mail are
+     * skipped (logged); an unknown group is a 400, so a typo in a workflow fails loudly instead of mailing no one.
+     */
+    public List<String> groupEmails(String group) {
+        String path = group == null ? null : group.trim();
+        if (path == null || path.isEmpty()) {
+            throw new BadRequestException("group name is required");
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        try (Keycloak keycloak = buildClient()) {
+            RealmResource realm = keycloak.realm(targetRealm);
+            GroupRepresentation found;
+            try {
+                found = realm.getGroupByPath(path);
+            } catch (NotFoundException ex) {
+                found = null;
+            }
+            if (found == null) {
+                Log.warnf("group emails: Keycloak group '%s' not found in realm %s", path, targetRealm);
+                throw new BadRequestException("unknown group '" + group + "'");
+            }
+            List<UserRepresentation> members = realm.groups().group(found.getId()).members(0, 1000);
+            List<String> emails = new ArrayList<>();
+            int skipped = 0;
+            for (UserRepresentation u : members) {
+                if (Boolean.FALSE.equals(u.isEnabled()) || u.getEmail() == null || u.getEmail().isBlank()) {
+                    skipped++;
+                    continue;
+                }
+                if (!emails.contains(u.getEmail().trim())) {
+                    emails.add(u.getEmail().trim());
+                }
+            }
+            Log.infof("group emails: '%s' (id %s) -> %d members, %d addresses, %d skipped (disabled / no e-mail)",
+                    path, found.getId(), members.size(), emails.size(), skipped);
+            return emails;
+        } catch (BadRequestException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            Log.error("Cannot list e-mails of Keycloak group " + path, ex);
+            throw new InternalServerErrorException("Cannot read group '" + group + "' from Keycloak realm '" + targetRealm + "'");
+        }
+    }
+
     public Object listUserGroups(String id) {
         if (id == null || id.isBlank()) {
             throw new BadRequestException("User id is required");
