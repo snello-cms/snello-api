@@ -2,14 +2,12 @@
 
 Snello control / query / MCP images ship **all JDBC drivers** on the classpath and specialize one dialect at container start (Keycloak-style **mutable-jar re-augmentation**).
 
-Two knobs must stay aligned:
+One knob: `SNELLO_DB_KIND` (or `QUARKUS_DATASOURCE_DB_KIND`) picks the Quarkus `quarkus.datasource.db-kind` driver at
+build time / re-augmentation, and `DbProducer` picks the `JdbcRepository` dialect from that same db-kind.
+`snello.dbtype` is no longer needed: re-augmentation only bakes build-time config, so a separate runtime value used to
+keep the app default and pair e.g. the H2 dialect with the PostgreSQL driver. If set and different, it is logged and ignored.
 
-| Knob | Role |
-|---|---|
-| `SNELLO_DB_KIND` (or `QUARKUS_DATASOURCE_DB_KIND`) | Build-time / re-augment: which Quarkus `quarkus.datasource.db-kind` driver is wired |
-| `snello.dbtype` | Runtime: which `JdbcRepository` dialect bean `DbProducer` selects |
-
-`snello-optimize.sh` sets **both** from `SNELLO_DB_KIND`.
+The all-in-one image has one tag per database (`alpha-postgresql`, `alpha-mysql`, `alpha-mssql`): see [All-in-one](all-in-one.md#external-database-tags).
 
 Supported values: **`postgresql`** (default), **`mysql`**, **`h2`**, **`mssql`**.
 
@@ -78,7 +76,6 @@ Default remains PostgreSQL via Compose Dev Services (`docker-compose/compose-dev
 
 ```properties
 quarkus.datasource.db-kind=mssql
-snello.dbtype=mssql
 quarkus.datasource.jdbc.url=jdbc:sqlserver://localhost:1433;databaseName=snello;encrypt=false;trustServerCertificate=true
 quarkus.datasource.username=snello
 quarkus.datasource.password=snello
@@ -88,7 +85,7 @@ Or use the `%mssql` profile entries already present in the app properties after 
 
 ## Dialect implementation map
 
-| `snello.dbtype` | Package |
+| db-kind (dialect) | Package |
 |---|---|
 | `postgresql` | `…repository.postgresql` |
 | `mysql` | `…repository.mysql` |

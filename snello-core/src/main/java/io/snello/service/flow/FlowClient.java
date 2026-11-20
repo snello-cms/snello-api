@@ -69,6 +69,22 @@ public class FlowClient {
                 yaml, token, deployTimeoutSeconds);
     }
 
+    /**
+     * Import of a workflow the runner already runs from a file not written by snello (git-managed copy):
+     * {@code POST /workflows/{ns}/{name}/{version}/adopt}. {@code dry}: only answers that file's YAML; otherwise the
+     * YAML (or, when null, that file) becomes the ui-*.yaml of the same version. Does not wait for the runner.
+     */
+    public FlowProxyResponse bridgeAdopt(String namespace, String name, String version, String yaml, boolean dry) {
+        String token = bridgeToken.map(String::trim).filter(s -> !s.isEmpty()).orElse(null);
+        if (token == null) {
+            Log.warnf("flow-bridge adopt %s:%s:%s: no token (SNELLO_FLOW_BRIDGE_TOKEN)", namespace, name, version);
+            return new FlowProxyResponse(503, "{\"error\":\"workflow deploy is not configured on this snello "
+                    + "(SNELLO_FLOW_BRIDGE_TOKEN)\"}", "application/json");
+        }
+        return call("flow-bridge", bridgeUrl, "POST", "/workflows/" + namespace + "/" + name + "/" + version
+                + "/adopt" + (dry ? "?dry=1" : ""), yaml, token, timeoutSeconds);
+    }
+
     private FlowProxyResponse call(String target, Optional<String> base, String method, String pathAndQuery) {
         return call(target, base, method, pathAndQuery, null, null, timeoutSeconds);
     }
@@ -97,6 +113,9 @@ public class FlowClient {
                         .PUT(HttpRequest.BodyPublishers.ofString(yamlBody == null ? "" : yamlBody, StandardCharsets.UTF_8));
             } else if ("DELETE".equals(method)) {
                 req.DELETE();
+            } else if ("POST".equals(method) && yamlBody != null) {
+                req.header("Content-Type", "application/yaml")
+                        .POST(HttpRequest.BodyPublishers.ofString(yamlBody, StandardCharsets.UTF_8));
             } else if ("POST".equals(method)) {
                 req.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString("{}"));
             } else {
