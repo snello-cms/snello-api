@@ -10,6 +10,7 @@ import io.snello.model.pojo.FlowProxyResponse;
 import io.snello.model.pojo.WorkflowDocument;
 import io.snello.service.ApiService;
 import io.snello.service.flow.FlowClient;
+import io.snello.service.flow.RunnerWorkflowYaml;
 import io.snello.service.flow.WorkflowYamlValidator;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -39,6 +40,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static io.snello.management.AppConstants.LIMIT_PARAM;
 import static io.snello.management.AppConstants.SORT_PARAM;
@@ -57,6 +59,9 @@ import static io.snello.management.AppConstants.WORKFLOW_DEFINITIONS_PATH;
  * POST /api/workflowdefinitions/validate                {"yaml"} -> {document, workflow (parsed)}, or 400 + reason
  * POST /api/workflowdefinitions/{id}/deploy             flow-bridge writes the file, waits for the runner to load it
  * GET  /api/workflowdefinitions/deploy-status           whether this snello can deploy (bridge URL + token, writes on)
+ * POST /api/workflowdefinitions/import                  {namespace, name, version} of a workflow the runner runs but
+ *                                                       that is not here (git-managed copy): saved here as DEPLOYED,
+ *                                                       its file becomes the editor's (same version, nothing restarts)
  * </pre>
  * Status: DRAFT (editable) -> DEPLOYED (immutable: the runner 1.3.0 never reloads an edited file, so a change is a
  * new version, and instances already running keep theirs) or FAILED (editable, {@code message} = the runner's error).
@@ -73,6 +78,9 @@ public class WorkflowDefinitionsServiceRs extends AbstractServiceRs {
     public static final String DRAFT = "DRAFT";
     public static final String DEPLOYED = "DEPLOYED";
     public static final String FAILED = "FAILED";
+
+    private static final Pattern NAME = Pattern.compile("[A-Za-z0-9-]{1,100}");
+    private static final Pattern VERSION = Pattern.compile("[A-Za-z0-9.+-]{1,50}");
 
     @Inject
     FlowClient flowClient;
@@ -177,6 +185,85 @@ public class WorkflowDefinitionsServiceRs extends AbstractServiceRs {
         Log.warnf("workflow deploy %s: bridge %d -> %s: %s", wd.id(), r.status(), refused ? FAILED : "unchanged", error);
         throw new WebApplicationException(Response.status(refused ? 422 : r.status())
                 .type(MediaType.APPLICATION_JSON).entity(Map.of("msg", error)).build());
+    }
+
+    /**
+     * Brings a workflow the runner runs from a file snello did not write (the git-managed copies) into the editor, so
+     * every workflow is managed here. Same namespace:name:version, so instances already running are untouched:
+     * flow-bridge copies the file to ui-*.yaml (the runner skips it until its next start, then loads it from there).
+     * The YAML is the original file when the bridge still has it (comments kept), else rebuilt from the runner.
+     */
+    @POST
+    @Path("/import")
+    @RolesAllowed({"Admin", "admin", "Manager", "manager"})
+    public Response importFromRunner(Map<String, Object> body) throws Exception {
+        String ns = body == null ? null : str(body.get("namespace"));
+        String name = body == null ? null : str(body.get("name"));
+        String version = body == null ? null : str(body.get("version"));
+        Log.infof("workflow import %s:%s:%s requested by %s", ns, name, version, user());
+        if (ns == null || name == null || version == null || !NAME.matcher(ns).matches()
+                || !NAME.matcher(name).matches() || !VERSION.matcher(version).matches()) {
+            throw new WebApplicationException(Response.status(400).type(MediaType.APPLICATION_JSON)
+                    .entity(Map.of("msg", "namespace, name and version are required")).build());
+        }
+        String yaml;
+        String source;
+        FlowProxyResponse dry = flowClient.bridgeAdopt(ns, name, version, null, true);
+        if (dry.status() == 200) {
+            yaml = str(json(dry.body()).get("yaml"));
+            source = str(json(dry.body()).get("source"));
+            Log.infof("workflow import %s:%s:%s: YAML from file %s (%d chars)", ns, name, version, source,
+                    yaml == null ? 0 : yaml.length());
+        } else if (dry.status() == 404 && "no-source".equals(json(dry.body()).get("code"))) {
+            // e.g. deleted here (file removed) but still loaded until the runner restarts: rebuild it from the runner
+            FlowProxyResponse r = flowClient.runner("GET", "/q/flow/definitions/" + ns + "/" + name + "/" + version);
+            if (r.status() != 200) {
+                throw bridgeError("the runner answered " + r.status(), r.status() == 404 ? 404 : 502);
+            }
+            yaml = RunnerWorkflowYaml.fromRunnerJson(r.body());
+            source = null;
+            Log.infof("workflow import %s:%s:%s: no file on the runner, YAML rebuilt (%d chars)", ns, name, version,
+                    yaml.length());
+        } else {
+            Object err = json(dry.body()).get("error");
+            Log.warnf("workflow import %s:%s:%s: bridge %d %s", ns, name, version, dry.status(), err);
+            throw bridgeError(err == null ? "flow-bridge answered " + dry.status() : err.toString(), dry.status());
+        }
+        WorkflowDocument wd = WorkflowYamlValidator.validate(yaml);
+        if (!ns.equals(wd.namespace()) || !name.equals(wd.name()) || !version.equals(wd.version())) {
+            Log.warnf("workflow import %s:%s:%s: YAML says %s", ns, name, version, wd.id());
+            throw bridgeError("the workflow file says " + wd.id(), 409);
+        }
+        requireUnique(wd, null);
+        FlowProxyResponse adopted = flowClient.bridgeAdopt(ns, name, version, yaml, false);
+        if (adopted.status() != 200) {
+            Object err = json(adopted.body()).get("error");
+            Log.warnf("workflow import %s: adopt -> %d %s", wd.id(), adopted.status(), err);
+            throw bridgeError(err == null ? "flow-bridge answered " + adopted.status() : err.toString(), adopted.status());
+        }
+        Map<?, ?> res = json(adopted.body());
+        Map<String, Object> row = new HashMap<>();
+        row.put(UUID, java.util.UUID.randomUUID().toString());
+        row.put("yaml", yaml);
+        fill(row, wd);
+        Timestamp now = now();
+        row.put("status", DEPLOYED);
+        row.put("message", "imported from the runner" + (source == null ? "" : " (file " + source + ")")
+                + (res.get("removed") instanceof List<?> l && !l.isEmpty() ? ", git copy removed" : ""));
+        row.put("created_at", now);
+        row.put("created_by", user());
+        row.put("deployed_at", now);
+        row.put("deployed_by", user());
+        Map<String, Object> saved = apiService.create(WORKFLOW_DEFINITIONS, row, UUID);
+        Log.infof("workflow import %s: saved as %s DEPLOYED, file %s, removed %s", wd.id(), row.get(UUID),
+                res.get("file"), res.get("removed"));
+        return Response.ok(saved).build();
+    }
+
+    private static WebApplicationException bridgeError(String msg, int status) {
+        int code = status == 404 || status == 409 || status == 400 ? status : status >= 500 ? status : 502;
+        return new WebApplicationException(Response.status(code).type(MediaType.APPLICATION_JSON)
+                .entity(Map.of("msg", msg)).build());
     }
 
     /**

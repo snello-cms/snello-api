@@ -91,6 +91,7 @@ Useful env vars:
 | `SNELLO_JDBC_URL` | file H2 at `/data/snello`; override with `jdbc:h2:mem:…` for ephemeral; **required** on the `-postgresql` / `-mysql` / `-mssql` tags |
 | `SNELLO_DB_USERNAME` / `SNELLO_DB_PASSWORD` | `sa` / empty (H2); the external database's user |
 | `SNELLO_FS_BASE_PATH` | `/data/files` |
+| `SNELLO_FLOW_SEED_DIR` | optional folder of workflow YAMLs (k8s: snello-flows ConfigMap): at startup the versions the Workflows editor does not have are imported and deployed through flow-bridge; existing ones are never overwritten |
 | `SNELLO_KEYCLOAK_ADMIN_*` | optional admin bootstrap against the same SSO |
 | `SNELLO_AITYPE` | `ai-gemini` (default in compose) or `openai` |
 | `OPENAI_API_KEY` | optional; when `SNELLO_AITYPE=openai` |
