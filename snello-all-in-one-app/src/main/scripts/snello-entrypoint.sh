@@ -24,6 +24,13 @@ if [[ "$DB_KIND" != "h2" && "$JDBC_URL" == jdbc:h2:* ]]; then
   echo "snello-entrypoint: ERROR db-kind=${DB_KIND} with an H2 URL (${JDBC_URL}): use the image for H2 or a ${DB_KIND} URL" >&2
   exit 1
 fi
+# reverse mismatch: H2 dialect + external JDBC URL (Agroal: "Driver does not support the provided URL")
+if [[ "$DB_KIND" == "h2" && -n "$JDBC_URL" && "$JDBC_URL" != jdbc:h2:* ]]; then
+  echo "snello-entrypoint: ERROR db-kind=h2 but JDBC URL is not H2 (${SHOWN_URL})." >&2
+  echo "  Set SNELLO_DB_KIND to match the URL (postgresql|mysql|mssql) or use an H2 URL / the plain H2 image." >&2
+  echo "  Example for SQL Server: SNELLO_DB_KIND=mssql (and image tag *-mssql if available)." >&2
+  exit 1
+fi
 
 if [[ -x "${SCRIPT_DIR}/snello-optimize.sh" ]]; then
   "${SCRIPT_DIR}/snello-optimize.sh" "$JAR"
