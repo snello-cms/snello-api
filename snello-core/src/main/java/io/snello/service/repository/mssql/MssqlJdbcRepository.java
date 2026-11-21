@@ -74,7 +74,10 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 """
                         IF OBJECT_ID(N'actions', N'U') IS NOT NULL \
                         AND COL_LENGTH('actions', 'body') IS NOT NULL \
-                        ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL"""
+                        ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL""",
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 
@@ -125,7 +128,10 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
-                creationLayoutsIndex
+                creationLayoutsIndex,
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 

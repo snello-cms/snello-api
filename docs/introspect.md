@@ -6,10 +6,30 @@ Base path: `/api/introspect`
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/api/introspect/preview` | Derive rows; dry run |
-| `POST` | `/api/introspect/apply` | Persist metadata + fields (Admin / Manager) |
+| `GET` | `/api/introspect/tables` | Cheap catalog: counts + table names (`?q=` optional filter). No columns/samples. |
+| `POST` | `/api/introspect/preview` | Derive rows; dry run (≤15 selected tables) |
+| `POST` | `/api/introspect/apply` | Persist metadata + fields (Admin / Manager; ≤15 selected) |
+| `POST` | `/api/introspect/batch` | Enqueue auto-apply of **all** remaining available tables; **202** `{uuid,status,…}` |
+| `GET` | `/api/introspect/batch` | Recent jobs |
+| `GET` | `/api/introspect/batch/{uuid}` | Job status + counters |
+| `GET` | `/api/introspect/batch/{uuid}/logs?after=` | Append-only log lines (poll; `after` = last seen log uuid) |
+| `POST` | `/api/introspect/batch/{uuid}/cancel` | Best-effort cancel between chunks |
 
-Body (`IntrospectRequest`):
+Admin SPA: **Metadata → Introspect** (`/metadata/introspect`) for selective preview/apply (max 15) and full batch
+import with a detachable job detail page (`/metadata/introspect/batch/:uuid`) that polls every ~2s.
+
+### Catalog (`GET /tables`)
+
+```json
+{
+  "total": 3004,
+  "available": 2980,
+  "already_referenced": 24,
+  "tables": [{"name": "products", "referenced": false}]
+}
+```
+
+### Selective preview / apply (`IntrospectRequest`)
 
 ```json
 {
@@ -19,14 +39,23 @@ Body (`IntrospectRequest`):
 }
 ```
 
-- `tables`: optional allow-list; omit/empty = every non-reserved user table **not** already referenced by metadata,
-  **hard-capped to 15 tables per request** (warning lists deferred names). Join/FK name matching still uses the
-  full physical table catalog, so relationships to tables outside the batch remain visible.
-- `sample_rows`: rows sampled for the data heuristics below (default **5**, max 200). Use `0` for schema-only (faster;
-  weaker select/join heuristics). On large MSSQL catalogs a long preview is often cut by ingress/SPA timeout — the UI
-  then shows nothing even though the server is still working; keep batches small or pass an allow-list.
-- Tables already referenced by current metadata (`table_name` or `alias_table`) are **always skipped** (warning only; not returned as entities)
-- Row sampling / enum heuristics use dialect-native limits (`LIMIT` on PostgreSQL/MySQL/H2, `TOP` on MSSQL), not a full-table `GROUP BY`
+- `tables`: optional allow-list; **an explicit list longer than 15 is rejected** (error). Omit/empty = every
+  non-reserved user table not yet in metadata, **soft-capped to 15** (warning lists deferred names). Prefer the
+  catalog + SPA select for interactive work, or `POST /batch` for the full remainder.
+- Join/FK name matching still uses the full physical table catalog.
+- `sample_rows`: rows sampled for the data heuristics below (default **5**, max 200). Use `0` for schema-only.
+- Tables already referenced by current metadata (`table_name` or `alias_table`) are **always skipped**
+- Row sampling / enum heuristics use dialect-native limits (`LIMIT` / `TOP`)
+
+### Batch auto-apply
+
+`POST /batch` body: `{ "sample_rows": 5, "metadata_group": "data" }` (both optional).
+
+- Enqueues one job over all non-reserved, not-yet-referenced tables; returns **202** immediately.
+- Worker applies in chunks of 15 via the same `apply` path; logs start/applied/skipped/errors in `introspect_job_logs`.
+- One concurrent batch per node (**409** if another is `queued`/`running`).
+- JVM restart marks any `queued`/`running` job as `failed` (“interrupted by restart”); no resume in v1.
+- Persistence: system tables `introspect_jobs` + `introspect_job_logs` (all dialects).
 
 ### Heuristics
 

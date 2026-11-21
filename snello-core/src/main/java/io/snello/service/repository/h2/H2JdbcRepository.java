@@ -72,7 +72,10 @@ public class H2JdbcRepository implements JdbcRepository {
                 "ALTER TABLE metadatas ALTER COLUMN order_by SET DATA TYPE VARCHAR(1000000)",
                 "ALTER TABLE metadatas ALTER COLUMN tab_groups SET DATA TYPE VARCHAR(1000000)",
                 // action scripts were capped at varchar(1000)
-                "ALTER TABLE actions ALTER COLUMN body SET DATA TYPE VARCHAR(1000000)"
+                "ALTER TABLE actions ALTER COLUMN body SET DATA TYPE VARCHAR(1000000)",
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 
@@ -100,7 +103,10 @@ public class H2JdbcRepository implements JdbcRepository {
                 creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
-                creationLayoutsIndex
+                creationLayoutsIndex,
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 

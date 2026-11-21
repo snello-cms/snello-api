@@ -1,6 +1,6 @@
 # Snello API Docs
 
-Functional and technical documentation for Snello **6.x** (`6.0.15-alpha`).
+Functional and technical documentation for Snello **6.x** (`6.0.16-alpha`).
 
 Architecture:
 

@@ -19,6 +19,10 @@ public class AppConstants {
     public static final String PUBLIC_DATA = "publicdata";
     public static final String DRAFTS = "drafts";
     public static final String INTROSPECT = "introspect";
+    /** Persisted async introspect batch jobs (system table). */
+    public static final String INTROSPECT_JOBS = "introspect_jobs";
+    /** Append-only log lines for {@link #INTROSPECT_JOBS}. */
+    public static final String INTROSPECT_JOB_LOGS = "introspect_job_logs";
     public static final String PAGES = "p";
     public static final String SELECT_QUERY = "selectqueries";
     public static final String SCHEDULED_ACTIONS = "scheduledactions";

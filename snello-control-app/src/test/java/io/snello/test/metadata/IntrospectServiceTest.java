@@ -4,9 +4,12 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import io.snello.api.service.JdbcRepository;
+import io.snello.model.pojo.IntrospectCatalog;
+import io.snello.model.pojo.IntrospectJob;
 import io.snello.model.pojo.IntrospectRequest;
 import io.snello.model.pojo.IntrospectResult;
 import io.snello.model.pojo.IntrospectedEntity;
+import io.snello.service.IntrospectBatchService;
 import io.snello.service.IntrospectService;
 import io.snello.service.MetadataService;
 import jakarta.inject.Inject;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +42,9 @@ class IntrospectServiceTest {
 
     @Inject
     IntrospectService introspectService;
+
+    @Inject
+    IntrospectBatchService batchService;
 
     @Inject
     JdbcRepository jdbc;
@@ -79,8 +86,135 @@ class IntrospectServiceTest {
                 + PRODUCTS + "','" + CATEGORIES + "','" + SERIALS + "')");
         jdbc.executeQuery("DELETE FROM metadatas WHERE table_name IN ('" + PRODUCTS + "','" + CATEGORIES + "','"
                 + SERIALS + "')");
+        jdbc.executeQuery("DELETE FROM introspect_job_logs");
+        jdbc.executeQuery("DELETE FROM introspect_jobs");
         metadataService.invalidateMetadataCaches();
         metadataService.invalidateSecondaryCaches();
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"Admin"})
+    void catalogEndpointListsAvailableTables() throws Exception {
+        IntrospectCatalog c = given()
+                .when().get("/api/introspect/tables")
+                .then().statusCode(200)
+                .extract().as(IntrospectCatalog.class);
+        assertTrue(c.total() >= 2);
+        assertTrue(c.available() >= 2);
+        assertTrue(c.tables().stream().anyMatch(t -> CATEGORIES.equals(t.name()) && !t.referenced()));
+
+        IntrospectCatalog filtered = given()
+                .queryParam("q", "ix_prod")
+                .when().get("/api/introspect/tables")
+                .then().statusCode(200)
+                .extract().as(IntrospectCatalog.class);
+        assertTrue(filtered.tables().stream().allMatch(t -> t.name().contains("ix_prod")));
+    }
+
+    @Test
+    void applyRejectsExplicitAllowListOverCap() throws Exception {
+        List<String> tooMany = new ArrayList<>();
+        for (int i = 0; i < 16; i++) {
+            String name = "ix_cap_" + i;
+            tooMany.add(name);
+            jdbc.executeQuery("CREATE TABLE " + name + " (uuid varchar(50) PRIMARY KEY, name varchar(80))");
+        }
+        try {
+            IntrospectResult r = introspectService.apply(new IntrospectRequest(tooMany, 0, null));
+            assertFalse(r.valid());
+            assertTrue(r.errors().stream().anyMatch(e -> e.contains("at most 15")));
+        } finally {
+            for (String name : tooMany) {
+                jdbc.executeQuery("DROP TABLE IF EXISTS " + name);
+            }
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"Admin"})
+    void batchStartsAppliesAndConflictWhenActive() throws Exception {
+        // simulate an active job so a second start is 409
+        String blocker = "00000000-0000-4000-8000-00000000b001";
+        Map<String, Object> row = new HashMap<>();
+        row.put("uuid", blocker);
+        row.put("status", "running");
+        row.put("created_at", "2020-01-01T00:00:00Z");
+        row.put("sample_rows", 0);
+        row.put("total_tables", 1);
+        row.put("done_tables", 0);
+        row.put("failed_tables", 0);
+        jdbc.create("introspect_jobs", "uuid", row);
+        try {
+            given().contentType(ContentType.JSON).body(Map.of("sample_rows", 0))
+                    .when().post("/api/introspect/batch")
+                    .then().statusCode(409);
+        } finally {
+            jdbc.executeQuery("DELETE FROM introspect_jobs WHERE uuid = '" + blocker + "'");
+        }
+
+        IntrospectJob started = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("sample_rows", 0))
+                .when().post("/api/introspect/batch")
+                .then().statusCode(202)
+                .extract().as(IntrospectJob.class);
+        assertNotNull(started.uuid());
+        assertTrue(started.total_tables() >= 2);
+
+        IntrospectJob done = waitForTerminal(started.uuid(), 30_000);
+        assertEquals("completed", done.status());
+        assertTrue(done.done_tables() >= 2);
+        assertNotNull(metadataService.metadataMap().get(PRODUCTS));
+        assertFalse(batchService.logs(started.uuid(), null).isEmpty());
+
+        IntrospectJob cancelled = given()
+                .when().post("/api/introspect/batch/" + started.uuid() + "/cancel")
+                .then().statusCode(200)
+                .extract().as(IntrospectJob.class);
+        assertEquals("completed", cancelled.status());
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"Admin"})
+    void batchCancelStopsQueuedOrRunningJob() throws Exception {
+        List<String> extras = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            String name = "ix_batch_" + i;
+            extras.add(name);
+            jdbc.executeQuery("CREATE TABLE " + name + " (uuid varchar(50) PRIMARY KEY, name varchar(80))");
+        }
+        try {
+            IntrospectJob started = given()
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("sample_rows", 0))
+                    .when().post("/api/introspect/batch")
+                    .then().statusCode(202)
+                    .extract().as(IntrospectJob.class);
+            given().when().post("/api/introspect/batch/" + started.uuid() + "/cancel")
+                    .then().statusCode(200);
+            IntrospectJob terminal = waitForTerminal(started.uuid(), 30_000);
+            assertTrue("cancelled".equals(terminal.status()) || "completed".equals(terminal.status()),
+                    "got " + terminal.status());
+        } finally {
+            for (String name : extras) {
+                jdbc.executeQuery("DROP TABLE IF EXISTS " + name);
+                jdbc.executeQuery("DELETE FROM fielddefinitions WHERE metadata_name = '" + name + "'");
+                jdbc.executeQuery("DELETE FROM metadatas WHERE table_name = '" + name + "'");
+            }
+        }
+    }
+
+    private IntrospectJob waitForTerminal(String uuid, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            IntrospectJob j = batchService.getJob(uuid);
+            if (j != null && !"queued".equals(j.status()) && !"running".equals(j.status())) {
+                return j;
+            }
+            Thread.sleep(100);
+        }
+        fail("job " + uuid + " did not finish within " + timeoutMs + "ms");
+        return null;
     }
 
     @Test

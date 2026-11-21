@@ -348,6 +348,35 @@ public class MysqlConstants {
             "  PRIMARY KEY (uuid)\n" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+    /** Async introspect batch jobs (auto-apply remaining tables in chunks of 15). */
+    public static String creationIntrospectJobs = "CREATE TABLE IF NOT EXISTS `introspect_jobs` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `status` varchar(20) NOT NULL,\n" +
+            "  `created_at` varchar(64) NOT NULL,\n" +
+            "  `started_at` varchar(64) DEFAULT NULL,\n" +
+            "  `finished_at` varchar(64) DEFAULT NULL,\n" +
+            "  `created_by` varchar(255) DEFAULT NULL,\n" +
+            "  `metadata_group` varchar(255) DEFAULT NULL,\n" +
+            "  `sample_rows` int DEFAULT 5,\n" +
+            "  `total_tables` int DEFAULT 0,\n" +
+            "  `done_tables` int DEFAULT 0,\n" +
+            "  `failed_tables` int DEFAULT 0,\n" +
+            "  `current_table` varchar(255) DEFAULT NULL,\n" +
+            "  `error_message` MEDIUMTEXT DEFAULT NULL,\n" +
+            "  PRIMARY KEY (uuid)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    public static String creationIntrospectJobLogs = "CREATE TABLE IF NOT EXISTS `introspect_job_logs` (\n" +
+            "  `uuid` varchar(255) NOT NULL,\n" +
+            "  `job_uuid` varchar(255) NOT NULL,\n" +
+            "  `created_at` varchar(64) NOT NULL,\n" +
+            "  `level` varchar(10) NOT NULL,\n" +
+            "  `table_name` varchar(255) DEFAULT NULL,\n" +
+            "  `message` MEDIUMTEXT NOT NULL,\n" +
+            "  PRIMARY KEY (uuid),\n" +
+            "  KEY `idx_introspect_job_logs_job` (`job_uuid`, `created_at`)\n" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
     public static String creationQuerySystemEventLogs = "CREATE TABLE IF NOT EXISTS `systemeventlogs` (\n" +
             "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `query_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +

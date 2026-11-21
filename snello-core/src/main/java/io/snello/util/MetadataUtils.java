@@ -19,6 +19,8 @@ public class MetadataUtils {
             case BACKUP:
             case DRAFTS:
             case INTROSPECT:
+            case INTROSPECT_JOBS:
+            case INTROSPECT_JOB_LOGS:
             case PAGES:
             case CONDITIONS:
             case DATALISTS:

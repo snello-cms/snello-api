@@ -19,8 +19,10 @@ import io.snello.model.facet.FieldQueryFacet;
 import io.snello.model.facet.FieldUiFacet;
 import io.snello.model.pojo.DbColumn;
 import io.snello.model.pojo.DbForeignKey;
+import io.snello.model.pojo.IntrospectCatalog;
 import io.snello.model.pojo.IntrospectRequest;
 import io.snello.model.pojo.IntrospectResult;
+import io.snello.model.pojo.IntrospectTableEntry;
 import io.snello.model.pojo.IntrospectedEntity;
 import io.snello.util.FieldUiDerivation;
 import io.snello.util.MetadataUtils;
@@ -81,6 +83,52 @@ public class IntrospectService {
 
     @Inject
     Event<MetadataCreateUpdateEvent> metadataEvents;
+
+    /**
+     * Cheap table catalog for the SPA: counts + names only (no columns/samples).
+     *
+     * @param q optional case-insensitive substring filter on table name
+     */
+    public IntrospectCatalog catalog(String q) throws Exception {
+        Set<String> referenced = referencedPhysicalTables();
+        String filter = q == null || q.isBlank() ? null : q.trim().toLowerCase(Locale.ROOT);
+        List<IntrospectTableEntry> entries = new ArrayList<>();
+        int total = 0;
+        int available = 0;
+        int already = 0;
+        for (String table : jdbcRepository.tables()) {
+            if (MetadataUtils.isReserved(table)) {
+                continue;
+            }
+            total++;
+            boolean ref = referenced.contains(table);
+            if (ref) {
+                already++;
+            } else {
+                available++;
+            }
+            if (filter != null && !table.contains(filter)) {
+                continue;
+            }
+            entries.add(new IntrospectTableEntry(table, ref));
+        }
+        return new IntrospectCatalog(total, available, already, entries);
+    }
+
+    /** Names eligible for batch auto-apply (non-reserved, not already in metadata). */
+    public List<String> availableTables() throws Exception {
+        Set<String> referenced = referencedPhysicalTables();
+        List<String> out = new ArrayList<>();
+        for (String table : jdbcRepository.tables()) {
+            if (MetadataUtils.isReserved(table)) {
+                continue;
+            }
+            if (!referenced.contains(table)) {
+                out.add(table);
+            }
+        }
+        return out;
+    }
 
     /** Dry run: derive rows, write nothing. */
     public IntrospectResult preview(IntrospectRequest request) throws Exception {
@@ -164,7 +212,16 @@ public class IntrospectService {
         if (!errors.isEmpty()) {
             return new IntrospectResult(false, errors, warnings, List.of(), false);
         }
-        selected = applyTableCap(selected, warnings);
+        // Explicit allow-list longer than the hard cap is an error (SPA must select ≤15). Empty filter still caps.
+        boolean explicit = req.tables() != null && !req.tables().isEmpty();
+        if (explicit && selected.size() > MAX_TABLES_PER_REQUEST) {
+            errors.add("at most " + MAX_TABLES_PER_REQUEST + " tables per request (got " + selected.size()
+                    + "); select fewer tables or use POST /api/introspect/batch");
+            return new IntrospectResult(false, errors, warnings, List.of(), false);
+        }
+        if (!explicit) {
+            selected = applyTableCap(selected, warnings);
+        }
         Log.infof("introspect: selected %d tables %s", selected.size(), selected);
 
         // Full physical catalog for join/FK/bridge name matching — not just the capped batch.

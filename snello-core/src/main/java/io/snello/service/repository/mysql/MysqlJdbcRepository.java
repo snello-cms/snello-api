@@ -53,7 +53,9 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE selectqueries ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE selectqueries ADD COLUMN username_field varchar(255) DEFAULT NULL",
                 // action scripts were capped at varchar(1000)
-                "ALTER TABLE actions MODIFY body TEXT"
+                "ALTER TABLE actions MODIFY body TEXT",
+                creationIntrospectJobs,
+                creationIntrospectJobLogs
         };
     }
 
@@ -86,7 +88,9 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 creationWorkflowPages,
                 creationWorkflowDefinitions,
                 creationHumanTasks,
-                creationLayouts
+                creationLayouts,
+                creationIntrospectJobs,
+                creationIntrospectJobLogs
         };
     }
 

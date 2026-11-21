@@ -51,7 +51,10 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS api_protected BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS username_field varchar(255) DEFAULT NULL",
                 // action scripts were capped at varchar(1000)
-                "ALTER TABLE IF EXISTS actions ALTER COLUMN body TYPE text"
+                "ALTER TABLE IF EXISTS actions ALTER COLUMN body TYPE text",
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 
@@ -86,7 +89,10 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
                 creationWorkflowDefinitions,
                 creationHumanTasks,
                 creationLayouts,
-                creationLayoutsIndex
+                creationLayoutsIndex,
+                creationIntrospectJobs,
+                creationIntrospectJobLogs,
+                creationIntrospectJobLogsIndex
         };
     }
 

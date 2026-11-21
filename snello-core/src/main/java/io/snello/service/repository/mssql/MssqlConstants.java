@@ -402,4 +402,40 @@ public class MssqlConstants {
             "  PRIMARY KEY ([uuid])\n" +
             ")";
 
+    /** Async introspect batch jobs (auto-apply remaining tables in chunks of 15). */
+    public static String creationIntrospectJobs =
+            "IF OBJECT_ID(N'introspect_jobs', N'U') IS NULL\n" +
+            "CREATE TABLE [introspect_jobs] (\n" +
+            "  [uuid] nvarchar(255) NOT NULL,\n" +
+            "  [status] nvarchar(20) NOT NULL,\n" +
+            "  [created_at] nvarchar(64) NOT NULL,\n" +
+            "  [started_at] nvarchar(64) NULL,\n" +
+            "  [finished_at] nvarchar(64) NULL,\n" +
+            "  [created_by] nvarchar(255) NULL,\n" +
+            "  [metadata_group] nvarchar(255) NULL,\n" +
+            "  [sample_rows] int NOT NULL DEFAULT 5,\n" +
+            "  [total_tables] int NOT NULL DEFAULT 0,\n" +
+            "  [done_tables] int NOT NULL DEFAULT 0,\n" +
+            "  [failed_tables] int NOT NULL DEFAULT 0,\n" +
+            "  [current_table] nvarchar(255) NULL,\n" +
+            "  [error_message] nvarchar(max) NULL,\n" +
+            "  PRIMARY KEY ([uuid])\n" +
+            ")";
+
+    public static String creationIntrospectJobLogs =
+            "IF OBJECT_ID(N'introspect_job_logs', N'U') IS NULL\n" +
+            "CREATE TABLE [introspect_job_logs] (\n" +
+            "  [uuid] nvarchar(255) NOT NULL,\n" +
+            "  [job_uuid] nvarchar(255) NOT NULL,\n" +
+            "  [created_at] nvarchar(64) NOT NULL,\n" +
+            "  [level] nvarchar(10) NOT NULL,\n" +
+            "  [table_name] nvarchar(255) NULL,\n" +
+            "  [message] nvarchar(max) NOT NULL,\n" +
+            "  PRIMARY KEY ([uuid])\n" +
+            ")";
+
+    public static String creationIntrospectJobLogsIndex =
+            "IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_introspect_job_logs_job' AND object_id = OBJECT_ID(N'introspect_job_logs'))\n" +
+            "CREATE INDEX [idx_introspect_job_logs_job] ON [introspect_job_logs] ([job_uuid], [created_at])";
+
 }
