@@ -20,9 +20,11 @@ Body (`IntrospectRequest`):
 ```
 
 - `tables`: optional allow-list; omit/empty = every non-reserved user table **not** already referenced by metadata,
-  **hard-capped to 50 tables per request** (warning lists deferred names). Join/FK name matching still uses the
+  **hard-capped to 15 tables per request** (warning lists deferred names). Join/FK name matching still uses the
   full physical table catalog, so relationships to tables outside the batch remain visible.
-- `sample_rows`: rows sampled for the data heuristics below (default 30, max 200). Prefer a small value on large DBs.
+- `sample_rows`: rows sampled for the data heuristics below (default **5**, max 200). Use `0` for schema-only (faster;
+  weaker select/join heuristics). On large MSSQL catalogs a long preview is often cut by ingress/SPA timeout — the UI
+  then shows nothing even though the server is still working; keep batches small or pass an allow-list.
 - Tables already referenced by current metadata (`table_name` or `alias_table`) are **always skipped** (warning only; not returned as entities)
 - Row sampling / enum heuristics use dialect-native limits (`LIMIT` on PostgreSQL/MySQL/H2, `TOP` on MSSQL), not a full-table `GROUP BY`
 

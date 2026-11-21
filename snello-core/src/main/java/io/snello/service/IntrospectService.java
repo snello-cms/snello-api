@@ -64,7 +64,8 @@ public class IntrospectService {
      * Max tables materialized per preview/apply. Large catalogs (thousands of tables) must be walked in batches;
      * join targets still resolve against the full physical name catalog.
      */
-    static final int MAX_TABLES_PER_REQUEST = 50;
+    /** Keep batches small so ingress/SPA timeouts do not empty the UI before the response arrives. */
+    static final int MAX_TABLES_PER_REQUEST = 15;
 
     @Inject
     JdbcRepository jdbcRepository;

@@ -6,6 +6,7 @@ import io.snello.model.Condition;
 import io.snello.model.enums.KeyType;
 import io.snello.model.facet.EntityQueryFacet;
 import io.snello.model.pojo.ColumnSpec;
+import io.snello.model.pojo.DbForeignKey;
 import io.snello.util.ConditionUtils;
 import io.snello.util.SqlHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -16,9 +17,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -479,6 +482,47 @@ public class MssqlJdbcRepository implements JdbcRepository {
         String col = escape(column);
         return "SELECT TOP (" + Math.max(0, limit) + ") " + col + " FROM " + escape(table)
                 + " WHERE " + col + " IS NOT NULL";
+    }
+
+    /**
+     * {@link DatabaseMetaData#getImportedKeys} is notoriously slow on SQL Server (catalog scans). Resolve FKs from
+     * {@code sys.foreign_keys} instead so introspect preview can finish before SPA/ingress timeouts.
+     */
+    @Override
+    public List<DbForeignKey> importedKeys(String table) throws Exception {
+        List<DbForeignKey> result = new ArrayList<>();
+        if (table == null || table.isBlank()) {
+            return result;
+        }
+        String sql = """
+                SELECT COL_NAME(fc.parent_object_id, fc.parent_column_id) AS fk_col,
+                       OBJECT_NAME(fk.referenced_object_id) AS pk_table,
+                       COL_NAME(fc.referenced_object_id, fc.referenced_column_id) AS pk_col
+                FROM sys.foreign_keys AS fk
+                INNER JOIN sys.foreign_key_columns AS fc ON fk.object_id = fc.constraint_object_id
+                WHERE OBJECT_SCHEMA_NAME(fk.parent_object_id) = SCHEMA_NAME()
+                  AND OBJECT_NAME(fk.parent_object_id) = ?
+                """;
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, table);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String fkCol = rs.getString(1);
+                    String pkTable = rs.getString(2);
+                    String pkCol = rs.getString(3);
+                    result.add(new DbForeignKey(
+                            fkCol == null ? null : fkCol.toLowerCase(Locale.ROOT),
+                            pkTable == null ? null : pkTable.toLowerCase(Locale.ROOT),
+                            pkCol == null ? null : pkCol.toLowerCase(Locale.ROOT)));
+                }
+            }
+        } catch (Exception e) {
+            Log.warnf(e, "mssql importedKeys via sys.foreign_keys failed for %s; falling back to JDBC metadata",
+                    table);
+            return JdbcRepository.super.importedKeys(table);
+        }
+        return result;
     }
 
     @Override
