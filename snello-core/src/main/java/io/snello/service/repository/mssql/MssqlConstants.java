@@ -92,6 +92,7 @@ public class MssqlConstants {
             "  [view_index] int NULL,\n" +
             "  [mandatory] bit NOT NULL DEFAULT 0,\n" +
             "  [order_num] int NULL,\n" +
+            "  [ai_profile] nvarchar(max) NULL,\n" +
             "  PRIMARY KEY ([uuid])\n" +
             ")";
 
@@ -118,6 +119,9 @@ public class MssqlConstants {
             "  [calendar_field] nvarchar(255) NULL,\n" +
             "  [calendar_label] nvarchar(255) NULL,\n" +
             "  [created] bit NOT NULL DEFAULT 0,\n" +
+            "  [ai_profile] nvarchar(max) NULL,\n" +
+            "  [api_protected] bit NOT NULL DEFAULT 0,\n" +
+            "  [username_field] nvarchar(255) NULL,\n" +
             "  PRIMARY KEY ([uuid])\n" +
             ")";
 

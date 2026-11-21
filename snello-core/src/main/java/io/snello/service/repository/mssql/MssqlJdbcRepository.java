@@ -44,24 +44,58 @@ public class MssqlJdbcRepository implements JdbcRepository {
 
     @Override
     public String[] upgradeQueries() {
-        // SQL Server has no ADD IF NOT EXISTS: re-runs fail with 2705, see isAlreadyApplied
+        // SQL Server has no ADD IF NOT EXISTS: guard with COL_LENGTH so restarts stay quiet
+        // (selectqueries already ships api_protected/username_field in CREATE; bare ALTER logged ERROR every boot).
         return new String[]{
-                "ALTER TABLE metadatas ADD ai_profile nvarchar(max)",
-                "ALTER TABLE fielddefinitions ADD ai_profile nvarchar(max)",
-                "ALTER TABLE metadatas ADD api_protected bit NOT NULL CONSTRAINT DF_metadatas_api_protected DEFAULT 0",
-                "ALTER TABLE metadatas ADD username_field nvarchar(255) NULL",
-                "ALTER TABLE selectqueries ADD api_protected bit NOT NULL CONSTRAINT DF_selectqueries_api_protected DEFAULT 0",
-                "ALTER TABLE selectqueries ADD username_field nvarchar(255) NULL",
-                // action scripts outgrew 1000 chars (Quarkus Flow starters, HTTP calls): idempotent, re-runs are no-ops
-                "ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL"
+                """
+                        IF COL_LENGTH('metadatas', 'ai_profile') IS NULL \
+                        ALTER TABLE metadatas ADD ai_profile nvarchar(max)""",
+                """
+                        IF COL_LENGTH('fielddefinitions', 'ai_profile') IS NULL \
+                        ALTER TABLE fielddefinitions ADD ai_profile nvarchar(max)""",
+                """
+                        IF COL_LENGTH('metadatas', 'api_protected') IS NULL \
+                        ALTER TABLE metadatas ADD api_protected bit NOT NULL \
+                        CONSTRAINT DF_metadatas_api_protected DEFAULT 0""",
+                """
+                        IF COL_LENGTH('metadatas', 'username_field') IS NULL \
+                        ALTER TABLE metadatas ADD username_field nvarchar(255) NULL""",
+                """
+                        IF COL_LENGTH('selectqueries', 'api_protected') IS NULL \
+                        ALTER TABLE selectqueries ADD api_protected bit NOT NULL \
+                        CONSTRAINT DF_selectqueries_api_protected DEFAULT 0""",
+                """
+                        IF COL_LENGTH('selectqueries', 'username_field') IS NULL \
+                        ALTER TABLE selectqueries ADD username_field nvarchar(255) NULL""",
+                // action scripts outgrew 1000 chars; no-op when already nvarchar(max)
+                """
+                        IF OBJECT_ID(N'actions', N'U') IS NOT NULL \
+                        AND COL_LENGTH('actions', 'body') IS NOT NULL \
+                        ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL"""
         };
     }
 
     @Override
     public boolean isAlreadyApplied(Exception e) {
-        // Column names in each table must be unique. (2705) / object already exists (2714)
-        return e instanceof SQLException sql && (sql.getErrorCode() == 2705 || sql.getErrorCode() == 2714
-                || sql.getErrorCode() == 1913); // duplicate index
+        // 2705 duplicate column / 2714 object exists / 1913 duplicate index — also walk cause + next
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (!(t instanceof SQLException sql)) {
+                continue;
+            }
+            for (; sql != null; sql = sql.getNextException()) {
+                int code = sql.getErrorCode();
+                if (code == 2705 || code == 2714 || code == 1913) {
+                    return true;
+                }
+                String msg = sql.getMessage();
+                if (msg != null && (msg.contains("specified more than once")
+                        || msg.contains("Column names in each table must be unique")
+                        || msg.contains("already an object named"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
