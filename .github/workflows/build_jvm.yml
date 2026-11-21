@@ -98,10 +98,16 @@ jobs:
 
       - name: Extract Maven project version
         run: |
-          # quiet when it works; on failure rerun without -q so the log shows why (e.g. a plugin download)
-          VERSION=$(mvn -B -ntp help:evaluate -Dexpression=project.version -q -DforceStdout) \
-            || { mvn -B help:evaluate -Dexpression=project.version -e; exit 1; }
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          # Read from the parent POM only — do not run help:evaluate here: it resolves import BOMs and
+          # parallel matrix jobs can poison the shared Maven cache with a transient Central 404
+          # (ArtifactNotFoundException cached until updateInterval for snello-central-mirror).
+          VERSION=$(sed -n '/<artifactId>snello-parent<\/artifactId>/{n;s/.*<version>\([^<]*\)<\/version>.*/\1/p;}' pom.xml)
+          if [ -z "$VERSION" ]; then
+            echo "Could not read <version> after snello-parent from pom.xml" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$VERSION"
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Resolve image tags
         id: image_tags
@@ -144,7 +150,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Maven Package
-        run: mvn -pl ${{ matrix.module }} -am clean package -DskipTests=true
+        # -U: refresh release metadata so a prior cached miss (e.g. quarkus-langchain4j-bom) is not sticky
+        run: mvn -U -pl ${{ matrix.module }} -am clean package -DskipTests=true
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'

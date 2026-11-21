@@ -43,10 +43,14 @@ jobs:
 
       - name: Extract Maven project version
         run: |
-          # quiet when it works; on failure rerun without -q so the log shows why (e.g. a plugin download)
-          VERSION=$(mvn -B -ntp help:evaluate -Dexpression=project.version -q -DforceStdout) \
-            || { mvn -B help:evaluate -Dexpression=project.version -e; exit 1; }
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          # Parent POM only — avoid help:evaluate (resolves import BOMs; see build_jvm.yml).
+          VERSION=$(sed -n '/<artifactId>snello-parent<\/artifactId>/{n;s/.*<version>\([^<]*\)<\/version>.*/\1/p;}' pom.xml)
+          if [ -z "$VERSION" ]; then
+            echo "Could not read <version> after snello-parent from pom.xml" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$VERSION"
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Resolve image tags
         id: image_tags
@@ -81,7 +85,7 @@ jobs:
         # Native build args (run-time init for LangChain4j holders, POI, zstd) live in
         # snello-control-app application.properties: passing quarkus.native.additional-build-args here would replace them.
         run: >
-          mvn -pl snello-control-app -am clean package -DskipTests=true -Pnative
+          mvn -U -pl snello-control-app -am clean package -DskipTests=true -Pnative
           -Dquarkus.native.container-build=true
           -Dquarkus.package.jar.type=fast-jar
           -Dquarkus.datasource.db-kind=postgresql
