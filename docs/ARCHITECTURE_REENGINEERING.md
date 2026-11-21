@@ -207,7 +207,7 @@ flowchart LR
 
 Locked choices for this image:
 
-- **DB:** H2 (`snello.dbtype=h2`), schema bootstrapped on startup; default JDBC URL is **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` for `jdbc:h2:mem:…` if desired
+- **DB:** H2 (`SNELLO_DB_KIND=h2` / `quarkus.datasource.db-kind=h2`), schema bootstrapped on startup; default JDBC URL is **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` for `jdbc:h2:mem:…` if desired. Legacy `snello.dbtype` is unused.
 - **Frontend:** **not** in the image (API-only). Optional later: sibling Angular `dist/` into `META-INF/resources`
 - **SSO:** external OIDC (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); optional Keycloak admin bootstrap via `SNELLO_KEYCLOAK_ADMIN_*`
 - **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — no MinIO required

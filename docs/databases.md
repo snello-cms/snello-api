@@ -4,8 +4,8 @@ Snello control / query / MCP images ship **all JDBC drivers** on the classpath a
 
 One knob: `SNELLO_DB_KIND` (or `QUARKUS_DATASOURCE_DB_KIND`) picks the Quarkus `quarkus.datasource.db-kind` driver at
 build time / re-augmentation, and `DbProducer` picks the `JdbcRepository` dialect from that same db-kind.
-`snello.dbtype` is no longer needed: re-augmentation only bakes build-time config, so a separate runtime value used to
-keep the app default and pair e.g. the H2 dialect with the PostgreSQL driver. If set and different, it is logged and ignored.
+
+**Unused:** `snello.dbtype` is obsolete and ignored. Do not set it; dialect selection is only `quarkus.datasource.db-kind`.
 
 The all-in-one image has one tag per database (`alpha-postgresql`, `alpha-mysql`, `alpha-mssql`): see [All-in-one](all-in-one.md#external-database-tags).
 

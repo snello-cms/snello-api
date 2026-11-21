@@ -16,7 +16,7 @@ mkdir -p target
 
 run postgresql
 
-run h2 -Dquarkus.compose.devservices.enabled=false -Dquarkus.datasource.db-kind=h2 -Dsnello.dbtype=h2 \
+run h2 -Dquarkus.compose.devservices.enabled=false -Dquarkus.datasource.db-kind=h2 \
   "-Dquarkus.datasource.jdbc.url=jdbc:h2:mem:snello;DB_CLOSE_DELAY=-1;MODE=MySQL;IGNORECASE=TRUE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE" \
   -Dquarkus.datasource.username=sa -Dquarkus.datasource.password=
 
@@ -24,7 +24,7 @@ docker rm -f snello-mysql-test >/dev/null 2>&1
 docker run -d --name snello-mysql-test -e MYSQL_ROOT_PASSWORD=snello -e MYSQL_DATABASE=snello \
   -e MYSQL_USER=snello -e MYSQL_PASSWORD=snello -p 3307:3306 mysql:8.4 >/dev/null
 for _ in $(seq 1 40); do docker exec snello-mysql-test mysqladmin ping -usnello -psnello --silent 2>/dev/null && break; sleep 3; done
-run mysql -Dquarkus.compose.devservices.enabled=false -Dquarkus.datasource.db-kind=mysql -Dsnello.dbtype=mysql \
+run mysql -Dquarkus.compose.devservices.enabled=false -Dquarkus.datasource.db-kind=mysql \
   -Dquarkus.datasource.jdbc.url=jdbc:mysql://localhost:3307/snello -Dquarkus.datasource.username=snello -Dquarkus.datasource.password=snello
 docker rm -f snello-mysql-test >/dev/null 2>&1
 

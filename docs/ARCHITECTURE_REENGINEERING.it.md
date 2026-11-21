@@ -207,7 +207,7 @@ flowchart LR
 
 Scelte fissate per questa immagine:
 
-- **DB:** H2 (`snello.dbtype=h2`), schema bootstrap all’avvio; JDBC default **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` per `jdbc:h2:mem:…`
+- **DB:** H2 (`SNELLO_DB_KIND=h2` / `quarkus.datasource.db-kind=h2`), schema bootstrap all’avvio; JDBC default **file** `/data/snello` (volume); override `SNELLO_JDBC_URL` per `jdbc:h2:mem:…`. La vecchia `snello.dbtype` non è più usata.
 - **Frontend:** **non** nell’immagine (solo API). Opzionale in seguito: `dist/` Angular sibling in `META-INF/resources`
 - **SSO:** OIDC esterno (`QUARKUS_OIDC_AUTH_SERVER_URL`, …); bootstrap admin Keycloak opzionale via `SNELLO_KEYCLOAK_ADMIN_*`
 - **Storage:** filesystem (`snello.storagetype=fs`, `/data/files`) — MinIO non richiesto

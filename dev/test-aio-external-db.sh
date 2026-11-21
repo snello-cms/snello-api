@@ -28,7 +28,7 @@ for db in "${DBS[@]}"; do
     sleep 3
   done
   "${COMPOSE[@]}" --profile "$db" logs "aio-$db" >"target/aio-$db.log" 2>&1
-  grep -E 'snello-entrypoint|snello-optimize|dbtype:|started in' "target/aio-$db.log" | sed 's/^/  /' | cut -c1-200
+  grep -E 'snello-entrypoint|snello-optimize|dialect:|started in' "target/aio-$db.log" | sed 's/^/  /' | cut -c1-200
   if ! $up; then results+=("$db FAILED: not up (target/aio-$db.log)"); continue; fi
   if SNELLO_URL="$url" python3 -I dev/scripts/aio-db-smoke.py write \
      && "${COMPOSE[@]}" --profile "$db" restart "aio-$db" >/dev/null 2>&1 \

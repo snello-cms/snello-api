@@ -28,7 +28,6 @@ echo "snello-optimize: re-augmenting for db-kind=${DB_KIND} ..."
 java ${JAVA_OPTS:-} ${JAVA_OPTS_APPEND:-} \
   -Dquarkus.launch.rebuild=true \
   -Dquarkus.datasource.db-kind="${DB_KIND}" \
-  -Dsnello.dbtype="${DB_KIND}" \
   -jar "$JAR"
 
 mkdir -p "$(dirname "$MARKER")"
