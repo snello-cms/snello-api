@@ -217,15 +217,43 @@ public interface JdbcRepository {
     }
 
     /**
+     * Catalog passed to {@link DatabaseMetaData} lookups. Dialects may narrow it when the driver returns null.
+     */
+    default String metadataCatalog(Connection connection) throws SQLException {
+        return connection.getCatalog();
+    }
+
+    /**
+     * Schema passed to {@link DatabaseMetaData} lookups. Dialects may supply a default when the driver returns null
+     * (unscoped metadata calls are slow and noisy on SQL Server).
+     */
+    default String metadataSchema(Connection connection) throws SQLException {
+        return connection.getSchema();
+    }
+
+    /**
+     * Table-name spellings tried against {@link DatabaseMetaData}. Case-insensitive dialects should return a single
+     * candidate: empty FK/PK lookups otherwise repeat the (expensive) call three times.
+     */
+    default String[] metadataTableCandidates(String table) {
+        if (table == null || table.isBlank()) {
+            return new String[0];
+        }
+        return new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)};
+    }
+
+    /**
      * User tables in the connection catalog/schema, lower-cased, excluding views.
      * Names are the logical identifiers Snello stores on {@code metadatas.table_name}.
      */
     default List<String> tables() throws Exception {
         Set<String> names = new TreeSet<>();
         try (Connection connection = getConnection()) {
+            String catalog = metadataCatalog(connection);
+            String schema = metadataSchema(connection);
+            Log.infof("jdbc tables(): catalog=%s schema=%s", catalog, schema);
             DatabaseMetaData metaData = connection.getMetaData();
-            try (ResultSet rs = metaData.getTables(connection.getCatalog(), connection.getSchema(), "%",
-                    new String[]{"TABLE"})) {
+            try (ResultSet rs = metaData.getTables(catalog, schema, "%", new String[]{"TABLE"})) {
                 while (rs.next()) {
                     String name = rs.getString("TABLE_NAME");
                     if (name != null && !name.isBlank()) {
@@ -233,6 +261,7 @@ public interface JdbcRepository {
                     }
                 }
             }
+            Log.infof("jdbc tables(): found %d", names.size());
         }
         return new ArrayList<>(names);
     }
@@ -244,9 +273,11 @@ public interface JdbcRepository {
             return result;
         }
         try (Connection connection = getConnection()) {
+            String catalog = metadataCatalog(connection);
+            String schema = metadataSchema(connection);
             DatabaseMetaData metaData = connection.getMetaData();
-            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
-                try (ResultSet rs = metaData.getColumns(connection.getCatalog(), connection.getSchema(), candidate, null)) {
+            for (String candidate : metadataTableCandidates(table)) {
+                try (ResultSet rs = metaData.getColumns(catalog, schema, candidate, null)) {
                     while (rs.next()) {
                         if (!table.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
                             continue;
@@ -289,9 +320,11 @@ public interface JdbcRepository {
             return result;
         }
         try (Connection connection = getConnection()) {
+            String catalog = metadataCatalog(connection);
+            String schema = metadataSchema(connection);
             DatabaseMetaData metaData = connection.getMetaData();
-            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
-                try (ResultSet rs = metaData.getPrimaryKeys(connection.getCatalog(), connection.getSchema(), candidate)) {
+            for (String candidate : metadataTableCandidates(table)) {
+                try (ResultSet rs = metaData.getPrimaryKeys(catalog, schema, candidate)) {
                     List<String[]> rows = new ArrayList<>();
                     while (rs.next()) {
                         if (!table.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
@@ -323,9 +356,12 @@ public interface JdbcRepository {
             return result;
         }
         try (Connection connection = getConnection()) {
+            String catalog = metadataCatalog(connection);
+            String schema = metadataSchema(connection);
+            Log.debugf("jdbc importedKeys(%s) catalog=%s schema=%s", table, catalog, schema);
             DatabaseMetaData metaData = connection.getMetaData();
-            for (String candidate : new String[]{table, table.toLowerCase(Locale.ROOT), table.toUpperCase(Locale.ROOT)}) {
-                try (ResultSet rs = metaData.getImportedKeys(connection.getCatalog(), connection.getSchema(), candidate)) {
+            for (String candidate : metadataTableCandidates(table)) {
+                try (ResultSet rs = metaData.getImportedKeys(catalog, schema, candidate)) {
                     while (rs.next()) {
                         if (!table.equalsIgnoreCase(rs.getString("FKTABLE_NAME"))) {
                             continue;
@@ -348,6 +384,23 @@ public interface JdbcRepository {
     }
 
     /**
+     * {@code SELECT *} with a dialect-native row bound. Dialects override with {@code LIMIT} / {@code TOP};
+     * {@link #sampleRows} still applies {@code setMaxRows} as a safety net.
+     */
+    default String selectStarSampleSql(String table, int limit) {
+        return "SELECT * FROM " + escape(table);
+    }
+
+    /**
+     * Single-column sample used by {@link #valueCounts}. Dialects override with {@code LIMIT} / {@code TOP} so large
+     * tables are not full-scanned for enum heuristics.
+     */
+    default String selectColumnSampleSql(String table, String column, int limit) {
+        String col = escape(column);
+        return "SELECT " + col + " FROM " + escape(table) + " WHERE " + col + " IS NOT NULL";
+    }
+
+    /**
      * Up to {@code limit} rows from {@code table} for heuristic sampling. Empty when limit ≤ 0 or the table
      * cannot be read. Failures are logged and yield an empty list (introspection must stay best-effort).
      */
@@ -355,7 +408,7 @@ public interface JdbcRepository {
         if (table == null || table.isBlank() || limit <= 0) {
             return List.of();
         }
-        String sql = "SELECT * FROM " + escape(table);
+        String sql = selectStarSampleSql(table, limit);
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setMaxRows(limit);
@@ -381,14 +434,18 @@ public interface JdbcRepository {
     }
 
     /**
-     * Distinct non-null values of {@code column} with their row counts, most frequent first. Returns null when the
-     * column has more than {@code maxDistinct} distinct values or cannot be read: callers use it to tell an
-     * enumeration from free text, so "too many" and "unknown" both mean "not an enumeration".
+     * Distinct non-null values of {@code column} with their row counts, most frequent first. Counts over a
+     * dialect-bounded sample ({@link #selectColumnSampleSql}), not the full table — large heaps stay affordable.
+     * Returns null when the column has more than {@code maxDistinct} distinct values or cannot be read.
      */
     default Map<String, Long> valueCounts(String table, String column, int maxDistinct) {
+        if (table == null || table.isBlank() || column == null || column.isBlank() || maxDistinct <= 0) {
+            return null;
+        }
+        int sampleCap = Math.max(500, maxDistinct * 50);
         String col = escape(column);
-        String sql = "SELECT " + col + ", COUNT(*) FROM " + escape(table) + " WHERE " + col + " IS NOT NULL GROUP BY "
-                + col + " ORDER BY COUNT(*) DESC";
+        String sql = "SELECT " + col + ", COUNT(*) FROM (" + selectColumnSampleSql(table, column, sampleCap)
+                + ") snello_vc GROUP BY " + col + " ORDER BY COUNT(*) DESC";
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setMaxRows(maxDistinct + 1);

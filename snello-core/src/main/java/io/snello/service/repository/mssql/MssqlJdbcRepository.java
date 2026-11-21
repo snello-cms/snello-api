@@ -416,6 +416,37 @@ public class MssqlJdbcRepository implements JdbcRepository {
         return MssqlSqlUtils.escape(name);
     }
 
+    /**
+     * Microsoft JDBC often returns a null schema; unscoped {@code getTables}/{@code getImportedKeys} then scan every
+     * schema and hang for minutes. Default to {@code dbo} (migration/other schemas stay out of introspect).
+     */
+    @Override
+    public String metadataSchema(Connection connection) throws SQLException {
+        String schema = connection.getSchema();
+        return (schema == null || schema.isBlank()) ? "dbo" : schema;
+    }
+
+    /** SQL Server lookups are case-insensitive; one candidate avoids 3× {@code getImportedKeys} cost. */
+    @Override
+    public String[] metadataTableCandidates(String table) {
+        if (table == null || table.isBlank()) {
+            return new String[0];
+        }
+        return new String[]{table};
+    }
+
+    @Override
+    public String selectStarSampleSql(String table, int limit) {
+        return "SELECT TOP (" + Math.max(0, limit) + ") * FROM " + escape(table);
+    }
+
+    @Override
+    public String selectColumnSampleSql(String table, String column, int limit) {
+        String col = escape(column);
+        return "SELECT TOP (" + Math.max(0, limit) + ") " + col + " FROM " + escape(table)
+                + " WHERE " + col + " IS NOT NULL";
+    }
+
     @Override
     public String columnSql(ColumnSpec column) {
         if (column == null || column.kind() == null) {

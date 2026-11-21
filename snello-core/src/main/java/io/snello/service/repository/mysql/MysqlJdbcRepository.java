@@ -468,6 +468,16 @@ public class MysqlJdbcRepository implements JdbcRepository {
     }
 
     @Override
+    public String selectStarSampleSql(String table, int limit) {
+        return "SELECT * FROM " + escape(table) + " LIMIT " + Math.max(0, limit);
+    }
+
+    @Override
+    public String selectColumnSampleSql(String table, String column, int limit) {
+        return JdbcRepository.super.selectColumnSampleSql(table, column, limit) + " LIMIT " + Math.max(0, limit);
+    }
+
+    @Override
     public String columnSql(ColumnSpec column) {
         if (column == null || column.kind() == null) {
             return null;

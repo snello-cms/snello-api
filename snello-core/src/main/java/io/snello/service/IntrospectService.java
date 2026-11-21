@@ -60,6 +60,11 @@ public class IntrospectService {
     /** Sample values checked against a join target. */
     private static final int JOIN_CHECK_VALUES = 30;
     private static final int MIN_LIST_FIELDS = 3;
+    /**
+     * Max tables materialized per preview/apply. Large catalogs (thousands of tables) must be walked in batches;
+     * join targets still resolve against the full physical name catalog.
+     */
+    static final int MAX_TABLES_PER_REQUEST = 50;
 
     @Inject
     JdbcRepository jdbcRepository;
@@ -149,13 +154,25 @@ public class IntrospectService {
                 : request;
 
         Set<String> referencedTables = referencedPhysicalTables();
+        Log.infof("introspect: listing tables (filter=%s sample_rows=%d)",
+                req.tables() == null || req.tables().isEmpty() ? "all" : req.tables(),
+                req.sampleRowsOrDefault());
         List<String> physical = jdbcRepository.tables();
+        Log.infof("introspect: physical tables=%d", physical.size());
         Set<String> selected = resolveSelection(req, physical, referencedTables, errors, warnings);
         if (!errors.isEmpty()) {
             return new IntrospectResult(false, errors, warnings, List.of(), false);
         }
+        selected = applyTableCap(selected, warnings);
+        Log.infof("introspect: selected %d tables %s", selected.size(), selected);
 
-        Set<String> known = new LinkedHashSet<>(selected);
+        // Full physical catalog for join/FK/bridge name matching — not just the capped batch.
+        Set<String> known = new LinkedHashSet<>();
+        for (String table : physical) {
+            if (!MetadataUtils.isReserved(table)) {
+                known.add(table);
+            }
+        }
         known.addAll(referencedTables);
         Map<String, String> existingKeys = new HashMap<>();
         for (String name : catalog.queryViews().keySet()) {
@@ -168,8 +185,15 @@ public class IntrospectService {
         }
 
         Map<String, TableInfo> infos = new LinkedHashMap<>();
+        int i = 0;
+        int total = selected.size();
         for (String table : selected) {
+            i++;
+            long t0 = System.currentTimeMillis();
+            Log.infof("introspect: [%d/%d] loadTable start %s", i, total, table);
             infos.put(table, loadTable(table, req.sampleRowsOrDefault()));
+            Log.infof("introspect: [%d/%d] loadTable done %s in %dms", i, total, table,
+                    System.currentTimeMillis() - t0);
         }
 
         // a snello-style bridge (a_b with a_id + b_id) is still generated as a plain entity with two joins:
@@ -284,11 +308,46 @@ public class IntrospectService {
         return selected;
     }
 
+    /**
+     * Keeps the first {@link #MAX_TABLES_PER_REQUEST} tables; remaining stay for a later request (after apply, or
+     * with an explicit allow-list). Order follows {@link #resolveSelection}.
+     */
+    static Set<String> applyTableCap(Set<String> selected, List<String> warnings) {
+        if (selected == null || selected.size() <= MAX_TABLES_PER_REQUEST) {
+            return selected == null ? Set.of() : selected;
+        }
+        Set<String> capped = new LinkedHashSet<>();
+        List<String> deferred = new ArrayList<>();
+        for (String table : selected) {
+            if (capped.size() < MAX_TABLES_PER_REQUEST) {
+                capped.add(table);
+            } else {
+                deferred.add(table);
+            }
+        }
+        String sample = deferred.size() <= 5
+                ? String.join(", ", deferred)
+                : String.join(", ", deferred.subList(0, 5)) + ", …";
+        warnings.add("capped to " + MAX_TABLES_PER_REQUEST + " of " + selected.size()
+                + " tables; " + deferred.size() + " deferred (" + sample
+                + "). Re-run after apply, or pass an explicit tables allow-list");
+        Log.infof("introspect: table cap %d → %d (%d deferred)", selected.size(), capped.size(), deferred.size());
+        return capped;
+    }
+
     private TableInfo loadTable(String table, int sampleLimit) throws Exception {
+        long t0 = System.currentTimeMillis();
         List<DbColumn> columns = jdbcRepository.columnDetails(table);
+        Log.debugf("introspect %s columns=%d (%dms)", table, columns.size(), System.currentTimeMillis() - t0);
+        t0 = System.currentTimeMillis();
         List<String> pks = jdbcRepository.primaryKeys(table);
+        Log.debugf("introspect %s primaryKeys=%s (%dms)", table, pks, System.currentTimeMillis() - t0);
+        t0 = System.currentTimeMillis();
         List<DbForeignKey> fks = jdbcRepository.importedKeys(table);
+        Log.infof("introspect %s importedKeys=%d (%dms)", table, fks.size(), System.currentTimeMillis() - t0);
+        t0 = System.currentTimeMillis();
         List<Map<String, Object>> samples = jdbcRepository.sampleRows(table, sampleLimit);
+        Log.infof("introspect %s sampleRows=%d (%dms)", table, samples.size(), System.currentTimeMillis() - t0);
         return new TableInfo(columns, pks, fks, samples);
     }
 

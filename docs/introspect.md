@@ -19,9 +19,12 @@ Body (`IntrospectRequest`):
 }
 ```
 
-- `tables`: optional allow-list; omit/empty = every non-reserved user table **not** already referenced by metadata
-- `sample_rows`: rows sampled for the data heuristics below (default 30, max 200)
+- `tables`: optional allow-list; omit/empty = every non-reserved user table **not** already referenced by metadata,
+  **hard-capped to 50 tables per request** (warning lists deferred names). Join/FK name matching still uses the
+  full physical table catalog, so relationships to tables outside the batch remain visible.
+- `sample_rows`: rows sampled for the data heuristics below (default 30, max 200). Prefer a small value on large DBs.
 - Tables already referenced by current metadata (`table_name` or `alias_table`) are **always skipped** (warning only; not returned as entities)
+- Row sampling / enum heuristics use dialect-native limits (`LIMIT` on PostgreSQL/MySQL/H2, `TOP` on MSSQL), not a full-table `GROUP BY`
 
 ### Heuristics
 

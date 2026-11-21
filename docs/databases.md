@@ -62,6 +62,7 @@ Notes specific to MSSQL:
 - Case-insensitive filters (`_ilike`, `_icontains`) use `lower(col) LIKE lower(?)` (same on every dialect).
 - Column / table renames use `sp_rename`.
 - Query-plane session “read-only SQL” is not set for `mssql` (connections still use the read-only JDBC interceptor when the query plane is enabled).
+- Schema introspect scopes JDBC metadata to `dbo` when the driver reports a null schema (unscoped `getTables` / `getImportedKeys` hang on SQL Server; the `migration` schema is excluded). Sample / enum probes use `SELECT TOP (n)` via the shared introspect hooks (other kinds use `LIMIT`).
 
 Local optimize without Docker:
 
