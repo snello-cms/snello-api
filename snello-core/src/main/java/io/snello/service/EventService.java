@@ -48,9 +48,10 @@ public class EventService {
 
     void createOrUpdateMetadata(@ObservesAsync MetadataCreateUpdateEvent metadataCreateUpdateEvent) {
         Log.info("new MetadataCreateUpdateEvent " + metadataCreateUpdateEvent.toString());
+        // Invalidate only: eager resetMetadata() reloads the whole catalog and hung/killed the pod
+        // under batch enrich / introspect PUT storms. Next metadataMap()/fielddefinitionsMap() reloads lazily.
         try {
-            resetMetadata();
-//            metadataService.metadataMap().put(metadataCreateUpdateEvent.metadata.table_name, metadataCreateUpdateEvent.metadata);
+            metadataService.invalidateMetadataCaches();
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
@@ -59,7 +60,7 @@ public class EventService {
     void deleteMetadata(@ObservesAsync MetadataDeleteEvent metadataDeleteEvent) {
         Log.info("new MetadataDeleteEvent " + metadataDeleteEvent.toString());
         try {
-            resetMetadata();
+            metadataService.invalidateMetadataCaches();
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
@@ -68,27 +69,8 @@ public class EventService {
 
     void createOrUpdateFieldDefinition(@ObservesAsync FieldDefinitionCreateUpdateEvent fieldDefinitionCreateUpdateEvent) {
         Log.info("new FieldDefinitionCreateUpdateEvent " + fieldDefinitionCreateUpdateEvent.toString());
-//        Map<String, FieldDefinition> fieldDefinitions = null;
-//        try {
-//            if (metadataService.fielddefinitionsMap().containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name)) {
-//                fieldDefinitions = metadataService.fielddefinitionsMap().get(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name);
-//            } else {
-//                fieldDefinitions = new HashMap<>();
-//            }
-//        } catch (Exception e) {
-//            Log.error(e.getMessage(), e);
-//        }
-////        if (!fieldDefinitions.containsKey(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid)) {
-////            fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
-////        }
-//        fieldDefinitions.put(fieldDefinitionCreateUpdateEvent.fieldDefinition.uuid, fieldDefinitionCreateUpdateEvent.fieldDefinition);
-//        try {
-//            metadataService.fielddefinitionsMap().put(fieldDefinitionCreateUpdateEvent.fieldDefinition.metadata_name, fieldDefinitions);
-//        } catch (Exception e) {
-//            Log.error(e.getMessage(), e);
-//        }
         try {
-            resetMetadata();
+            metadataService.invalidateMetadataCaches();
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
@@ -111,7 +93,7 @@ public class EventService {
 //            Log.error(e.getMessage(), e);
 //        }
         try {
-            resetMetadata();
+            metadataService.invalidateMetadataCaches();
         } catch (Exception e) {
             Log.error(e.getMessage(), e);
         }
