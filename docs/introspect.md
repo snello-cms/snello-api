@@ -53,6 +53,8 @@ import with a detachable job detail page (`/metadata/introspect/batch/:uuid`) th
 
 - Enqueues one job over all non-reserved, not-yet-referenced tables; returns **202** immediately.
 - Worker applies in chunks of 15 via the same `apply` path; logs start/applied/skipped/errors in `introspect_job_logs`.
+- Batch apply skips per-table CDI metadata events (cache invalidate only) so a large catalog does not reload
+  on every table. Join-by-values only probes name-affine targets (capped), not every existing metadata.
 - One concurrent batch per node (**409** if another is `queued`/`running`).
 - JVM restart marks any `queued`/`running` job as `failed` (“interrupted by restart”); no resume in v1.
 - Persistence: system tables `introspect_jobs` + `introspect_job_logs` (all dialects).
@@ -88,11 +90,19 @@ Measured by wiping the metadata of a real database, regenerating it and diffing 
 (19 tables, 122 fields). These cannot be read from schema or data and need a pass in the SPA:
 
 - tables with no rows: key type `slug`, selects and value-confirmed joins need data
-- select options are only the values already used, not the full domain (e.g. every country)
+- select options are only the values already used, not the full domain (e.g. every country).
+  System columns that hold them (`fielddefinitions.options`, `description`, `metadatas.search_fields`, …)
+  are wide text (`nvarchar(max)` / `TEXT`); legacy `varchar(255)` installs are widened on upgrade so
+  introspect does not fail with SQL Server “String or binary data would be truncated”
 - default order when it is not the label (events by date, news newest first)
 - which extra columns a list or search form shows (a province, a date)
 - `tags` / relationship pickers on columns not named `tags`; tinymce on a text column with no HTML yet
 - `mandatory` follows the database: hand-made metadata is usually laxer than its own `NOT NULL` columns
+- **UI labels / `metadata_group`**: field labels are only `_` → space + capitalize; glued Italian names
+  (`a_operatorimansionioperative`, `codicefiscale`) stay unreadable. There is no metadata display `label`
+  column (SPA shows `table_name`; use `description` + `metadata_group`). Prefer a post-introspect AI pass
+  (skill `enrich_metadata_catalog` + MCP tools, or `dev/scripts/enrich-metadata-pass1.py`) with `_limit=50`,
+  multi-pass until join targets exist, and data sampling for join vs multijoin.
 
 ```bash
 curl -sf -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \

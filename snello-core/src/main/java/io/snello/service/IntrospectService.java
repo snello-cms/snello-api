@@ -61,6 +61,11 @@ public class IntrospectService {
     private static final int ENUM_MAX_VALUES = 30;
     /** Sample values checked against a join target. */
     private static final int JOIN_CHECK_VALUES = 30;
+    /**
+     * Cap for {@link #joinByValues}: never probe the whole metadata catalog (O(tables) SQL per enum column
+     * hung large MSSQL imports once thousands of metadatas already existed).
+     */
+    private static final int JOIN_BY_VALUES_MAX_CANDIDATES = 24;
     private static final int MIN_LIST_FIELDS = 3;
     /**
      * Max tables materialized per preview/apply. Large catalogs (thousands of tables) must be walked in batches;
@@ -137,6 +142,14 @@ public class IntrospectService {
 
     /** Persist derived metadata + fields for non-skipped entities. Never creates/alters tables. */
     public IntrospectResult apply(IntrospectRequest request) throws Exception {
+        return apply(request, true);
+    }
+
+    /**
+     * @param publishEvents when false (batch worker), only invalidate caches — avoids an async
+     *                      {@code resetMetadata()} storm per table via {@link MetadataCreateUpdateEvent}
+     */
+    public IntrospectResult apply(IntrospectRequest request, boolean publishEvents) throws Exception {
         IntrospectResult preview = run(request);
         if (!preview.valid()) {
             return preview;
@@ -188,10 +201,13 @@ public class IntrospectService {
         // observer rebuilds the caches on another thread, and a rebuild started mid-write would store a snapshot
         // missing the later tables.
         metadataService.invalidateMetadataCaches();
-        for (Map<String, Object> metadataRow : writtenMetadata) {
-            metadataEvents.fireAsync(new MetadataCreateUpdateEvent(metadataRow));
+        if (publishEvents) {
+            for (Map<String, Object> metadataRow : writtenMetadata) {
+                metadataEvents.fireAsync(new MetadataCreateUpdateEvent(metadataRow));
+            }
         }
-        Log.infof("introspect apply done entities=%d, metadata caches invalidated", writtenMetadata.size());
+        Log.infof("introspect apply done entities=%d, metadata caches invalidated publishEvents=%s",
+                writtenMetadata.size(), publishEvents);
         return new IntrospectResult(true, preview.errors(), warnings, appliedEntities, true);
     }
 
@@ -542,7 +558,7 @@ public class IntrospectService {
                     counts == null ? "many" : counts.size());
             return null;
         }
-        Optional<JoinGuess> byValues = joinByValues(table, counts.keySet(), keys);
+        Optional<JoinGuess> byValues = joinByValues(table, name, counts.keySet(), keys);
         if (byValues.isPresent()) {
             JoinGuess j = byValues.get();
             Log.infof("introspect %s.%s every value is a key of %s.%s: join", table, name, j.targetTable(),
@@ -582,22 +598,79 @@ public class IntrospectService {
         return null;
     }
 
-    /** The one entity table whose keys contain every value, if any. Values with spaces are never keys. */
-    private Optional<JoinGuess> joinByValues(String table, Set<String> values, Map<String, KeyGuess> keys) {
+    /**
+     * The one entity table whose keys contain every value, if any. Values with spaces are never keys.
+     * Only probes name-affine candidates (capped): a full-catalog scan is O(metadatas) SQL per enum column.
+     */
+    private Optional<JoinGuess> joinByValues(String table, String column, Set<String> values,
+                                             Map<String, KeyGuess> keys) {
         for (String value : values) {
             if (value.chars().anyMatch(Character::isWhitespace)) {
                 return Optional.empty();
             }
         }
+        List<Map.Entry<String, KeyGuess>> candidates = new ArrayList<>();
         for (Map.Entry<String, KeyGuess> e : keys.entrySet()) {
-            if (e.getKey().equals(table)) {
+            if (e.getKey().equalsIgnoreCase(table)) {
                 continue;
             }
+            if (nameAffinity(column, e.getKey()) || nameAffinity(table, e.getKey())) {
+                candidates.add(e);
+            }
+        }
+        if (candidates.isEmpty()) {
+            Log.debugf("introspect %s.%s joinByValues: no name-affine targets among %d keys", table, column,
+                    keys.size());
+            return Optional.empty();
+        }
+        if (candidates.size() > JOIN_BY_VALUES_MAX_CANDIDATES) {
+            Log.debugf("introspect %s.%s joinByValues: capping candidates %d → %d", table, column,
+                    candidates.size(), JOIN_BY_VALUES_MAX_CANDIDATES);
+            candidates = candidates.subList(0, JOIN_BY_VALUES_MAX_CANDIDATES);
+        }
+        for (Map.Entry<String, KeyGuess> e : candidates) {
             if (jdbcRepository.countMatching(e.getKey(), e.getValue().column(), values) == values.size()) {
                 return Optional.of(new JoinGuess(e.getKey(), e.getValue().column(), false));
             }
         }
         return Optional.empty();
+    }
+
+    /** Shared token (≥3 chars) or one name contains the other — cheap filter before countMatching. */
+    public static boolean nameAffinity(String left, String right) {
+        if (left == null || right == null || left.isBlank() || right.isBlank()) {
+            return false;
+        }
+        String a = left.toLowerCase(Locale.ROOT).replace('-', '_');
+        String b = right.toLowerCase(Locale.ROOT).replace('-', '_');
+        if (a.contains(b) || b.contains(a)) {
+            return true;
+        }
+        Set<String> tokensA = nameTokens(a);
+        Set<String> tokensB = nameTokens(b);
+        for (String t : tokensA) {
+            if (t.length() >= 3 && tokensB.contains(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Set<String> nameTokens(String name) {
+        Set<String> out = new HashSet<>();
+        for (String part : name.split("[_\\s]+")) {
+            if (!part.isBlank()) {
+                out.add(part);
+                // strip common id suffixes so brand_id affinity-matches brands
+                if (part.endsWith("id") && part.length() > 2) {
+                    out.add(part.substring(0, part.length() - 2));
+                }
+                if (part.endsWith("uuid") && part.length() > 4) {
+                    out.add(part.substring(0, part.length() - 4));
+                }
+            }
+        }
+        return out;
     }
 
     /** Cheap pre-check on the sample before counting values on the whole table. */

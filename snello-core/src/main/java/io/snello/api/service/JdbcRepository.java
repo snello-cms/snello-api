@@ -449,6 +449,8 @@ public interface JdbcRepository {
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setMaxRows(maxDistinct + 1);
+            // Introspect must not hang the batch worker on a pathological table/column.
+            ps.setQueryTimeout(30);
             try (ResultSet rs = ps.executeQuery()) {
                 Map<String, Long> counts = new LinkedHashMap<>();
                 while (rs.next()) {
@@ -483,6 +485,7 @@ public interface JdbcRepository {
                 + placeholders + ")";
         try (Connection connection = getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setQueryTimeout(15);
             int i = 1;
             for (String value : values) {
                 io.snello.util.SqlHelper.bindKey(ps, i++, value);

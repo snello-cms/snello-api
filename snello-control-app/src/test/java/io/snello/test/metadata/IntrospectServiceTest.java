@@ -395,4 +395,12 @@ class IntrospectServiceTest {
         assertEquals("11:45:00", String.valueOf(row.get("at_time")));
         assertEquals("2", row.get("a"));
     }
+
+    @Test
+    void nameAffinityFiltersJoinByValuesCandidates() {
+        assertTrue(IntrospectService.nameAffinity("brand_id", "brands"));
+        assertTrue(IntrospectService.nameAffinity("ix_categories_id", "ix_categories"));
+        assertFalse(IntrospectService.nameAffinity("status", "ix_products"));
+        assertFalse(IntrospectService.nameAffinity("codice", "anaart"));
+    }
 }

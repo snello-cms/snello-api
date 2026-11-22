@@ -27,6 +27,7 @@ In code, the flat model is [`Metadata`](../snello-core/src/main/java/io/snello/m
 - `order_by`: default ordering
 - `creation_query`: optional raw SQL table creation query (otherwise derived from fields)
 - `tab_groups`: tab/wizard group definition
+- `metadata_group`: taxonomy string for SPA menu grouping (e.g. `Acquisti`, `Operatori`); not a Keycloak role group
 - `icon`: icon associated with the resource
 - `already_exist`: true if the table already exists and is not created by SNELLO
 - `created`: true if the table was created by the system

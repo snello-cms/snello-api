@@ -75,6 +75,65 @@ public class MssqlJdbcRepository implements JdbcRepository {
                         IF OBJECT_ID(N'actions', N'U') IS NOT NULL \
                         AND COL_LENGTH('actions', 'body') IS NOT NULL \
                         ALTER TABLE actions ALTER COLUMN body nvarchar(max) NULL""",
+                // Introspect / import: select options and CSV field lists outgrow nvarchar(255)
+                // (same widen as PostgreSQL TEXT / H2 wide varchar). COL_LENGTH = -1 means already max.
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'options') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN options nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'label') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN label nvarchar(max) NOT NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'description') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN description nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'validations') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN validations nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'function_def') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN function_def nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'sql_type') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN sql_type nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'sql_definition') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN sql_definition nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'default_value') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN default_value nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'pattern') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN pattern nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'join_table_select_fields') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN join_table_select_fields nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'search_condition') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN search_condition nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'fielddefinitions', N'U') IS NOT NULL AND COL_LENGTH('fielddefinitions', 'search_field_name') > 0 \
+                        ALTER TABLE fielddefinitions ALTER COLUMN search_field_name nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'select_fields') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN select_fields nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'search_fields') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN search_fields nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'description') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN description nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'alias_condition') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN alias_condition nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'creation_query') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN creation_query nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'order_by') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN order_by nvarchar(max) NULL""",
+                """
+                        IF OBJECT_ID(N'metadatas', N'U') IS NOT NULL AND COL_LENGTH('metadatas', 'tab_groups') > 0 \
+                        ALTER TABLE metadatas ALTER COLUMN tab_groups nvarchar(max) NULL""",
                 creationIntrospectJobs,
                 creationIntrospectJobLogs,
                 creationIntrospectJobLogsIndex

@@ -202,8 +202,9 @@ public class IntrospectBatchService {
                     updateFields(jobUuid, Map.of("current_table", table));
                     appendLog(jobUuid, "info", table, "start table " + table);
                     try {
+                        // publishEvents=false: avoid EventService.resetMetadata() per table (full catalog reload).
                         IntrospectResult result = introspectService.apply(
-                                new IntrospectRequest(List.of(table), sampleRows, metadataGroup));
+                                new IntrospectRequest(List.of(table), sampleRows, metadataGroup), false);
                         if (result == null || !result.valid()) {
                             failed++;
                             String err = result == null || result.errors() == null || result.errors().isEmpty()

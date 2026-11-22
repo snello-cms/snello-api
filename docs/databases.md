@@ -53,6 +53,7 @@ docker run --rm -p 8080:8080 \
 ```
 
 3. On first start the dialect creates system tables (`metadatas`, `fielddefinitions`, …) using SQL Server types (`nvarchar`, `bit`, `datetime2`, `IDENTITY`).
+   Long metadata payloads (select `options`, `search_fields`, …) use `nvarchar(max)`; startup upgrades widen legacy `nvarchar(255)` columns the same way PostgreSQL/H2 already did.
 
 Notes specific to MSSQL:
 

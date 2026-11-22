@@ -67,27 +67,28 @@ public class MssqlConstants {
             "  [metadata_uuid] nvarchar(255) NOT NULL,\n" +
             "  [metadata_name] nvarchar(255) NOT NULL,\n" +
             "  [name] nvarchar(255) NOT NULL,\n" +
-            "  [label] nvarchar(255) NOT NULL,\n" +
-            "  [description] nvarchar(255) NULL,\n" +
+            // Long text: introspect select options / import payloads outgrow 255 (align with PG TEXT / H2 wide varchar).
+            "  [label] nvarchar(max) NOT NULL,\n" +
+            "  [description] nvarchar(max) NULL,\n" +
             "  [type] nvarchar(255) NOT NULL,\n" +
             "  [input_type] nvarchar(255) NULL,\n" +
-            "  [options] nvarchar(255) NULL,\n" +
+            "  [options] nvarchar(max) NULL,\n" +
             "  [group_name] nvarchar(255) NULL,\n" +
             "  [tab_name] nvarchar(255) NULL,\n" +
-            "  [validations] nvarchar(255) NULL,\n" +
+            "  [validations] nvarchar(max) NULL,\n" +
             "  [table_key] bit NOT NULL DEFAULT 0,\n" +
             "  [input_disabled] bit NOT NULL DEFAULT 0,\n" +
-            "  [function_def] nvarchar(255) NULL,\n" +
-            "  [sql_type] nvarchar(255) NULL,\n" +
-            "  [sql_definition] nvarchar(255) NULL,\n" +
-            "  [default_value] nvarchar(255) NULL,\n" +
-            "  [pattern] nvarchar(255) NULL,\n" +
+            "  [function_def] nvarchar(max) NULL,\n" +
+            "  [sql_type] nvarchar(max) NULL,\n" +
+            "  [sql_definition] nvarchar(max) NULL,\n" +
+            "  [default_value] nvarchar(max) NULL,\n" +
+            "  [pattern] nvarchar(max) NULL,\n" +
             "  [join_table_name] nvarchar(100) NULL,\n" +
             "  [join_table_key] nvarchar(100) NULL,\n" +
-            "  [join_table_select_fields] nvarchar(100) NULL,\n" +
+            "  [join_table_select_fields] nvarchar(max) NULL,\n" +
             "  [searchable] bit NOT NULL DEFAULT 0,\n" +
-            "  [search_condition] nvarchar(100) NULL,\n" +
-            "  [search_field_name] nvarchar(100) NULL,\n" +
+            "  [search_condition] nvarchar(max) NULL,\n" +
+            "  [search_field_name] nvarchar(max) NULL,\n" +
             "  [show_in_list] bit NOT NULL DEFAULT 0,\n" +
             "  [view_index] int NULL,\n" +
             "  [mandatory] bit NOT NULL DEFAULT 0,\n" +
@@ -102,18 +103,18 @@ public class MssqlConstants {
             "  [uuid] nvarchar(255) NOT NULL,\n" +
             "  [table_name] nvarchar(255) NOT NULL,\n" +
             "  [icon] nvarchar(100) NULL,\n" +
-            "  [select_fields] nvarchar(255) NULL,\n" +
-            "  [search_fields] nvarchar(255) NULL,\n" +
-            "  [description] nvarchar(255) NULL,\n" +
+            "  [select_fields] nvarchar(max) NULL,\n" +
+            "  [search_fields] nvarchar(max) NULL,\n" +
+            "  [description] nvarchar(max) NULL,\n" +
             "  [alias_table] nvarchar(255) NULL,\n" +
-            "  [alias_condition] nvarchar(255) NULL,\n" +
+            "  [alias_condition] nvarchar(max) NULL,\n" +
             "  [table_key] nvarchar(255) NOT NULL,\n" +
             "  [table_key_type] nvarchar(255) NULL,\n" +
             "  [table_key_addition] nvarchar(255) NULL,\n" +
-            "  [creation_query] nvarchar(255) NULL,\n" +
-            "  [order_by] nvarchar(255) NULL,\n" +
+            "  [creation_query] nvarchar(max) NULL,\n" +
+            "  [order_by] nvarchar(max) NULL,\n" +
             "  [metadata_group] nvarchar(150) NULL,\n" +
-            "  [tab_groups] nvarchar(255) NULL,\n" +
+            "  [tab_groups] nvarchar(max) NULL,\n" +
             "  [already_exist] bit NOT NULL DEFAULT 0,\n" +
             "  [calendar_enabled] bit NOT NULL DEFAULT 0,\n" +
             "  [calendar_field] nvarchar(255) NULL,\n" +

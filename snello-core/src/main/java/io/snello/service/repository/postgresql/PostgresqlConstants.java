@@ -56,27 +56,27 @@ public class PostgresqlConstants {
                                                          "  metadata_uuid varchar(255) NOT NULL,\n" +
                                                          "  metadata_name varchar(255) NOT NULL,\n" +
                                                          "  name varchar(255) NOT NULL,\n" +
-                                                         "  label varchar(255)  NOT NULL,\n" +
-                                                         "  description varchar(255) DEFAULT NULL,\n" +
+                                                         "  label TEXT NOT NULL,\n" +
+                                                         "  description TEXT DEFAULT NULL,\n" +
                                                          "  type varchar(255) NOT NULL,\n" +
                                                          "  input_type varchar(255) DEFAULT NULL,\n" +
-                                                         "  options varchar(255) DEFAULT NULL,\n" +
+                                                         "  options TEXT DEFAULT NULL,\n" +
                                                          "  group_name varchar(255) DEFAULT NULL,\n" +
                                                          "  tab_name varchar(255) DEFAULT NULL,\n" +
-                                                         "  validations varchar(255) DEFAULT NULL,\n" +
+                                                         "  validations TEXT DEFAULT NULL,\n" +
                                                          "  table_key BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                                                          "  input_disabled BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-                                                         "  function_def varchar(255) DEFAULT NULL ,\n" +
-                                                         "  sql_type varchar(255) DEFAULT NULL,\n" +
-                                                         "  sql_definition varchar(255) DEFAULT NULL,\n" +
-                                                         "  default_value varchar(255) DEFAULT NULL,\n" +
-                                                         "  pattern varchar(255) DEFAULT NULL,\n" +
+                                                         "  function_def TEXT DEFAULT NULL,\n" +
+                                                         "  sql_type TEXT DEFAULT NULL,\n" +
+                                                         "  sql_definition TEXT DEFAULT NULL,\n" +
+                                                         "  default_value TEXT DEFAULT NULL,\n" +
+                                                         "  pattern TEXT DEFAULT NULL,\n" +
                                                          "  join_table_name varchar(100) DEFAULT NULL,\n" +
                                                          "  join_table_key varchar(100) DEFAULT NULL,\n" +
-                                                         "  join_table_select_fields varchar(100) DEFAULT NULL,\n" +
+                                                         "  join_table_select_fields TEXT DEFAULT NULL,\n" +
                                                          "  searchable BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-                                                         "  search_condition varchar(100) DEFAULT NULL,\n" +
-                                                         "  search_field_name varchar(100) DEFAULT NULL,\n" +
+                                                         "  search_condition TEXT DEFAULT NULL,\n" +
+                                                         "  search_field_name TEXT DEFAULT NULL,\n" +
                                                          "  show_in_list BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                                                          "  view_index NUMERIC(12),\n" +
                                                          "  mandatory BOOLEAN NOT NULL DEFAULT FALSE,\n" +
@@ -156,18 +156,18 @@ public class PostgresqlConstants {
                                                   "  uuid varchar(255) NOT NULL,\n" +
                                                   "  table_name varchar(255) NOT NULL,\n" +
                                                   "  icon varchar(100) DEFAULT NULL,\n" +
-                                                  "  select_fields varchar(255) DEFAULT NULL,\n" +
-                                                  "  search_fields varchar(255) DEFAULT NULL,\n" +
-                                                  "  description varchar(255) DEFAULT NULL,\n" +
+                                                  "  select_fields TEXT DEFAULT NULL,\n" +
+                                                  "  search_fields TEXT DEFAULT NULL,\n" +
+                                                  "  description TEXT DEFAULT NULL,\n" +
                                                   "  alias_table varchar(255) DEFAULT NULL,\n" +
-                                                  "  alias_condition varchar(255) DEFAULT NULL,\n" +
+                                                  "  alias_condition TEXT DEFAULT NULL,\n" +
                                                   "  table_key varchar(255) NOT NULL,\n" +
                                                   "  table_key_type varchar(255) DEFAULT NULL,\n" +
                                                   "  table_key_addition varchar(255) DEFAULT NULL,\n" +
-                                                  "  creation_query varchar(255) DEFAULT NULL,\n" +
-                                                  "  order_by varchar(255) DEFAULT NULL,\n" +
+                                                  "  creation_query TEXT DEFAULT NULL,\n" +
+                                                  "  order_by TEXT DEFAULT NULL,\n" +
                                                   "  metadata_group varchar(150) DEFAULT NULL,\n" +
-                                                  "  tab_groups varchar(255) DEFAULT NULL,\n" +
+                                                  "  tab_groups TEXT DEFAULT NULL,\n" +
                                                   "  already_exist BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                                                   "  api_protected BOOLEAN NOT NULL DEFAULT FALSE,\n" +
                                                   "  username_field varchar(255) DEFAULT NULL,\n" +

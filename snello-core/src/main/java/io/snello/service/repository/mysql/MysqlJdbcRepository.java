@@ -54,6 +54,26 @@ public class MysqlJdbcRepository implements JdbcRepository {
                 "ALTER TABLE selectqueries ADD COLUMN username_field varchar(255) DEFAULT NULL",
                 // action scripts were capped at varchar(1000)
                 "ALTER TABLE actions MODIFY body TEXT",
+                // Introspect select options / CSV field lists outgrow varchar(255)
+                "ALTER TABLE fielddefinitions MODIFY label TEXT NOT NULL",
+                "ALTER TABLE fielddefinitions MODIFY description TEXT",
+                "ALTER TABLE fielddefinitions MODIFY options TEXT",
+                "ALTER TABLE fielddefinitions MODIFY validations TEXT",
+                "ALTER TABLE fielddefinitions MODIFY function_def TEXT",
+                "ALTER TABLE fielddefinitions MODIFY sql_type TEXT",
+                "ALTER TABLE fielddefinitions MODIFY sql_definition TEXT",
+                "ALTER TABLE fielddefinitions MODIFY default_value TEXT",
+                "ALTER TABLE fielddefinitions MODIFY pattern TEXT",
+                "ALTER TABLE fielddefinitions MODIFY join_table_select_fields TEXT",
+                "ALTER TABLE fielddefinitions MODIFY search_condition TEXT",
+                "ALTER TABLE fielddefinitions MODIFY search_field_name TEXT",
+                "ALTER TABLE metadatas MODIFY select_fields TEXT",
+                "ALTER TABLE metadatas MODIFY search_fields TEXT",
+                "ALTER TABLE metadatas MODIFY description TEXT",
+                "ALTER TABLE metadatas MODIFY alias_condition TEXT",
+                "ALTER TABLE metadatas MODIFY creation_query TEXT",
+                "ALTER TABLE metadatas MODIFY order_by TEXT",
+                "ALTER TABLE metadatas MODIFY tab_groups TEXT",
                 creationIntrospectJobs,
                 creationIntrospectJobLogs
         };

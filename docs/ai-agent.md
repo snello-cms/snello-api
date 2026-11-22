@@ -38,6 +38,20 @@ SQL dynamic tools remain at `/api/ai_tools`.
 
 Default project seeded as `snello.cms` when empty (see `AiProjectSeeder`).
 
+## Metadata enrich skill (post-introspect)
+
+On a live catalog (e.g. after `/api/introspect`), use skill **`enrich_metadata_catalog`** with MCP tools
+`list_metadatas`, `list_fields`, `sample_table_rows` (`GET /api/{table}`), `get_entity_ai`,
+`update_metadata`, `update_field`. Always page with `_limit=50`. The skill updates `description`,
+`metadata_group`, field `label`, and join/multijoin when targets and row samples allow; incomplete
+relations stay blocked until missing tables are introspected (re-run the skill).
+
+Batch helper (Admin token via `.env.test`): `dev/scripts/enrich-metadata-pass1.py`
+(`SNELLO_URL`, `SNELLO_TOKEN`; report in `dev/exports/enrichment-pass1.json`).
+
+Note: `EntityAiProfile` only persists `summary` / `synonyms` / `tool_visible` / `examples` — multi-pass
+status is tracked in the local report until an `enrichment` field is added to the profile shape.
+
 ## Flower catalog import (kayak.love)
 
 Export from [ai.kayak.love](https://ai.kayak.love) (Admin APIs under `/api/v1/…`, camelCase) into Snello snake_case fixture, then upsert on a control/all-in-one node:

@@ -55,27 +55,27 @@ public class MysqlConstants {
             "  `metadata_uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `metadata_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
-            "  `label` varchar(255) COLLATE utf8mb4_unicode_ci  NOT NULL,\n" +
-            "  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `label` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
+            "  `description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `input_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `options` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `options` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `group_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `tab_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `validations` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `validations` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `table_key` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  `input_disabled` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  `function_def` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL ,\n" +
-            "  `sql_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `sql_definition` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `default_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `pattern` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `function_def` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `sql_type` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `sql_definition` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `default_value` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `pattern` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `join_table_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `join_table_key` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `join_table_select_fields` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `join_table_select_fields` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `searchable` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
-            "  `search_condition` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `search_field_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `search_condition` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `search_field_name` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `show_in_list` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  `view_index` int(12),\n" +
             "  `mandatory` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
@@ -87,18 +87,18 @@ public class MysqlConstants {
             "  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `table_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `icon` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `select_fields` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `search_fields` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `select_fields` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `search_fields` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `description` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `alias_table` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `alias_condition` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `alias_condition` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `table_key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n" +
             "  `table_key_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `table_key_addition` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `creation_query` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `order_by` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `creation_query` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `order_by` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `metadata_group` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
-            "  `tab_groups` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
+            "  `tab_groups` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
             "  `already_exist` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  `calendar_enabled` BOOLEAN NOT NULL DEFAULT FALSE,\n" +
             "  `calendar_field` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n" +
