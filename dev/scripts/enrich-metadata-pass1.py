@@ -88,7 +88,7 @@ PREFIX_GROUP = [
 ]
 
 
-def http(method: str, path: str, body=None, auth=False, retries: int = 5):
+def http(method: str, path: str, body=None, auth=False, retries: int = 8):
     data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
     headers = {"Accept": "application/json"}
     if body is not None:
@@ -101,7 +101,7 @@ def http(method: str, path: str, body=None, auth=False, retries: int = 5):
     for attempt in range(retries):
         req = urllib.request.Request(BASE + path, data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=90) as r:
+            with urllib.request.urlopen(req, timeout=120) as r:
                 raw = r.read()
                 total = r.headers.get("x-total-count") or r.headers.get("X-Total-Count")
                 payload = json.loads(raw) if raw else None
@@ -109,14 +109,18 @@ def http(method: str, path: str, body=None, auth=False, retries: int = 5):
         except urllib.error.HTTPError as e:
             err = e.read()[:800]
             if e.code in (429, 502, 503, 504) and attempt + 1 < retries:
-                time.sleep(1.5 * (attempt + 1))
+                wait = min(30.0, 2.0 * (attempt + 1) ** 1.5)
+                print(f"  retry {method} {path} http={e.code} wait={wait:.1f}s", flush=True)
+                time.sleep(wait)
                 last_err = RuntimeError(f"{method} {path} -> {e.code}: {err}")
                 continue
             raise RuntimeError(f"{method} {path} -> {e.code}: {err}") from e
         except Exception as e:
             last_err = e
             if attempt + 1 < retries:
-                time.sleep(1.5 * (attempt + 1))
+                wait = min(45.0, 3.0 * (attempt + 1) ** 1.5)
+                print(f"  retry {method} {path} err={e} wait={wait:.1f}s", flush=True)
+                time.sleep(wait)
                 continue
             raise
     raise last_err  # pragma: no cover
@@ -404,13 +408,23 @@ def main() -> int:
             if DRY:
                 print(f"DRY meta {table} -> group={group} desc={title}", flush=True)
             else:
-                http("PUT", f"/api/metadatas/{m['uuid']}", body, auth=True)
+                try:
+                    http("PUT", f"/api/metadatas/{m['uuid']}", body, auth=True)
+                except Exception as e:
+                    report["stats"]["metadata_put_errors"] += 1
+                    print(f"WARN meta PUT {table}: {e}", flush=True)
+                    report["entities"][table]["status"] = "partial"
+                    report["entities"][table]["notes"].append(f"PUT fail: {e}")
+                    time.sleep(max(SLEEP, 2.0))
+                    continue
                 time.sleep(SLEEP)
             meta_updates += 1
             report["stats"]["metadata_updated"] += 1
-            if meta_updates % 25 == 0:
+            if meta_updates % 5 == 0:
                 print(f"  metadata updates={meta_updates}", flush=True)
-                time.sleep(1.0)
+            if meta_updates % 25 == 0:
+                # Cool-down so liveness probes stay green under PUT storms.
+                time.sleep(max(2.0, SLEEP * 4))
         else:
             report["stats"]["metadata_unchanged"] += 1
 
