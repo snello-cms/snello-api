@@ -6,12 +6,14 @@ Tracks complete|partial|blocked in a local report (ai_profile strips unknown key
 
 Env:
   SNELLO_URL          default https://mssql.sne.lol
-  SNELLO_TOKEN        Bearer access token (required for PUT)
+  SNELLO_TOKEN        Bearer access token (optional if CLIENT_ID/SECRET set)
+  CLIENT_ID / CLIENT_SECRET / SNELLO_TOKEN_URL
+                      client_credentials refresh (token TTL is often 300s)
   ENRICH_REPORT       default dev/exports/enrichment-pass1.json
   ENRICH_DRY_RUN=1    no PUT
   ENRICH_MAX_META     optional cap on metadata updates (debug)
   ENRICH_MAX_FIELDS   optional cap on field updates (debug)
-  ENRICH_SLEEP        pause between PUTs (default 0.05)
+  ENRICH_SLEEP        pause between PUTs (default 0.25)
 """
 from __future__ import annotations
 
@@ -29,6 +31,13 @@ from pathlib import Path
 
 BASE = os.environ.get("SNELLO_URL", "https://mssql.sne.lol").rstrip("/")
 TOKEN = os.environ.get("SNELLO_TOKEN", "")
+TOKEN_URL = os.environ.get(
+    "SNELLO_TOKEN_URL",
+    "https://accounts.kayak.love/realms/alphasnello/protocol/openid-connect/token",
+)
+CLIENT_ID = os.environ.get("CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "")
+_TOKEN_EXPIRES_AT = 0.0  # epoch seconds; refresh a bit before
 PAGE = 50
 DRY = os.environ.get("ENRICH_DRY_RUN", "") in ("1", "true", "yes")
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,6 +54,38 @@ FIELDS_ONLY_TABLES = [
     t.strip() for t in os.environ.get("ENRICH_TABLES", "").split(",") if t.strip()
 ]
 MAX_TABLES = int(os.environ["ENRICH_MAX_TABLES"]) if os.environ.get("ENRICH_MAX_TABLES") else None
+
+
+def refresh_token(force: bool = False) -> str:
+    """Keep Bearer token fresh (Keycloak client_credentials often expires in 300s)."""
+    global TOKEN, _TOKEN_EXPIRES_AT
+    now = time.time()
+    if not force and TOKEN and now < (_TOKEN_EXPIRES_AT - 30):
+        return TOKEN
+    if not (CLIENT_ID and CLIENT_SECRET):
+        if not TOKEN:
+            raise SystemExit("SNELLO_TOKEN or CLIENT_ID/CLIENT_SECRET required for writes")
+        return TOKEN
+    data = urllib.parse.urlencode(
+        {
+            "grant_type": "client_credentials",
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        TOKEN_URL,
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        payload = json.loads(r.read())
+    TOKEN = payload["access_token"]
+    expires_in = int(payload.get("expires_in") or 300)
+    _TOKEN_EXPIRES_AT = time.time() + expires_in
+    print(f"  token refreshed ttl={expires_in}s", flush=True)
+    return TOKEN
 
 TOKENS = sorted(
     {
@@ -90,15 +131,13 @@ PREFIX_GROUP = [
 
 def http(method: str, path: str, body=None, auth=False, retries: int = 8):
     data = None if body is None else json.dumps(body, ensure_ascii=False).encode()
-    headers = {"Accept": "application/json"}
-    if body is not None:
-        headers["Content-Type"] = "application/json"
-    if auth:
-        if not TOKEN:
-            raise SystemExit("SNELLO_TOKEN required for writes")
-        headers["Authorization"] = f"Bearer {TOKEN}"
     last_err = None
     for attempt in range(retries):
+        headers = {"Accept": "application/json"}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+        if auth:
+            headers["Authorization"] = f"Bearer {refresh_token()}"
         req = urllib.request.Request(BASE + path, data=data, method=method, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
@@ -108,6 +147,12 @@ def http(method: str, path: str, body=None, auth=False, retries: int = 8):
                 return r.status, payload, int(total) if total else None
         except urllib.error.HTTPError as e:
             err = e.read()[:800]
+            if e.code == 401 and auth and attempt + 1 < retries:
+                print(f"  retry {method} {path} http=401 refreshing token", flush=True)
+                refresh_token(force=True)
+                time.sleep(0.5)
+                last_err = RuntimeError(f"{method} {path} -> 401: {err}")
+                continue
             if e.code in (429, 502, 503, 504) and attempt + 1 < retries:
                 wait = min(30.0, 2.0 * (attempt + 1) ** 1.5)
                 print(f"  retry {method} {path} http={e.code} wait={wait:.1f}s", flush=True)
