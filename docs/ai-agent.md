@@ -52,6 +52,8 @@ Batch helper (Admin token via `.env.test`): `dev/scripts/enrich-metadata-pass1.p
 Note: `EntityAiProfile` only persists `summary` / `synonyms` / `tool_visible` / `examples` — multi-pass
 status is tracked in the local report until an `enrichment` field is added to the profile shape.
 
+Full plan (200+ tables, join cardinality, phases): [AI metadata enrichment](ai-metadata-enrichment.md).
+
 ## Flower catalog import (kayak.love)
 
 Export from [ai.kayak.love](https://ai.kayak.love) (Admin APIs under `/api/v1/…`, camelCase) into Snello snake_case fixture, then upsert on a control/all-in-one node:

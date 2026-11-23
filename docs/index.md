@@ -35,6 +35,7 @@ Architecture:
 - [Document Management](document-management.md)
 - [AI Agent](ai-agent.md)
 - [AI Tools Schema](ai-tools-schema.md)
+- [AI metadata enrichment](ai-metadata-enrichment.md) — multi-pass labels / groups / join vs multijoin (200+ tables)
 
 ### Planning
 
