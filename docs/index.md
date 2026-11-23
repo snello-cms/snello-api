@@ -14,7 +14,7 @@ Architecture:
 
 - [Databases](databases.md) — `SNELLO_DB_KIND` / JDBC for PostgreSQL, MySQL, H2, **SQL Server (mssql)**
 - [All-in-one](all-in-one.md) — Docker / Compose under [`docker-compose/`](../docker-compose/) (`docker-compose-aio.yaml`, `docker-compose-aio-sso.yaml`)
-- [OpenAPI](openapi.md) — `GET /openapi` JSON
+- [OpenAPI](openapi.md) — `GET /openapi` JSON; per-table data API at `GET /openapi/data/{table}`
 - [Backup (data ZIP)](backup.md) — `GET/POST /api/backup/data`
 
 ### Modeling
