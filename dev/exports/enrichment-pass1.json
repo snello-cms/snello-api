@@ -1,0 +1,1676 @@
+{
+  "base": "https://mssql.sne.lol",
+  "pass": 1,
+  "updated_at": "2026-11-21T16:20:04.901812+00:00",
+  "page_size": 50,
+  "entities": {
+    "a_operatorimansionioperative": {
+      "uuid": "4d158d83-8156-4eaf-b900-64a797ea5e26",
+      "metadata_group": "Operatori",
+      "description": "Operatori mansioni operative",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aa_regconsumi20260410": {
+      "uuid": "131dafd0-872e-4a6e-bda5-bef80e735dbe",
+      "metadata_group": "Magazzino",
+      "description": "Reg consumi 20260410",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_anagrafica_articoli_interinali": {
+      "uuid": "13417017-0289-426f-8bc2-b569f740b1c9",
+      "metadata_group": "Anagrafiche",
+      "description": "Anagrafica articoli interinali",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_attributiattrezzature": {
+      "uuid": "d210e348-e71c-46e2-ad9c-73ff06c7e489",
+      "metadata_group": "Attrezzature",
+      "description": "Attributi attrezzature",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_automezzi_autovetture": {
+      "uuid": "379f829c-480d-472f-884e-d5aa5802b84b",
+      "metadata_group": "Automezzi",
+      "description": "Automezzi autovetture",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_magcau": {
+      "uuid": "d2b334b8-3d11-4c3a-9c78-626040c023ff",
+      "metadata_group": "Magazzino",
+      "description": "Magcau",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_operatorimansionioperative": {
+      "uuid": "b64c04ec-678f-4d50-b3b1-6626bdf669d2",
+      "metadata_group": "Operatori",
+      "description": "Operatori mansioni operative",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_operatorimansionisic": {
+      "uuid": "b7c4c03d-7506-40ee-9471-55fb59a42ed8",
+      "metadata_group": "Operatori",
+      "description": "Operatori mansioni sic",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aaa_righeordinisap": {
+      "uuid": "9f4292fd-9958-492d-8fc5-d3185bbfdeca",
+      "metadata_group": "Magazzino",
+      "description": "Righe ordini sap",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "abicab": {
+      "uuid": "2d58dd2d-09fa-4e7a-96db-837e2db6b644",
+      "metadata_group": "Riferimenti",
+      "description": "Abicab",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "absarticoli": {
+      "uuid": "8685bee4-f5a3-46b4-bc99-295aa6ab800e",
+      "metadata_group": "ABS",
+      "description": "Abs articoli",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "absbolle": {
+      "uuid": "4e81d3ff-64e7-499f-a23c-f36bcdd93fca",
+      "metadata_group": "ABS",
+      "description": "Absbolle",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "absbollecor": {
+      "uuid": "43bf947c-8f71-44ba-ada2-56b5ae1a5504",
+      "metadata_group": "ABS",
+      "description": "Absbolle cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "abscondiz": {
+      "uuid": "a528cae1-1bf2-427b-9012-3d15242608d8",
+      "metadata_group": "ABS",
+      "description": "Abscondiz",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "accorpafat": {
+      "uuid": "17c37f78-8d9f-4d34-a483-d42cef11f062",
+      "metadata_group": "Acquisti",
+      "description": "Ac cor pafat",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqartfor": {
+      "uuid": "3ef5ace3-aa25-484b-9115-777e75f84c32",
+      "metadata_group": "Acquisti",
+      "description": "Acqartfor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqbudget": {
+      "uuid": "99fef9da-2d50-464e-a5a5-16cffa5b3a59",
+      "metadata_group": "Acquisti",
+      "description": "Acq budget",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqbudgetsca": {
+      "uuid": "f168a29b-0c6b-48de-8dde-9de6f9d75c75",
+      "metadata_group": "Acquisti",
+      "description": "Acq budget sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqcondiz": {
+      "uuid": "3417f9af-9cb6-4916-827f-c79f1cdf5d9d",
+      "metadata_group": "Acquisti",
+      "description": "Acqcondiz",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqcondizsca": {
+      "uuid": "9c7a2832-0c83-4cfa-8e0b-d06571ef863f",
+      "metadata_group": "Acquisti",
+      "description": "Acqcondiz sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqcontrcor": {
+      "uuid": "0d30b2c2-88f6-4568-87e3-3893b16b9847",
+      "metadata_group": "Acquisti",
+      "description": "Acqcontr cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqcontrcorsca": {
+      "uuid": "22d511f0-d495-4a60-a4e5-c4687760b07f",
+      "metadata_group": "Acquisti",
+      "description": "Acqcontr cor sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqcontrtes": {
+      "uuid": "2a97f277-bb40-41d0-a2fd-964090ead1a8",
+      "metadata_group": "Acquisti",
+      "description": "Acqcontr tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatcorceslot": {
+      "uuid": "47d7bd33-7159-4582-bd3b-17f39853ed66",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat cor ces lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatcorcos": {
+      "uuid": "91358616-010f-491c-8f86-2ce35d0ca43c",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat cor cos",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatcorfruit": {
+      "uuid": "e273d4c5-da08-47b0-af59-a1fcac62b9f6",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat cor fruit",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatcorlot": {
+      "uuid": "66f535cd-df1f-4fad-9c2c-1a13ad04bfa0",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat cor lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatcorscad": {
+      "uuid": "9aa807fd-173c-4b24-bb74-239560a9b9a5",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat cor sca d",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatlav": {
+      "uuid": "c3cc5a37-b3f9-4676-93cc-a07f791c4235",
+      "metadata_group": "Acquisti",
+      "description": "Acqfatlav",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfatrate": {
+      "uuid": "1ac69494-c2be-4fba-be4a-eadee27a2e1c",
+      "metadata_group": "Acquisti",
+      "description": "Acqfatrate",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfattesauth": {
+      "uuid": "ea4e5ba1-1d3a-4a9c-b769-2ac425f99353",
+      "metadata_group": "Acquisti",
+      "description": "Acqfat tes auth",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfattot": {
+      "uuid": "f997eb26-ad34-4ad1-b52e-676da27b1a6d",
+      "metadata_group": "Acquisti",
+      "description": "Acqfattot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfattotcom": {
+      "uuid": "fc5298b8-a822-4d74-8a91-e70c81d1d4e3",
+      "metadata_group": "Acquisti",
+      "description": "Acqfattotcom",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqfattra": {
+      "uuid": "54783419-592a-47e4-98f4-b9f859140207",
+      "metadata_group": "Acquisti",
+      "description": "Acqfattra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqlisrig": {
+      "uuid": "55b032f1-ca07-4b19-93f7-6a5a4a57f954",
+      "metadata_group": "Acquisti",
+      "description": "Acqlis rig",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqlissca": {
+      "uuid": "9d6424f4-2ba1-4cda-b645-f54e9299e407",
+      "metadata_group": "Acquisti",
+      "description": "Acqlis sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqlistes": {
+      "uuid": "758e8666-83a9-4a58-b5fc-42ebb3f362c2",
+      "metadata_group": "Acquisti",
+      "description": "Acqlis tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmeratt": {
+      "uuid": "93e7beb5-18ee-4932-9bc5-6d2ba4725440",
+      "metadata_group": "Acquisti",
+      "description": "Acqmeratt",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmerceslot": {
+      "uuid": "75dc85f0-a57c-4d87-b144-c7efe51499f9",
+      "metadata_group": "Acquisti",
+      "description": "Acq merce s lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercomp": {
+      "uuid": "d066e4c9-0890-4362-914f-66f11be1d85a",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercomp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercompcv": {
+      "uuid": "fc1dd3fd-e348-4868-b2a1-527cbe8f0474",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercompcv",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercompcvdett": {
+      "uuid": "7af76c66-b0c2-4bee-a1a9-1e7fc1ed65ba",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercompcv det t",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercomptra": {
+      "uuid": "9cc7928e-ea71-46e5-b4f8-94ee64bdaf9a",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercomptra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercoralleg": {
+      "uuid": "f04967de-269a-4dd4-b232-307c7bfd8904",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor alleg",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorcampione": {
+      "uuid": "09fe45bd-dcc5-4a7e-914a-8100498283dd",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor campione",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorcomplot": {
+      "uuid": "66e8269d-e071-4930-a060-c8ed90138914",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor comp lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorcos": {
+      "uuid": "e4e33ffb-3974-4eb4-bb3a-9e58d341cbdd",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor cos",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorcust": {
+      "uuid": "2c3b85e5-45a8-4d9f-ab1d-ea12e2858137",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor cust",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorcust_c00002": {
+      "uuid": "efdde7ea-4567-4493-b419-273826d51aaa",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercorcust c00002",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorext": {
+      "uuid": "6886b5a2-4677-4c2b-88a1-5d468b813e48",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor ext",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorfruit": {
+      "uuid": "333bb789-ae74-41d1-af56-792b83a29c90",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor fruit",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorimport": {
+      "uuid": "8bc29738-8fa2-42ee-9d15-4f5f176464c1",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor import",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercorlot": {
+      "uuid": "3ccc471f-68b7-41a6-a05a-57a8c2ce3902",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercortmp": {
+      "uuid": "f9b62446-61b6-4e7c-b5bb-689713471c0e",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer cor tmp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercust": {
+      "uuid": "722c28c6-907b-459f-98fc-5946bec150a0",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercust",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmercust_c00002": {
+      "uuid": "2851e659-894a-4fa1-ba68-9c4cf27c1b17",
+      "metadata_group": "Acquisti",
+      "description": "Acqmercust c00002",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmerdtcons": {
+      "uuid": "fa240538-be77-4c66-9cc0-6bdd916a8f3c",
+      "metadata_group": "Acquisti",
+      "description": "Acqmerdtcons",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmerlav": {
+      "uuid": "ebcddc6c-44bc-4171-aae6-a9ae087c0ef2",
+      "metadata_group": "Acquisti",
+      "description": "Acqmerlav",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmerqual": {
+      "uuid": "b7e8ed33-1eac-4c12-8b57-5b5081bba1e3",
+      "metadata_group": "Acquisti",
+      "description": "Acqmerqual",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmersca": {
+      "uuid": "0c35c3cb-d54b-4cf7-92a2-530d6dbfa961",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmerscad": {
+      "uuid": "4802e552-022d-4d7a-a1b0-7f1e49e62736",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer sca d",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmertestmp": {
+      "uuid": "5d59df25-dbba-4c87-bc94-7e088683827a",
+      "metadata_group": "Acquisti",
+      "description": "Acqmer tes tmp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmertot": {
+      "uuid": "d173fc01-f7b2-498f-a948-56313ca68cc3",
+      "metadata_group": "Acquisti",
+      "description": "Acqmertot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqmertra": {
+      "uuid": "9334cc9d-9a12-4ef2-8cc3-551334c269dd",
+      "metadata_group": "Acquisti",
+      "description": "Acqmertra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordauth": {
+      "uuid": "9d9bbb7f-7191-499e-a077-4cb3d109e489",
+      "metadata_group": "Acquisti",
+      "description": "Acqordauth",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordceslot": {
+      "uuid": "49806f35-e0d0-477b-be67-0535c4b42858",
+      "metadata_group": "Acquisti",
+      "description": "Acqordces lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcomptra": {
+      "uuid": "36337dea-0518-47bb-8266-613cef675f2f",
+      "metadata_group": "Acquisti",
+      "description": "Acqordcomptra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcorcos": {
+      "uuid": "b36c2cfa-29a3-4447-b386-86e060ecf28c",
+      "metadata_group": "Acquisti",
+      "description": "Acqord cor cos",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcorcust": {
+      "uuid": "b10d924a-cec1-42fb-91bf-532d53b86f1b",
+      "metadata_group": "Acquisti",
+      "description": "Acqord cor cust",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcorcust_c00002": {
+      "uuid": "f428214e-4611-4057-9bb4-ed16806e5812",
+      "metadata_group": "Acquisti",
+      "description": "Acqordcorcust c00002",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcorfruit": {
+      "uuid": "f21382bf-f573-4aa6-a623-456e0b3c5156",
+      "metadata_group": "Acquisti",
+      "description": "Acqord cor fruit",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcorlot": {
+      "uuid": "31bfc223-11ed-4cad-bdb4-28b71efdddeb",
+      "metadata_group": "Acquisti",
+      "description": "Acqord cor lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcust": {
+      "uuid": "a3bb0cbe-49fb-4549-b1a5-0c5b0e3fa473",
+      "metadata_group": "Acquisti",
+      "description": "Acqordcust",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordcust_c00002": {
+      "uuid": "26c83f62-1e5b-4cb4-b97f-746eaf310a01",
+      "metadata_group": "Acquisti",
+      "description": "Acqordcust c00002",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqorddet": {
+      "uuid": "867c2018-0f0f-4e19-bc9e-3600045753f6",
+      "metadata_group": "Acquisti",
+      "description": "Acqord det",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqorddetlot": {
+      "uuid": "337ebd3c-83fb-471d-ac8a-162b7fb08bc6",
+      "metadata_group": "Acquisti",
+      "description": "Acqord det lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqorddtcons": {
+      "uuid": "6539a4d8-9ecd-465c-92f1-f4febc119686",
+      "metadata_group": "Acquisti",
+      "description": "Acqorddtcons",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordinialleg": {
+      "uuid": "7ab85c7b-edf0-4317-85cc-4d96f96e01c8",
+      "metadata_group": "Acquisti",
+      "description": "Acq ordini alleg",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordiniconsmagdin": {
+      "uuid": "51fbff11-cf20-40b2-81a2-aacb086a2c76",
+      "metadata_group": "Acquisti",
+      "description": "Acq ordini consmagdin",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordlav": {
+      "uuid": "9e28fa47-7d16-4044-8efd-b2c3e17582fc",
+      "metadata_group": "Acquisti",
+      "description": "Acqordlav",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordlavtra": {
+      "uuid": "ad90cdb6-0b5a-4184-bba7-7d399dfe18d7",
+      "metadata_group": "Acquisti",
+      "description": "Acqordlavtra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordqual": {
+      "uuid": "1d1d046f-6a61-4d42-9a36-5d463c2911c0",
+      "metadata_group": "Acquisti",
+      "description": "Acqordqual",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordrip": {
+      "uuid": "6ad128df-e115-4572-9b88-4de3053ee8e2",
+      "metadata_group": "Acquisti",
+      "description": "Acqordrip",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordripperizia": {
+      "uuid": "ba961e28-ff15-4424-beee-cedc2eb74c9c",
+      "metadata_group": "Acquisti",
+      "description": "Acqordripperizia",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordripperiziaqual": {
+      "uuid": "567747fb-7e8c-4eb4-9f25-0cdaff1318ea",
+      "metadata_group": "Acquisti",
+      "description": "Acqordripperiziaqual",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordripqual": {
+      "uuid": "a6eab647-94c1-45c3-bc7c-8efd588aa0ed",
+      "metadata_group": "Acquisti",
+      "description": "Acqordripqual",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordripqualgruper": {
+      "uuid": "f38614fe-2de6-417c-a8ec-9380ecdd9baa",
+      "metadata_group": "Acquisti",
+      "description": "Acqordripqualgruper",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordscad": {
+      "uuid": "bba8f075-0020-4809-910e-f28f2d7ff79c",
+      "metadata_group": "Acquisti",
+      "description": "Acqord sca d",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordtot": {
+      "uuid": "2b27583b-8195-4c79-b0b2-5f5269fdaa3f",
+      "metadata_group": "Acquisti",
+      "description": "Acqordtot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqordtra": {
+      "uuid": "8faab0f9-f2c3-4289-9474-f271cb361954",
+      "metadata_group": "Acquisti",
+      "description": "Acqordtra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqpresenzecor": {
+      "uuid": "be3c4145-9f3b-45b4-a60e-d84b874eec27",
+      "metadata_group": "Acquisti",
+      "description": "Acq presenze cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqpresenzetes": {
+      "uuid": "ff1ca5ca-7a60-49c2-a9ff-8b706820ec2d",
+      "metadata_group": "Acquisti",
+      "description": "Acq presenze tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqricauth": {
+      "uuid": "9260791d-f0ff-4956-aad1-bbf0d7ef06ae",
+      "metadata_group": "Acquisti",
+      "description": "Acqricauth",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqriccomp": {
+      "uuid": "389c3b14-8a03-40a1-9afa-eae90c231fe1",
+      "metadata_group": "Acquisti",
+      "description": "Acqriccomp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqriccorlot": {
+      "uuid": "4e8ab77f-7495-4002-a106-6a8f4d02f7f1",
+      "metadata_group": "Acquisti",
+      "description": "Acqric cor lot",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqriccortmp": {
+      "uuid": "afa9d112-5b6e-44eb-9e08-bea61b8ced85",
+      "metadata_group": "Acquisti",
+      "description": "Acqric cor tmp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqriclav": {
+      "uuid": "da13676e-77f8-4aca-b7b5-67b145b467bb",
+      "metadata_group": "Acquisti",
+      "description": "Acqriclav",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqriclavtra": {
+      "uuid": "6818bfce-ce1d-45e4-85b3-8cb90ba0146e",
+      "metadata_group": "Acquisti",
+      "description": "Acqriclavtra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqricmerpallet": {
+      "uuid": "8cc4a0d4-8c2b-42b6-b0a9-c8a9652dedd0",
+      "metadata_group": "Acquisti",
+      "description": "Acqricmer pallet",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqrictes": {
+      "uuid": "172a65db-4ec2-4662-b935-09ca4206c3a0",
+      "metadata_group": "Acquisti",
+      "description": "Acqric tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqrictesalleg": {
+      "uuid": "82aca452-a513-4b77-b49a-f408f0c81fdf",
+      "metadata_group": "Acquisti",
+      "description": "Acqric tes alleg",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqrictestmp": {
+      "uuid": "d04f8f58-a626-437e-9ca1-0810589e8d84",
+      "metadata_group": "Acquisti",
+      "description": "Acqric tes tmp",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "acqrictra": {
+      "uuid": "c84ab687-0f58-49de-9538-e5b09c20b491",
+      "metadata_group": "Acquisti",
+      "description": "Acqrictra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageana": {
+      "uuid": "299306bc-13ab-4c41-b0f9-b4e777fc8e93",
+      "metadata_group": "Agenti",
+      "description": "Ageana",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageanabudget": {
+      "uuid": "c839270c-2182-4fc0-8968-e81f6d8e1ae4",
+      "metadata_group": "Agenti",
+      "description": "Ageana budget",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageanasoci": {
+      "uuid": "1289db94-9325-4a0a-b76f-396df41bacac",
+      "metadata_group": "Agenti",
+      "description": "Ageanasoci",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageanatliq": {
+      "uuid": "baa18b87-1f68-4a92-a55a-62a1ebdff637",
+      "metadata_group": "Agenti",
+      "description": "Ageanatliq",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "agebudget": {
+      "uuid": "2a3c08df-0115-4d84-bf6f-3a1a24086a64",
+      "metadata_group": "Agenti",
+      "description": "Age budget",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "agebudgetcor": {
+      "uuid": "7a02b819-625b-47e5-a9c7-a9fd9bb478da",
+      "metadata_group": "Agenti",
+      "description": "Age budget cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "agecondizsca": {
+      "uuid": "b2a03f12-0302-4f72-ac97-798129d56a81",
+      "metadata_group": "Agenti",
+      "description": "Agecondiz sca",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageinde": {
+      "uuid": "34d111d2-bb7d-46f7-bed5-5f7c52f6d56b",
+      "metadata_group": "Agenti",
+      "description": "Ageinde",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ageprogressivi": {
+      "uuid": "60c9c7fd-777f-439d-99d1-b25f71b84ae1",
+      "metadata_group": "Agenti",
+      "description": "Ageprogressivi",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "agg_integrazione": {
+      "uuid": "78badee4-8183-4d41-82ad-b4a6aa450046",
+      "metadata_group": "Integrazioni",
+      "description": "Agg integrazione",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "agg_unimag": {
+      "uuid": "901acf2f-d8a5-4199-b4d0-e0c532a9109c",
+      "metadata_group": "Integrazioni",
+      "description": "Agg unimag",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "alfrescoconfig": {
+      "uuid": "7adfcd02-601d-42c2-a0d7-23906b771633",
+      "metadata_group": "Documenti",
+      "description": "Alfresco config",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "alfrescoconfigsosc": {
+      "uuid": "8dd31d45-21f8-4e2d-ad8f-c29670bfb126",
+      "metadata_group": "Documenti",
+      "description": "Alfresco config sosc",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "alfrescocontainer": {
+      "uuid": "23bcf8c3-d984-4218-84f9-63b34ed003bd",
+      "metadata_group": "Documenti",
+      "description": "Alfresco container",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "alfrescodocument": {
+      "uuid": "34cd7f3b-e7fe-4728-8c33-c5c9c24e0d95",
+      "metadata_group": "Documenti",
+      "description": "Alfresco document",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "alfrescoup": {
+      "uuid": "31ecd005-f022-49c3-8899-00117c0a8745",
+      "metadata_group": "Documenti",
+      "description": "Alfresco up",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "aliquoteamm": {
+      "uuid": "409235e7-8797-40fd-8a85-e2d86fe9bc2c",
+      "metadata_group": "Configurazione",
+      "description": "Aliquote amm",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "allegatistampe": {
+      "uuid": "60394b00-c032-4a64-99b7-b32b95ecb590",
+      "metadata_group": "Configurazione",
+      "description": "Allegati stampe",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ammassicor": {
+      "uuid": "b20458cb-3970-4940-a994-05258bcaf26d",
+      "metadata_group": "Ammassi",
+      "description": "Ammassi cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ammassimagdin": {
+      "uuid": "0b6a1ea7-da2b-4c18-ad04-fcbb960faeba",
+      "metadata_group": "Ammassi",
+      "description": "Ammassi magdin",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ammassites": {
+      "uuid": "b1efb402-d18b-4456-bf7d-05b847759e33",
+      "metadata_group": "Ammassi",
+      "description": "Ammassi tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "ammassiubi": {
+      "uuid": "65eefc87-ccbf-4188-a0fc-68aeece29037",
+      "metadata_group": "Ammassi",
+      "description": "Ammassi ubi",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartalt": {
+      "uuid": "04feabd7-4b1c-40b2-939a-a18459d25965",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaart alt",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartattrib": {
+      "uuid": "2e709ad9-b6bf-4d6e-ab40-da0a9b5ac5f7",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartattrib",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartbar": {
+      "uuid": "fd221bc5-0e5f-432e-9ac4-d6e8d43b1bed",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaart bar",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartcorrelati": {
+      "uuid": "45a50812-37f0-400d-9e86-fdad45c96ff2",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaart cor relati",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartcust": {
+      "uuid": "882fb6f2-b857-4b74-a440-52931caf6810",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartcust",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartcust_c00003": {
+      "uuid": "b7b7b768-8871-48a7-995c-ba50c6ee290a",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartcust c00003",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartdesc": {
+      "uuid": "6237a7dd-6382-48bf-ae04-95a7cc99b6c6",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartdesc",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartext": {
+      "uuid": "61ebc683-134e-4c90-84b8-f036512fc293",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaart ext",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartfiliali": {
+      "uuid": "1fde177f-a574-4423-81f1-203475415c84",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartfiliali",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartgruppiauth": {
+      "uuid": "ac986048-9a74-48f3-8a28-f77c2cdddd66",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartgruppiauth",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartlav": {
+      "uuid": "4d9c662b-f9b5-44d4-9f7d-a70d38b483df",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartlav",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartmangani": {
+      "uuid": "9ebe7b49-b991-483d-8077-7e325c313049",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartmangani",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartnote": {
+      "uuid": "009f5d40-b2ca-47bb-991b-e6b3bb97d32f",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaart note",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartnutriz": {
+      "uuid": "e969e5f2-6df4-4bce-886e-d48f7ae1216c",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartnutriz",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartscontiage": {
+      "uuid": "0912d2be-9ad1-4e98-9c51-4238d56b9a78",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaartscontiage",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaartscorte": {
+      "uuid": "c7a9721f-8d92-4f0f-8d97-183a5978e365",
+      "metadata_group": "Anagrafiche articoli",
+      "description": "Anaarts cor te",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclicauzioni": {
+      "uuid": "efc5dfc0-60de-483d-bf4c-825c1d6a2241",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacli cauzioni",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anacliconai": {
+      "uuid": "3d5c81b0-6248-4f12-b687-d99dfecf4214",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacliconai",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anacliext": {
+      "uuid": "a170ceaf-7149-4994-b907-b835acadec16",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacli ext",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclifido": {
+      "uuid": "517d4c34-d3e3-46c4-b9e6-c2bd5c31557a",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaclifido",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anacliinterc": {
+      "uuid": "0ad213b4-1a70-4cfb-82ef-eccf45a64245",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacliinterc",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclinote": {
+      "uuid": "460c818e-5baa-44b6-8633-ff57deead3ba",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacli note",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclirif": {
+      "uuid": "c09f36e6-9c16-4c04-b605-780ba03893db",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaclirif",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclispeinc": {
+      "uuid": "83a3f67f-3ab6-4b4a-84af-fa203189200d",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaclispeinc",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaclitargetanno": {
+      "uuid": "aedc6cfa-fa69-46c0-9841-71b313139018",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaclitargetanno",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anacliuti": {
+      "uuid": "f3efcbb7-c96d-4aea-a46d-d46e15ed95d5",
+      "metadata_group": "Anagrafiche",
+      "description": "Anacliuti",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anacorso": {
+      "uuid": "bb3b2384-ba59-463b-b547-56005ae4b561",
+      "metadata_group": "Anagrafiche",
+      "description": "Ana cor so",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anadocfornitori": {
+      "uuid": "3bc3194e-bc3b-4195-8c92-8995bfc349ba",
+      "metadata_group": "Anagrafiche",
+      "description": "Anadoc fornitori",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforasl": {
+      "uuid": "9e538000-f78d-42d0-ba4f-f5fea45a29d0",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaf ora sl",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforasltipiprodotti": {
+      "uuid": "57b6a1f4-91e3-4253-8f34-1c586e2201d1",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaf ora sltipiprodotti",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforban": {
+      "uuid": "4e923c18-5f15-46dc-bdea-3092cadc25b4",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaforban",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anafordest": {
+      "uuid": "285476b3-4d7c-46bc-a91e-26b8a18eba99",
+      "metadata_group": "Anagrafiche",
+      "description": "Anafordest",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anafordestasl": {
+      "uuid": "afcb72bc-7635-465d-ba94-5ac14f94d0b5",
+      "metadata_group": "Anagrafiche",
+      "description": "Anafordestasl",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anafordestasltipiprodotti": {
+      "uuid": "644f2f61-efca-46a9-b753-90b366c87777",
+      "metadata_group": "Anagrafiche",
+      "description": "Anafordestasltipiprodotti",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anafordurc": {
+      "uuid": "ba3c0873-be43-4d7c-b48f-bbcd84f8457e",
+      "metadata_group": "Anagrafiche",
+      "description": "Anafordurc",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforlett": {
+      "uuid": "66859ba5-71e1-4995-a2ed-d103aee7dcdf",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaforlett",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anafornote": {
+      "uuid": "d30631bf-c0a4-4916-b3f4-7f5104471294",
+      "metadata_group": "Anagrafiche",
+      "description": "Anafor note",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforrif": {
+      "uuid": "03d36eba-93ce-417b-9f0b-a179b171e339",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaforrif",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaforvalutazioni": {
+      "uuid": "b55a134d-b2fa-4a53-ab25-ccda96458461",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaforvalutazioni",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaintra": {
+      "uuid": "ada936ae-96c5-4e58-96a5-e14d0bdf4cf0",
+      "metadata_group": "Anagrafiche",
+      "description": "Ana intra",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anaintrserv": {
+      "uuid": "4cc24008-6a6e-4864-a305-f04617dbd0ca",
+      "metadata_group": "Anagrafiche",
+      "description": "Anaintrserv",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisiburro": {
+      "uuid": "ca60e23a-2eb9-40be-bf4c-145d3afb2014",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisiburro",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisiburromaturatori": {
+      "uuid": "7b15d725-767d-45b7-b13d-7f0a1734b008",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisiburromaturatori",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisidepuratore": {
+      "uuid": "54963fc9-89b9-4f20-a33f-1bc06e7db435",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisidepuratore",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisiformaggio": {
+      "uuid": "9889d2ab-799c-4c8f-9192-8ca38c248ee4",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisiformaggio",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisilab": {
+      "uuid": "ebc3bac9-8a59-47bf-b991-f55acfd1749a",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisilab",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisilatte": {
+      "uuid": "7db142d2-cdc5-411a-9c94-9a4b6c808895",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisilatte",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisilattecdl": {
+      "uuid": "4ff9e766-f983-4623-b13a-093ac99350b5",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisilattecdl",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisilatteserbatoi": {
+      "uuid": "538eded6-118d-4dc3-87ab-f767f716981b",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisilat tes erbatoi",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisilatticello": {
+      "uuid": "942e0c8a-3698-4124-8532-3026e6b37d06",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisilatticello",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisimascarpone": {
+      "uuid": "96f65c86-49b7-4639-8f67-f73b2c0e7d98",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisima sca rpone",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisipanna": {
+      "uuid": "3408af5a-0583-4162-9c86-f5171bdaeee0",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisipanna",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisipannamaturatori": {
+      "uuid": "f3edf58c-5f28-4fac-85d1-66ae739d80c1",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisipannamaturatori",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "analisipannauht": {
+      "uuid": "fe560e2c-a844-4c2a-91cd-2657e959786c",
+      "metadata_group": "Anagrafiche",
+      "description": "Analisipannauht",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "annullamentoinps": {
+      "uuid": "1c189fce-4001-4826-967b-0308b2a1b262",
+      "metadata_group": "Annullamentoinps",
+      "description": "Annullamentoinps",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "anomalieordini": {
+      "uuid": "8472d7f0-419e-43b9-9286-230d6739d083",
+      "metadata_group": "Anomalie",
+      "description": "Anomalie ordini",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "appartaticons": {
+      "uuid": "88e59181-fcea-491f-949a-cdf03867a4c5",
+      "metadata_group": "Appartaticons",
+      "description": "Appartaticons",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "appartaticor": {
+      "uuid": "9276c14a-d84c-4ff4-99f4-8f289087b14f",
+      "metadata_group": "Appartaticons",
+      "description": "Appartati cor",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "appartatimagdin": {
+      "uuid": "30d8f07d-d985-4c35-ad7d-fe91e605b4e6",
+      "metadata_group": "Appartaticons",
+      "description": "Appartatimagdin",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    },
+    "appartatites": {
+      "uuid": "9f8af5ff-a4c3-4c8a-988f-a8b6fe06450a",
+      "metadata_group": "Appartaticons",
+      "description": "Appartati tes",
+      "status": "complete",
+      "missing_targets": [],
+      "notes": [],
+      "fields_touched": 0
+    }
+  },
+  "stats": {
+    "metadata_updated": 185
+  }
+}
