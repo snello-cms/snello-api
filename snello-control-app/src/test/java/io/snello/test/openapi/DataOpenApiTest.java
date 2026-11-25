@@ -46,10 +46,11 @@ class DataOpenApiTest {
         field(customer, CUSTOMER, Map.of("name", "full_name", "label", "Full name", "type", "input", "input_type", "text",
                 "mandatory", true, "view_index", 1));
         field(customer, CUSTOMER, Map.of("name", "email", "label", "Email", "type", "input", "input_type", "email", "view_index", 2));
-        field(customer, CUSTOMER, Map.of("name", "birth", "label", "Birth date", "type", "date", "view_index", 3));
+        field(customer, CUSTOMER, Map.of("name", "birth", "label", "Birth date", "type", "date",
+                "default_value", "now()", "view_index", 3));
         field(customer, CUSTOMER, Map.of("name", "active", "label", "Active", "type", "checkbox", "view_index", 4));
         field(customer, CUSTOMER, Map.of("name", "status", "label", "Status", "type", "select", "options", "new,approved,closed",
-                "view_index", 5));
+                "default_value", "new", "view_index", 5));
         field(customer, CUSTOMER, Map.of("name", "score", "label", "Score", "type", "input", "input_type", "number", "view_index", 6));
         given().when().post("/api/metadatas/{uuid}/create", customer).then().statusCode(200);
 
@@ -70,7 +71,7 @@ class DataOpenApiTest {
             List<Map> existing = given().queryParam("table_name", t).queryParam("_limit", 100)
                     .when().get("/api/metadatas").then().statusCode(200).extract().jsonPath().getList("", Map.class);
             for (Map meta : existing) {
-                given().when().get("/api/metadatas/{uuid}/delete", meta.get("uuid"));
+                given().when().post("/api/metadatas/{uuid}/delete", meta.get("uuid"));
                 given().when().delete("/api/metadatas/{id}", meta.get("uuid")).then().statusCode(200);
             }
         }
@@ -97,6 +98,9 @@ class DataOpenApiTest {
         assertEquals("number", doc.getString(props + "score.type"));
         assertEquals(List.of("new", "approved", "closed"), doc.getList(props + "status.enum"));
         assertEquals(true, doc.getBoolean(props + "uuid.readOnly"));
+        // a DB expression is no value of the schema (made api.sne.lol's document invalid); a valid default stays
+        assertNull(doc.get(props + "birth.default"), "now() is not a date");
+        assertEquals("new", doc.getString(props + "status.default"));
         assertEquals(List.of("full_name"), doc.getList("components.schemas." + CUSTOMER + ".required"));
 
         List<String> params = doc.getList("paths.'/api/" + CUSTOMER + "'.get.parameters.name");

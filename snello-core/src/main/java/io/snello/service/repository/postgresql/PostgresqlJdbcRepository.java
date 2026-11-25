@@ -46,6 +46,8 @@ public class PostgresqlJdbcRepository implements JdbcRepository {
     public String[] upgradeQueries() {
         return new String[]{
                 "ALTER TABLE IF EXISTS metadatas ADD COLUMN IF NOT EXISTS ai_profile TEXT",
+                // write permission per table: roles allowed to create / change / delete rows (empty = any user)
+                "ALTER TABLE IF EXISTS metadatas ADD COLUMN IF NOT EXISTS write_roles varchar(255) DEFAULT NULL",
                 "ALTER TABLE IF EXISTS fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile TEXT",
                 // row-level security for select queries (same contract as metadatas)
                 "ALTER TABLE IF EXISTS selectqueries ADD COLUMN IF NOT EXISTS api_protected BOOLEAN NOT NULL DEFAULT FALSE",

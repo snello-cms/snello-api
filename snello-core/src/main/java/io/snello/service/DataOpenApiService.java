@@ -396,9 +396,43 @@ public class DataOpenApiService {
             s.put("readOnly", true);
         }
         if (!forFilter && fd.default_value != null && !fd.default_value.isBlank() && STRING.equals(s.get("type"))) {
-            s.put("default", fd.default_value);
+            if (validDefault(fd.default_value.trim(), s)) {
+                s.put("default", fd.default_value.trim());
+            } else {
+                // e.g. now() on a date: a DB expression, not a value of the schema (it would make the document invalid)
+                Log.debugf("openapi: default '%s' of %s.%s not valid for %s, left out", fd.default_value, fd.metadata_name,
+                        fd.name, s);
+            }
         }
         return s;
+    }
+
+    /** A default must satisfy the schema it sits in (enum, date / date-time / time, email, uri). */
+    private static boolean validDefault(String value, Map<String, Object> schema) {
+        if (schema.get("enum") instanceof List<?> values && !values.contains(value)) {
+            return false;
+        }
+        Object format = schema.get("format");
+        if (format == null) {
+            return true;
+        }
+        try {
+            switch (format.toString()) {
+                case "date" -> java.time.LocalDate.parse(value);
+                case "date-time" -> java.time.OffsetDateTime.parse(value);
+                case "time" -> java.time.LocalTime.parse(value);
+                case "email" -> {
+                    return value.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
+                }
+                case "uri" -> {
+                    return java.net.URI.create(value).isAbsolute();
+                }
+                default -> { }
+            }
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private static String fieldDescription(FieldDefinition fd, String kind) {
@@ -536,7 +570,10 @@ public class DataOpenApiService {
     }
 
     private String writeNote(Metadata m) {
-        String roles = String.join(", ", roles());
+        // a table's own write_roles (e.g. a catalog only the staff changes) narrow the global write roles
+        String roles = m.write_roles != null && !m.write_roles.isBlank()
+                ? String.join(", ", Arrays.stream(m.write_roles.split(",")).map(String::trim).filter(r -> !r.isEmpty()).toList())
+                : String.join(", ", roles());
         String own = m.api_protected && hasOwner(m)
                 ? " A user without Admin / Manager writes only their own rows: `" + m.username_field + "` is set to their username."
                 : "";

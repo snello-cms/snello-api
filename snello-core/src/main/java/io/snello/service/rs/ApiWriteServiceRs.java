@@ -3,6 +3,7 @@ package io.snello.service.rs;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.snello.util.FieldDefinitionUtils;
 import io.snello.management.SnelloPlane;
 import io.snello.model.Metadata;
 import io.snello.service.ApiService;
@@ -57,6 +58,10 @@ public class ApiWriteServiceRs {
             Log.infof("post table=%s: no metadata -> 404", table);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+        Response notAllowed = requireWriteRole(metadata, table, "post", null);
+        if (notAllowed != null) {
+            return notAllowed;
+        }
         String key = metadata.table_key;
         if (metadata.api_protected) {
             if (!isAdminOrManager(securityContext)) {
@@ -71,6 +76,7 @@ public class ApiWriteServiceRs {
         } else {
             Log.info("api NOT protected");
         }
+        dropVirtualValues(metadata, map, table);
         RowValidator.validate(metadata, map, true);
         TableKeyUtils.generateUUid(map, metadata, apiService);
         map = apiService.create(table, map, key);
@@ -87,6 +93,10 @@ public class ApiWriteServiceRs {
         if (metadata == null) {
             Log.infof("put table=%s uuid=%s: no metadata -> 404", table, uuid);
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        Response notAllowed = requireWriteRole(metadata, table, "put", uuid);
+        if (notAllowed != null) {
+            return notAllowed;
         }
         String key = apiService.table_key(table);
         // Ownership first: the owner value must be fixed before the slug is derived (lovers slugs on username).
@@ -113,6 +123,7 @@ public class ApiWriteServiceRs {
             Log.warnf("put table=%s uuid=%s: body %s=%s ignored, the key cannot change on update", table, uuid, key, bodyKey);
         }
         map.put(key, uuid);
+        dropVirtualValues(metadata, map, table);
         RowValidator.validate(metadata, map, false);
         map = apiService.merge(table, map, uuid, key);
         return ok(map).build();
@@ -124,6 +135,42 @@ public class ApiWriteServiceRs {
      *
      * @return an error response, or {@code null} when the caller owns the row
      */
+    /**
+     * Table write permission ({@code metadatas.write_roles}, e.g. "Admin,Manager"): creating, changing and deleting
+     * rows needs one of those roles. Empty = any authenticated user, as before. Reads are not affected (a catalog can
+     * be public to read and writable only by the staff).
+     *
+     * @return the refusal (401 anonymous, 403 without the role), or null when the write may go on
+     */
+    private Response requireWriteRole(Metadata metadata, String table, String operation, String uuid) {
+        if (metadata.write_roles == null || metadata.write_roles.isBlank()) {
+            return null;
+        }
+        if (!isAuthenticated(securityContext)) {
+            Log.infof("%s table=%s uuid=%s: anonymous, write needs %s -> 401", operation, table, uuid, metadata.write_roles);
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        for (String role : metadata.write_roles.split(",")) {
+            if (!role.isBlank() && securityContext.isUserInRole(role.trim())) {
+                Log.debugf("%s table=%s uuid=%s: caller has write role %s", operation, table, uuid, role.trim());
+                return null;
+            }
+        }
+        Log.infof("%s table=%s uuid=%s: caller %s has none of the write roles %s -> 403", operation, table, uuid,
+                username(securityContext), metadata.write_roles);
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(Map.of("msg", "only " + metadata.write_roles.trim() + " can change " + table))
+                .type(MediaType.APPLICATION_JSON).build();
+    }
+
+    /** Virtual fields (button) have no column: a value sent for them (an admin form control) is dropped. */
+    private static void dropVirtualValues(Metadata metadata, Map<String, Object> map, String table) {
+        java.util.List<String> dropped = FieldDefinitionUtils.stripVirtual(metadata.fields, map);
+        if (!dropped.isEmpty()) {
+            Log.infof("write table=%s: virtual field values ignored %s", table, dropped);
+        }
+    }
+
     private Response requireOwner(Metadata metadata, String table, String uuid, String key) throws Exception {
         String user = username(securityContext);
         if (user == null || user.isBlank()) {
@@ -153,6 +200,10 @@ public class ApiWriteServiceRs {
         if (metadata == null) {
             Log.infof("delete table=%s uuid=%s: no metadata -> 404", table, uuid);
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        Response notAllowed = requireWriteRole(metadata, table, "delete", uuid);
+        if (notAllowed != null) {
+            return notAllowed;
         }
         String key = metadata.table_key;
         if (metadata.api_protected) {

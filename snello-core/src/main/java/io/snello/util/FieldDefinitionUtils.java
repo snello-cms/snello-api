@@ -25,6 +25,38 @@ public class FieldDefinitionUtils {
         return model != null && model.ui != null && isMultiJoinType(model.ui.type());
     }
 
+    /**
+     * A field with no column: {@code button} (a form action, e.g. "scan document" that pre-fills other fields).
+     * CREATE TABLE / ADD COLUMN skip it, and writes drop any value sent for it.
+     */
+    public static boolean isVirtualType(String type) {
+        return WidgetType.BUTTON == WidgetType.from(type);
+    }
+
+    public static boolean isVirtual(FieldDefinition fd) {
+        return fd != null && isVirtualType(fd.type);
+    }
+
+    /**
+     * Removes the values of virtual fields from a row about to be written (an admin form may send its button's
+     * control): they have no column, the INSERT / UPDATE would fail on them.
+     *
+     * @return the names removed
+     */
+    public static java.util.List<String> stripVirtual(java.util.List<FieldDefinition> fields, java.util.Map<String, Object> row) {
+        java.util.List<String> removed = new java.util.ArrayList<>();
+        if (fields == null || row == null) {
+            return removed;
+        }
+        for (FieldDefinition fd : fields) {
+            if (isVirtual(fd) && fd.name != null && row.containsKey(fd.name)) {
+                row.remove(fd.name);
+                removed.add(fd.name);
+            }
+        }
+        return removed;
+    }
+
     public static boolean isPassivation(FieldDefinition fd) {
         return fd != null && InputType.PASSIVATION == InputType.from(fd.input_type);
     }
