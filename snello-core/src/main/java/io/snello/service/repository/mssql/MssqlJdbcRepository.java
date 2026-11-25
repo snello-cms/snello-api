@@ -56,6 +56,10 @@ public class MssqlJdbcRepository implements JdbcRepository {
                 """
                         IF COL_LENGTH('fielddefinitions', 'ai_profile') IS NULL \
                         ALTER TABLE fielddefinitions ADD ai_profile nvarchar(max)""",
+                // write permission per table: roles allowed to create / change / delete rows (empty = any user)
+                """
+                        IF COL_LENGTH('metadatas', 'write_roles') IS NULL \
+                        ALTER TABLE metadatas ADD write_roles nvarchar(255) NULL""",
                 """
                         IF COL_LENGTH('metadatas', 'api_protected') IS NULL \
                         ALTER TABLE metadatas ADD api_protected bit NOT NULL \

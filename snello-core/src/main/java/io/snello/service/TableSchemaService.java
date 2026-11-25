@@ -186,6 +186,10 @@ public class TableSchemaService {
     // ------------------------------------------------------------------------------------------------
 
     private void addColumnIfMissing(String table, Map<String, Object> metadata, FieldDefinition field) throws Exception {
+        if (FieldDefinitionUtils.isVirtual(field)) {
+            Log.infof("TABLE SYNC: %s.%s is virtual (%s), no column", table, field.name, field.type);
+            return;
+        }
         requireIdentifier(field.name, "column name");
         Set<String> columns = jdbcRepository.columns(table);
         if (columns.contains(field.name.toLowerCase())) {

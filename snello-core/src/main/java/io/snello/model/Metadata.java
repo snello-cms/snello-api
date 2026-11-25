@@ -49,6 +49,12 @@ public class Metadata {
     public boolean api_protected;
     public String username_field;
 
+    /**
+     * Roles allowed to create, change and delete rows, comma separated (e.g. "Admin,Manager"). Empty = any
+     * authenticated user (the behaviour before this setting). Reads are not affected: see api_protected.
+     */
+    public String write_roles;
+
     public boolean calendar_enabled;
     public String calendar_field;
     public String calendar_label;
@@ -170,6 +176,7 @@ public class Metadata {
             metadata.ai_profile = rawProfile;
         }
         metadata.description = MapReads.str(map, "description");
+        metadata.write_roles = MapReads.str(map, "write_roles");
         return metadata;
     }
 
@@ -192,6 +199,7 @@ public class Metadata {
         MapWrites.put(map, "tab_groups", tab_groups);
         MapWrites.put(map, "icon", icon);
         MapWrites.put(map, "username_field", username_field);
+        MapWrites.put(map, "write_roles", write_roles);
         map.put("calendar_field", calendar_field);
         map.put("calendar_label", calendar_label);
         MapWrites.putBool(map, "calendar_enabled", calendar_enabled);

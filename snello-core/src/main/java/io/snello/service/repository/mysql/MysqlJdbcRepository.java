@@ -45,6 +45,8 @@ public class MysqlJdbcRepository implements JdbcRepository {
         // MySQL 8 has no ADD COLUMN IF NOT EXISTS: re-runs fail with 1060, see isAlreadyApplied
         return new String[]{
                 "ALTER TABLE metadatas ADD COLUMN ai_profile TEXT",
+                // write permission per table: roles allowed to create / change / delete rows (empty = any user)
+                "ALTER TABLE metadatas ADD COLUMN write_roles varchar(255) DEFAULT NULL",
                 "ALTER TABLE fielddefinitions ADD COLUMN ai_profile TEXT",
                 // row-level security columns existed only in the PostgreSQL schema
                 "ALTER TABLE metadatas ADD COLUMN api_protected BOOLEAN NOT NULL DEFAULT FALSE",

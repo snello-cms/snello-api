@@ -2,6 +2,7 @@ package io.snello.service;
 
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.logging.Log;
+import io.snello.util.FieldDefinitionUtils;
 import io.snello.api.service.JdbcRepository;
 import io.snello.management.SnelloPlane;
 import io.snello.model.Condition;
@@ -355,7 +356,10 @@ public class DraftService {
     private List<String> previewDdl(EntityModel entity, List<FieldModel> fields, List<String> errors) {
         try {
             // storage facets only: identity + query facet + resolved columns
-            List<ColumnSpec> columns = fields.stream().map(f -> ColumnSpecs.of(f.name, f.query, f.ui)).toList();
+            // virtual fields (button) have no column
+            List<ColumnSpec> columns = fields.stream()
+                    .filter(f -> f.ui == null || !FieldDefinitionUtils.isVirtualType(f.ui.type()))
+                    .map(f -> ColumnSpecs.of(f.name, f.query, f.ui)).toList();
             List<String> joinTables = new ArrayList<>();
             String sql = jdbcRepository.createTableSql(entity.identity, entity.query, columns, joinTables,
                     new ArrayList<Condition>());

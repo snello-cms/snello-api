@@ -1,6 +1,7 @@
 package io.snello.api.service;
 
 import io.quarkus.logging.Log;
+import io.snello.util.FieldDefinitionUtils;
 import io.snello.model.Condition;
 import io.snello.model.FieldDefinition;
 import io.snello.model.Metadata;
@@ -152,7 +153,9 @@ public interface JdbcRepository {
         }
         List<ColumnSpec> columns = new ArrayList<>();
         for (FieldDefinition fd : fields == null ? List.<FieldDefinition>of() : fields) {
-            if (fd != null) {
+            if (fd != null && FieldDefinitionUtils.isVirtual(fd)) {
+                Log.infof("createTableSql %s: field %s is virtual (%s), no column", metadata.table_name, fd.name, fd.type);
+            } else if (fd != null) {
                 columns.add(ColumnSpecs.of(fd));
             }
         }

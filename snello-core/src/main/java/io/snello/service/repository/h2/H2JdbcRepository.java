@@ -44,6 +44,8 @@ public class H2JdbcRepository implements JdbcRepository {
         // VARCHAR, not CLOB: the JDBC driver then returns String, which the model's fromMap expects
         return new String[]{
                 "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS ai_profile VARCHAR(1000000)",
+                // write permission per table: roles allowed to create / change / delete rows (empty = any user)
+                "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS write_roles VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE fielddefinitions ADD COLUMN IF NOT EXISTS ai_profile VARCHAR(1000000)",
                 // row-level security columns existed only in the PostgreSQL schema
                 "ALTER TABLE metadatas ADD COLUMN IF NOT EXISTS api_protected BOOLEAN DEFAULT FALSE NOT NULL",
