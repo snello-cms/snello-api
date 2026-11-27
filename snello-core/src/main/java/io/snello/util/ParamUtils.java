@@ -286,7 +286,7 @@ public class ParamUtils {
         if (key.endsWith(GTE)) {
             join(where, joinOp);
             where.append(key.substring(0, key.length() - GTE.length()));
-            where.append(_GT);
+            where.append(_GTE);
             where.append(" ? ").append(SPACE);
             in.add(value);
             return;
