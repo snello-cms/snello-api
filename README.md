@@ -37,9 +37,9 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
 | `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
-| `6.0.0-alpha` | `6.0.0-RC1` | 4.0.1 | `:6.0.0-RC1`, `:rc` (no `:latest` until GA) |
+| `6.0.0-alpha` | `6.0.0-RC2` | 4.0.1 | `:6.0.0-RC2`, `:rc` (no `:latest` until GA) |
 
-First **release candidate** of the 6.x line on Quarkus **4.0.1**. Earlier drops used `6.0.x-alpha` on the same git branch (`6.0.0-alpha`). GA will publish `:latest` when the version has no alpha/RC qualifier.
+**6.0.0-RC2** on Quarkus **4.0.1** (native base image aligned to Quarkus scaffold `ubi10/ubi-minimal:10.3`). Earlier drops: `6.0.x-alpha`, then `6.0.0-RC1`. GA will publish `:latest` when the version has no alpha/RC qualifier.
 
 Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](docs/ARCHITECTURE_REENGINEERING.md) · [IT](docs/ARCHITECTURE_REENGINEERING.it.md).
 
