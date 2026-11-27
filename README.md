@@ -3,7 +3,7 @@
 ![Snello Logo](docs/images/snello-logo.svg)
 
 [![Built with Maven](https://img.shields.io/badge/Built%20with-Maven-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
-[![Quarkus](https://img.shields.io/badge/Quarkus-4.0.0.CR1-4695EB?logo=quarkus&logoColor=white)](https://quarkus.io/)
+[![Quarkus](https://img.shields.io/badge/Quarkus-4.0.1-4695EB?logo=quarkus&logoColor=white)](https://quarkus.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 Snello is a metadata-driven headless CMS API.
@@ -37,9 +37,9 @@ DB-facing JVM images use Quarkus **mutable-jar** and Keycloak-style **re-augment
 | Branch | App version | Quarkus | Docker tags |
 |---|---|---|---|
 | `main` | `5.1.1` | 3.40.1.1 | `:5.1.1`, `:latest` |
-| `6.0.0-alpha` | `6.0.16-alpha` | 4.0.0.CR1 | `:6.0.16-alpha`, `:alpha` (no `:latest`) |
+| `6.0.0-alpha` | `6.0.0-RC1` | 4.0.1 | `:6.0.0-RC1`, `:rc` (no `:latest` until GA) |
 
-Alpha patch bumps (`6.0.x-alpha`) advance the Maven / Docker app tag on each meaningful drop while the git branch stays `6.0.0-alpha`. Target after feature freeze: `6.1.0-alpha` (or beta).
+First **release candidate** of the 6.x line on Quarkus **4.0.1**. Earlier drops used `6.0.x-alpha` on the same git branch (`6.0.0-alpha`). GA will publish `:latest` when the version has no alpha/RC qualifier.
 
 Architecture notes for 6.x (facets, planes, roadmap status): [ARCHITECTURE_REENGINEERING.md](docs/ARCHITECTURE_REENGINEERING.md) · [IT](docs/ARCHITECTURE_REENGINEERING.it.md).
 

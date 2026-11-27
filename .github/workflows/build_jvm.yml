@@ -118,33 +118,29 @@ jobs:
           SUFFIX=""
           if [ -n "${DB}" ] && [ "${DB}" != "h2" ]; then SUFFIX="-${DB}"; fi
           VERSION="${APP_VERSION}${SUFFIX}"
-          ALPHA="alpha${SUFFIX}"
-          LATEST="latest${SUFFIX}"
-          echo "image=${IMAGE} db=${DB:-<n/a>} version tag=${VERSION}"
+          # Floating channel: alpha → :alpha ; RC/CR/beta → :rc ; otherwise :latest (GA only).
+          if echo "${APP_VERSION}" | grep -qi 'alpha'; then
+            CHANNEL="alpha${SUFFIX}"
+          elif echo "${APP_VERSION}" | grep -qiE 'rc|cr|beta'; then
+            CHANNEL="rc${SUFFIX}"
+          else
+            CHANNEL="latest${SUFFIX}"
+          fi
+          echo "image=${IMAGE} db=${DB:-<n/a>} version tag=${VERSION} channel=${CHANNEL}"
           DH="${DOCKERHUB_OWNER}/${IMAGE}"
           GH="ghcr.io/${GHCR_OWNER}/${IMAGE}"
           {
             echo "tags<<EOF"
             echo "${DH}:${VERSION}"
             echo "${GH}:${VERSION}"
-            if echo "${APP_VERSION}" | grep -qi 'alpha'; then
-              echo "${DH}:${ALPHA}"
-              echo "${GH}:${ALPHA}"
-            else
-              echo "${DH}:${LATEST}"
-              echo "${GH}:${LATEST}"
-            fi
-            # Compat alias: control also published as snello-api during alpha
+            echo "${DH}:${CHANNEL}"
+            echo "${GH}:${CHANNEL}"
+            # Compat alias: control also published as snello-api
             if [ "${IMAGE}" = "snello-control" ]; then
               echo "${DOCKERHUB_OWNER}/snello-api:${VERSION}"
               echo "ghcr.io/${GHCR_OWNER}/snello-api:${VERSION}"
-              if echo "${VERSION}" | grep -qi 'alpha'; then
-                echo "${DOCKERHUB_OWNER}/snello-api:alpha"
-                echo "ghcr.io/${GHCR_OWNER}/snello-api:alpha"
-              else
-                echo "${DOCKERHUB_OWNER}/snello-api:latest"
-                echo "ghcr.io/${GHCR_OWNER}/snello-api:latest"
-              fi
+              echo "${DOCKERHUB_OWNER}/snello-api:${CHANNEL}"
+              echo "ghcr.io/${GHCR_OWNER}/snello-api:${CHANNEL}"
             fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"

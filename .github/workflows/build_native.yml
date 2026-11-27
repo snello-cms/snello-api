@@ -67,16 +67,16 @@ jobs:
             echo "${DHA}:${VERSION}-native"
             echo "${GHA}:${VERSION}-native"
             if echo "${VERSION}" | grep -qi 'alpha'; then
-              echo "${DH}:alpha-native"
-              echo "${GH}:alpha-native"
-              echo "${DHA}:alpha-native"
-              echo "${GHA}:alpha-native"
+              CHANNEL=alpha-native
+            elif echo "${VERSION}" | grep -qiE 'rc|cr|beta'; then
+              CHANNEL=rc-native
             else
-              echo "${DH}:latest-native"
-              echo "${GH}:latest-native"
-              echo "${DHA}:latest-native"
-              echo "${GHA}:latest-native"
+              CHANNEL=latest-native
             fi
+            echo "${DH}:${CHANNEL}"
+            echo "${GH}:${CHANNEL}"
+            echo "${DHA}:${CHANNEL}"
+            echo "${GHA}:${CHANNEL}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
